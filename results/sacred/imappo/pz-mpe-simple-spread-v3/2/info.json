@@ -1,0 +1,44 @@
+{
+  "actor_loss": [
+    -0.040387216955423355
+  ],
+  "actor_loss_T": [
+    0
+  ],
+  "critic_loss": [
+    4.485602378845215
+  ],
+  "critic_loss_T": [
+    0
+  ],
+  "entropy": [
+    5.553497791290283
+  ],
+  "entropy_T": [
+    0
+  ],
+  "episode": [
+    0
+  ],
+  "episode_T": [
+    0
+  ],
+  "episode_return": [
+    -3.4324909448623657
+  ],
+  "episode_return_T": [
+    0
+  ],
+  "potential_loss": [
+    1.3382326364517212
+  ],
+  "potential_loss_T": [
+    0
+  ],
+  "return_mean": [
+    -0.858122706413269
+  ],
+  "return_mean_T": [
+    0
+  ]
+}

@@ -1,0 +1,363 @@
+[INFO 15:21:47] pymarl Running command 'my_main'
+[INFO 15:21:47] pymarl Started run with ID "1"
+[DEBUG 15:21:47] pymarl Starting Heartbeat
+[DEBUG 15:21:47] my_main Started
+[WARNING 15:21:47] my_main CUDA flag use_cuda was switched OFF automatically because no CUDA devices are available!
+[INFO 15:21:47] my_main Experiment Parameters:
+[INFO 15:21:47] my_main 
+
+{   'action_selector': 'soft_policies',
+    'add_value_last_step': True,
+    'agent': 'rnn',
+    'agent_output_type': 'pi_logits',
+    'batch_size': 10,
+    'batch_size_run': 10,
+    'buffer_cpu_only': True,
+    'buffer_size': 10,
+    'checkpoint_path': '',
+    'common_reward': True,
+    'critic_type': 'cv_critic',
+    'entropy_coef': 0.001,
+    'env': 'gymma',
+    'env_args': {   'key': 'mpe:SimpleSpread-v0',
+                    'pretrained_wrapper': None,
+                    'seed': 388930472,
+                    'time_limit': 25},
+    'epochs': 4,
+    'eps_clip': 0.2,
+    'evaluate': False,
+    'gamma': 0.99,
+    'grad_norm_clip': 10,
+    'hidden_dim': 128,
+    'hypergroup': None,
+    'label': 'default_label',
+    'learner': 'ppo_learner',
+    'learner_log_interval': 10000,
+    'load_step': 0,
+    'local_results_path': 'results',
+    'log_interval': 50000,
+    'lr': 0.0003,
+    'mac': 'basic_mac',
+    'mask_before_softmax': True,
+    'name': 'mappo',
+    'obs_agent_id': True,
+    'obs_individual_obs': False,
+    'obs_last_action': False,
+    'optim_alpha': 0.99,
+    'optim_eps': 1e-05,
+    'q_nstep': 5,
+    'render': False,
+    'repeat_id': 1,
+    'reward_scalarisation': 'sum',
+    'runner': 'parallel',
+    'runner_log_interval': 10000,
+    'save_model': False,
+    'save_model_interval': 50000,
+    'save_replay': False,
+    'seed': 388930472,
+    'standardise_returns': False,
+    'standardise_rewards': True,
+    't_max': 20050000,
+    'target_update_interval_or_tau': 0.01,
+    'test_greedy': True,
+    'test_interval': 50000,
+    'test_nepisode': 100,
+    'use_cuda': False,
+    'use_rnn': True,
+    'use_tensorboard': False,
+    'use_wandb': False,
+    'wandb_mode': 'offline',
+    'wandb_project': None,
+    'wandb_save_model': False,
+    'wandb_team': None}
+
+Process Process-1:
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 504, in _find_spec
+    importlib.import_module(module)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 973, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'mpe'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/cring/rl/epymarl/src/runners/parallel_runner.py", line 290, in env_worker
+    env = env_fn.x()
+  File "/home/cring/rl/epymarl/src/envs/__init__.py", line 33, in gymma_fn
+    return GymmaWrapper(**kwargs)
+  File "/home/cring/rl/epymarl/src/envs/gymma.py", line 39, in __init__
+    self._env = gym.make(f"{key}", **kwargs)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 689, in make
+    env_spec = _find_spec(id)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 506, in _find_spec
+    raise ModuleNotFoundError(
+ModuleNotFoundError: No module named 'mpe'. Environment registration via importing a module failed. Check whether 'mpe' contains env registration and can be imported.
+Process Process-2:
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 504, in _find_spec
+    importlib.import_module(module)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 973, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'mpe'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/cring/rl/epymarl/src/runners/parallel_runner.py", line 290, in env_worker
+    env = env_fn.x()
+  File "/home/cring/rl/epymarl/src/envs/__init__.py", line 33, in gymma_fn
+    return GymmaWrapper(**kwargs)
+  File "/home/cring/rl/epymarl/src/envs/gymma.py", line 39, in __init__
+    self._env = gym.make(f"{key}", **kwargs)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 689, in make
+    env_spec = _find_spec(id)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 506, in _find_spec
+    raise ModuleNotFoundError(
+ModuleNotFoundError: No module named 'mpe'. Environment registration via importing a module failed. Check whether 'mpe' contains env registration and can be imported.
+Process Process-3:
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 504, in _find_spec
+    importlib.import_module(module)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 973, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'mpe'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/cring/rl/epymarl/src/runners/parallel_runner.py", line 290, in env_worker
+    env = env_fn.x()
+  File "/home/cring/rl/epymarl/src/envs/__init__.py", line 33, in gymma_fn
+    return GymmaWrapper(**kwargs)
+  File "/home/cring/rl/epymarl/src/envs/gymma.py", line 39, in __init__
+    self._env = gym.make(f"{key}", **kwargs)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 689, in make
+    env_spec = _find_spec(id)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 506, in _find_spec
+    raise ModuleNotFoundError(
+ModuleNotFoundError: No module named 'mpe'. Environment registration via importing a module failed. Check whether 'mpe' contains env registration and can be imported.
+Process Process-4:
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 504, in _find_spec
+    importlib.import_module(module)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 973, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'mpe'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/cring/rl/epymarl/src/runners/parallel_runner.py", line 290, in env_worker
+    env = env_fn.x()
+  File "/home/cring/rl/epymarl/src/envs/__init__.py", line 33, in gymma_fn
+    return GymmaWrapper(**kwargs)
+  File "/home/cring/rl/epymarl/src/envs/gymma.py", line 39, in __init__
+    self._env = gym.make(f"{key}", **kwargs)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 689, in make
+    env_spec = _find_spec(id)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 506, in _find_spec
+    raise ModuleNotFoundError(
+ModuleNotFoundError: No module named 'mpe'. Environment registration via importing a module failed. Check whether 'mpe' contains env registration and can be imported.
+Process Process-5:
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 504, in _find_spec
+    importlib.import_module(module)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 973, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'mpe'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/cring/rl/epymarl/src/runners/parallel_runner.py", line 290, in env_worker
+    env = env_fn.x()
+  File "/home/cring/rl/epymarl/src/envs/__init__.py", line 33, in gymma_fn
+    return GymmaWrapper(**kwargs)
+  File "/home/cring/rl/epymarl/src/envs/gymma.py", line 39, in __init__
+    self._env = gym.make(f"{key}", **kwargs)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 689, in make
+    env_spec = _find_spec(id)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 506, in _find_spec
+    raise ModuleNotFoundError(
+ModuleNotFoundError: No module named 'mpe'. Environment registration via importing a module failed. Check whether 'mpe' contains env registration and can be imported.
+Process Process-6:
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 504, in _find_spec
+    importlib.import_module(module)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 973, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'mpe'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/cring/rl/epymarl/src/runners/parallel_runner.py", line 290, in env_worker
+    env = env_fn.x()
+  File "/home/cring/rl/epymarl/src/envs/__init__.py", line 33, in gymma_fn
+    return GymmaWrapper(**kwargs)
+  File "/home/cring/rl/epymarl/src/envs/gymma.py", line 39, in __init__
+    self._env = gym.make(f"{key}", **kwargs)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 689, in make
+    env_spec = _find_spec(id)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 506, in _find_spec
+    raise ModuleNotFoundError(
+ModuleNotFoundError: No module named 'mpe'. Environment registration via importing a module failed. Check whether 'mpe' contains env registration and can be imported.
+Process Process-7:
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 504, in _find_spec
+    importlib.import_module(module)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 973, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'mpe'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/cring/rl/epymarl/src/runners/parallel_runner.py", line 290, in env_worker
+    env = env_fn.x()
+  File "/home/cring/rl/epymarl/src/envs/__init__.py", line 33, in gymma_fn
+    return GymmaWrapper(**kwargs)
+  File "/home/cring/rl/epymarl/src/envs/gymma.py", line 39, in __init__
+    self._env = gym.make(f"{key}", **kwargs)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 689, in make
+    env_spec = _find_spec(id)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 506, in _find_spec
+    raise ModuleNotFoundError(
+ModuleNotFoundError: No module named 'mpe'. Environment registration via importing a module failed. Check whether 'mpe' contains env registration and can be imported.
+Process Process-8:
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 504, in _find_spec
+    importlib.import_module(module)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 973, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'mpe'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/cring/rl/epymarl/src/runners/parallel_runner.py", line 290, in env_worker
+    env = env_fn.x()
+  File "/home/cring/rl/epymarl/src/envs/__init__.py", line 33, in gymma_fn
+    return GymmaWrapper(**kwargs)
+  File "/home/cring/rl/epymarl/src/envs/gymma.py", line 39, in __init__
+    self._env = gym.make(f"{key}", **kwargs)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 689, in make
+    env_spec = _find_spec(id)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 506, in _find_spec
+    raise ModuleNotFoundError(
+ModuleNotFoundError: No module named 'mpe'. Environment registration via importing a module failed. Check whether 'mpe' contains env registration and can be imported.
+Process Process-9:
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 504, in _find_spec
+    importlib.import_module(module)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 973, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'mpe'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/cring/rl/epymarl/src/runners/parallel_runner.py", line 290, in env_worker
+    env = env_fn.x()
+  File "/home/cring/rl/epymarl/src/envs/__init__.py", line 33, in gymma_fn
+    return GymmaWrapper(**kwargs)
+  File "/home/cring/rl/epymarl/src/envs/gymma.py", line 39, in __init__
+    self._env = gym.make(f"{key}", **kwargs)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 689, in make
+    env_spec = _find_spec(id)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 506, in _find_spec
+    raise ModuleNotFoundError(
+ModuleNotFoundError: No module named 'mpe'. Environment registration via importing a module failed. Check whether 'mpe' contains env registration and can be imported.
+Process Process-10:
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 504, in _find_spec
+    importlib.import_module(module)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 973, in _find_and_load_unlocked
+ModuleNotFoundError: No module named 'mpe'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/cring/rl/epymarl/src/runners/parallel_runner.py", line 290, in env_worker
+    env = env_fn.x()
+  File "/home/cring/rl/epymarl/src/envs/__init__.py", line 33, in gymma_fn
+    return GymmaWrapper(**kwargs)
+  File "/home/cring/rl/epymarl/src/envs/gymma.py", line 39, in __init__
+    self._env = gym.make(f"{key}", **kwargs)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 689, in make
+    env_spec = _find_spec(id)
+  File "/home/cring/anaconda3/envs/rl-test/lib/python3.8/site-packages/gymnasium/envs/registration.py", line 506, in _find_spec
+    raise ModuleNotFoundError(
+ModuleNotFoundError: No module named 'mpe'. Environment registration via importing a module failed. Check whether 'mpe' contains env registration and can be imported.

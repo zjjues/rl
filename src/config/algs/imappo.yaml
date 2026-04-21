@@ -1,0 +1,39 @@
+# --- I-MAPPO specific parameters ---
+
+runner: "episode"
+mac: "basic_mac"
+learner: "imappo_learner"
+name: "imappo"
+
+lr: 0.0003
+critic_lr: 0.0003
+potential_lr: 0.0003
+potential_update_mode: "normal"
+potential_update_interval: 4
+
+gamma: 0.99
+gae_lambda: 0.95
+eps_clip: 0.2
+eta: 0.5
+entropy_coef: 0.001
+value_coef: 0.5
+epochs: 4
+
+batch_size: 128
+rollout_length: 512
+max_episodes: 100
+
+intent_dim: 8
+imappo_n_agents: 4
+imappo_obs_dim: 18
+imappo_state_dim: 72
+imappo_action_dim: 3
+
+action_low: -1.0
+action_high: 1.0
+
+standardise_returns: False
+standardise_rewards: False
+
+use_rnn: False
+agent_output_type: "continuous_gaussian"
