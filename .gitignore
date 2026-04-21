@@ -219,6 +219,12 @@ dmypy.json
 # Ignore all local history of files
 .history
 
+# Local Codex/session files
+.codex
+
+# Experiment outputs
+results/
+
 ### Windows ###
 # Windows thumbnail cache files
 Thumbs.db
