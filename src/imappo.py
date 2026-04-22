@@ -24,11 +24,14 @@ class IMAPPOConfig:
 
     gamma: float = 0.99
     gae_lambda: float = 0.95
-    eps_clip: float = 0.2
+    eps_clip: float = 0.1
     eta: float = 0.5
+    eta_end: float = 0.1
     entropy_coef: float = 1e-3
+    entropy_coef_end: float = 1e-4
     value_coef: float = 0.5
-    max_grad_norm: float = 10.0
+    max_grad_norm: float = 0.5
+    value_clip: float = 0.2
 
     actor_lr: float = 3e-4
     critic_lr: float = 3e-4
@@ -41,6 +44,19 @@ class IMAPPOConfig:
     rollout_length: int = 512
     max_episodes: int = 100
     max_steps: int = 200
+    eval_interval: int = 10
+    eval_episodes: int = 3
+    curriculum_spawn_scale_start: float = 0.45
+    curriculum_spawn_scale_end: float = 0.30
+    curriculum_separation_start: float = 0.95
+    curriculum_separation_end: float = 1.20
+    eval_spawn_scale: float = 0.34
+    eval_separation_scale: float = 0.95
+    collision_probe_spawn_scale: float = 0.29
+    collision_probe_separation_scale: float = 0.82
+    hard_train_interval: int = 6
+    hard_train_spawn_scale: float = 0.31
+    hard_train_separation_scale: float = 0.86
 
     actor_hidden_dims: Tuple[int, int, int] = (256, 256, 128)
     critic_hidden_dims: Tuple[int, int, int] = (256, 256, 128)
@@ -50,7 +66,7 @@ class IMAPPOConfig:
     action_low: float = -1.0
     action_high: float = 1.0
     log_std_min: float = -5.0
-    log_std_max: float = 2.0
+    log_std_max: float = 0.5
     device: str = "cpu"
     seed: int = 42
 
@@ -81,6 +97,8 @@ class IntentConditionedActor(nn.Module):
         )
         self.mean_head = nn.Linear(h3, config.action_dim)
         self.log_std_head = nn.Linear(h3, config.action_dim)
+        nn.init.zeros_(self.log_std_head.weight)
+        nn.init.constant_(self.log_std_head.bias, -1.0)
 
     def forward(
         self,
@@ -90,8 +108,7 @@ class IntentConditionedActor(nn.Module):
     ) -> Tuple[Tensor, Tensor, Tensor]:
         x = torch.cat([obs, intent], dim=-1)
         hidden = self.backbone(x)
-        action_mean = torch.tanh(self.mean_head(hidden))
-        action_mean = action_mean * self.config.action_high
+        action_mean = self.mean_head(hidden)
         if action_mask is not None:
             action_mean = action_mean * action_mask
 
@@ -130,11 +147,39 @@ class IntentConditionedActor(nn.Module):
             raw_action = dist.mean
         else:
             raw_action = dist.rsample()
-        action = torch.clamp(raw_action, self.config.action_low, self.config.action_high)
+        squashed_action = torch.tanh(raw_action)
+        action = squashed_action * self.config.action_high
         if action_mask is not None:
             action = action * action_mask
-        log_prob = dist.log_prob(action).sum(dim=-1)
+        log_prob = self.log_prob_from_raw_action(dist, raw_action, squashed_action, action_mask)
         return action, log_prob, hidden
+
+    def log_prob(
+        self,
+        dist: Normal,
+        actions: Tensor,
+        action_mask: Optional[Tensor] = None,
+    ) -> Tensor:
+        scaled_actions = torch.clamp(
+            actions / max(self.config.action_high, 1e-6),
+            -0.999999,
+            0.999999,
+        )
+        raw_action = torch.atanh(scaled_actions)
+        return self.log_prob_from_raw_action(dist, raw_action, scaled_actions, action_mask)
+
+    def log_prob_from_raw_action(
+        self,
+        dist: Normal,
+        raw_action: Tensor,
+        squashed_action: Tensor,
+        action_mask: Optional[Tensor] = None,
+    ) -> Tensor:
+        correction = torch.log1p(-squashed_action.pow(2) + 1e-6)
+        log_prob = dist.log_prob(raw_action) - correction
+        if action_mask is not None:
+            log_prob = log_prob * action_mask
+        return log_prob.sum(dim=-1)
 
 
 class CrossAttentionCritic(nn.Module):
@@ -272,15 +317,33 @@ class IMAPPO:
             self.potential.parameters(), lr=config.potential_lr
         )
         self.potential_update_step = 0
+        self.current_eta = config.eta
+        self.current_entropy_coef = config.entropy_coef
 
         if config.potential_update_mode == "frozen":
             for param in self.potential.parameters():
                 param.requires_grad = False
 
+    def set_training_progress(self, progress: float) -> None:
+        progress = float(np.clip(progress, 0.0, 1.0))
+        self.current_eta = self.config.eta + progress * (
+            self.config.eta_end - self.config.eta
+        )
+        self.current_entropy_coef = self.config.entropy_coef + progress * (
+            self.config.entropy_coef_end - self.config.entropy_coef
+        )
+
     def sample_episode_intent_and_mask(self) -> Tuple[Tensor, Tensor]:
         intent = torch.randn(self.config.intent_dim, device=self.device)
         mask = (torch.rand(self.config.n_agents, self.config.action_dim, device=self.device) > 0.2).float()
         mask[:, 0] = 1.0
+        return intent, mask
+
+    def evaluation_intent_and_mask(self) -> Tuple[Tensor, Tensor]:
+        intent = torch.zeros(self.config.intent_dim, device=self.device)
+        mask = torch.ones(
+            self.config.n_agents, self.config.action_dim, device=self.device
+        )
         return intent, mask
 
     def compute_shaped_rewards(
@@ -292,8 +355,12 @@ class IMAPPO:
     ) -> Tuple[Tensor, Tensor]:
         phi_t = self.potential(state.unsqueeze(0), intent.unsqueeze(0)).squeeze(0)
         phi_tp1 = self.potential(next_state.unsqueeze(0), intent.unsqueeze(0)).squeeze(0)
-        intrinsic_reward = self.config.gamma * phi_tp1 - phi_t
-        total_reward = env_reward + self.config.eta * intrinsic_reward
+        intrinsic_reward = torch.clamp(
+            self.config.gamma * phi_tp1 - phi_t,
+            min=-1.0,
+            max=1.0,
+        )
+        total_reward = env_reward + self.current_eta * intrinsic_reward
         return total_reward, intrinsic_reward
 
     def compute_gae(
@@ -328,6 +395,7 @@ class IMAPPO:
         values, _ = self.critic(states, intents, obs)
         with torch.no_grad():
             next_values, _ = self.critic(next_states, intents, next_obs)
+        old_values = values.detach()
 
         team_rewards = rewards.mean(dim=-1)
         advantages, returns = self.compute_gae(team_rewards, dones, values.detach(), next_values.detach())
@@ -354,11 +422,20 @@ class IMAPPO:
                 mb_returns = returns[idx]
                 mb_advantages = agent_advantages[idx]
                 mb_old_log_probs = old_log_probs[idx]
+                mb_old_values = old_values[idx]
                 mb_next_states = next_states[idx]
-                mb_dones = dones[idx]
 
                 critic_values, _ = self.critic(mb_states, mb_intents, mb_obs)
-                critic_loss = F.mse_loss(critic_values, mb_returns)
+                clipped_values = mb_old_values + torch.clamp(
+                    critic_values - mb_old_values,
+                    -self.config.value_clip,
+                    self.config.value_clip,
+                )
+                critic_loss_unclipped = (critic_values - mb_returns).pow(2)
+                critic_loss_clipped = (clipped_values - mb_returns).pow(2)
+                critic_loss = 0.5 * torch.max(
+                    critic_loss_unclipped, critic_loss_clipped
+                ).mean()
 
                 flat_obs = mb_obs.reshape(-1, self.config.obs_dim)
                 flat_intents = (
@@ -372,7 +449,7 @@ class IMAPPO:
                 flat_old_log_probs = mb_old_log_probs.reshape(-1)
 
                 dist, _ = self.actor.distribution(flat_obs, flat_intents, flat_masks)
-                new_log_probs = dist.log_prob(flat_actions).sum(dim=-1)
+                new_log_probs = self.actor.log_prob(dist, flat_actions, flat_masks)
                 entropy = dist.entropy().sum(dim=-1).mean()
                 ratios = torch.exp(new_log_probs - flat_old_log_probs)
                 surr1 = ratios * flat_advantages
@@ -381,7 +458,10 @@ class IMAPPO:
                     1.0 - self.config.eps_clip,
                     1.0 + self.config.eps_clip,
                 ) * flat_advantages
-                actor_loss = -(torch.min(surr1, surr2).mean() + self.config.entropy_coef * entropy)
+                actor_loss = -(
+                    torch.min(surr1, surr2).mean()
+                    + self.current_entropy_coef * entropy
+                )
 
                 state_embed = self.potential.state_encoder(mb_states)
                 next_state_embed = self.potential.state_encoder(mb_next_states)
@@ -435,6 +515,8 @@ class IMAPPO:
             "entropy": last_entropy,
             "potential_loss": last_potential_loss,
             "return_mean": float(team_rewards.mean().item()),
+            "eta": float(self.current_eta),
+            "entropy_coef": float(self.current_entropy_coef),
         }
 
     def select_actions(
@@ -586,8 +668,140 @@ def env_step(env, agent_order: List[str], actions: np.ndarray):
     return obs, reward_vec, done, truncated_done, infos
 
 
+def extract_collision_count(infos, agent_order: List[str]) -> int:
+    if isinstance(infos, dict):
+        for agent_id in agent_order:
+            agent_info = infos.get(agent_id, {})
+            if isinstance(agent_info, dict) and "collision" in agent_info:
+                return int(bool(agent_info["collision"]))
+        if "collision" in infos:
+            return int(bool(infos["collision"]))
+    return 0
+
+
+def summarise_step_info(infos, agent_order: List[str]) -> Dict[str, float]:
+    summary = {
+        "task_completion": 0.0,
+        "reward_env": 0.0,
+        "reward_dist": 0.0,
+        "reward_energy": 0.0,
+        "reward_collision": 0.0,
+        "reward_safety": 0.0,
+        "reward_task": 0.0,
+    }
+    if not isinstance(infos, dict):
+        return summary
+
+    collected = []
+    for agent_id in agent_order:
+        agent_info = infos.get(agent_id, {})
+        if isinstance(agent_info, dict):
+            collected.append(agent_info)
+    if not collected:
+        return summary
+
+    denom = float(len(collected))
+    for key in summary:
+        summary[key] = float(
+            sum(float(agent_info.get(key, 0.0)) for agent_info in collected) / denom
+        )
+    return summary
+
+
+def build_uav_env_factory(config: IMAPPOConfig, mode: str = "train") -> Callable[[], object]:
+    import gymnasium as gym
+
+    def make_env():
+        if mode == "train":
+            progress = float(np.clip(getattr(config, "_env_progress", 0.0), 0.0, 1.0))
+            hard_episode = bool(getattr(config, "_use_hard_train_env", False))
+            if hard_episode:
+                spawn_scale = config.hard_train_spawn_scale
+                separation_scale = config.hard_train_separation_scale
+            else:
+                spawn_scale = config.curriculum_spawn_scale_start + progress * (
+                    config.curriculum_spawn_scale_end - config.curriculum_spawn_scale_start
+                )
+                separation_scale = config.curriculum_separation_start + progress * (
+                    config.curriculum_separation_end - config.curriculum_separation_start
+                )
+        elif mode == "collision_probe":
+            spawn_scale = config.collision_probe_spawn_scale
+            separation_scale = config.collision_probe_separation_scale
+        else:
+            spawn_scale = config.eval_spawn_scale
+            separation_scale = config.eval_separation_scale
+
+        return gym.make(
+            "uav-scheduling-v0",
+            spawn_region_scale=spawn_scale,
+            spawn_separation_scale=separation_scale,
+        )
+
+    return make_env
+
+
+def evaluate_imappo(
+    algo: IMAPPO,
+    env_factory: Callable[[], object],
+    config: IMAPPOConfig,
+    prefix: str = "eval",
+) -> Dict[str, float]:
+    env = env_factory()
+    episode_returns = []
+    episode_collisions = []
+    episode_collision_rates = []
+    episode_task_completion = []
+
+    for _ in range(config.eval_episodes):
+        obs_data, _ = env_reset(env)
+        agent_order = infer_agent_order(env, obs_data, config)
+        obs_array = normalise_obs(agent_order, obs_data)
+        intent, episode_mask = algo.evaluation_intent_and_mask()
+
+        ep_return = 0.0
+        ep_collisions = 0.0
+        ep_task_completion = 0.0
+        ep_steps = 0
+        for _ in range(config.max_steps):
+            obs_tensor = torch.tensor(obs_array, dtype=torch.float32, device=algo.device)
+            actions, _ = algo.select_actions(
+                obs_tensor, intent, episode_mask, deterministic=True
+            )
+            next_obs_data, reward_vec, done_flag, truncated_flag, info = env_step(
+                env, agent_order, actions.detach().cpu().numpy()
+            )
+            next_obs_array = normalise_obs(agent_order, next_obs_data)
+            step_info = summarise_step_info(info, agent_order)
+
+            ep_return += float(np.mean(reward_vec))
+            ep_collisions += float(extract_collision_count(info, agent_order))
+            ep_task_completion += step_info["task_completion"]
+            ep_steps += 1
+
+            obs_array = next_obs_array
+            done = done_flag or truncated_flag
+            if done:
+                break
+
+        episode_returns.append(ep_return)
+        episode_collisions.append(ep_collisions)
+        episode_collision_rates.append(ep_collisions / max(ep_steps, 1))
+        episode_task_completion.append(ep_task_completion / max(ep_steps, 1))
+
+    env.close()
+    return {
+        f"{prefix}_episode_return": float(np.mean(episode_returns)),
+        f"{prefix}_episode_collisions": float(np.mean(episode_collisions)),
+        f"{prefix}_collision_rate": float(np.mean(episode_collision_rates)),
+        f"{prefix}_task_completion": float(np.mean(episode_task_completion)),
+    }
+
+
 def train_imappo(
     env_factory: Optional[Callable[[], object]] = None,
+    eval_env_factory: Optional[Callable[[], object]] = None,
+    collision_probe_env_factory: Optional[Callable[[], object]] = None,
     config: Optional[IMAPPOConfig] = None,
     logger=None,
 ) -> Tuple[IMAPPO, List[Dict[str, float]]]:
@@ -596,9 +810,13 @@ def train_imappo(
     buffer = RolloutBuffer()
     logs: List[Dict[str, float]] = []
 
-    env = env_factory() if env_factory is not None else MockContinuousUAVEnv(cfg)
-
     for episode in range(cfg.max_episodes):
+        cfg._env_progress = episode / max(cfg.max_episodes - 1, 1)
+        cfg._use_hard_train_env = (
+            cfg.hard_train_interval > 0 and (episode + 1) % cfg.hard_train_interval == 0
+        )
+        algo.set_training_progress(episode / max(cfg.max_episodes - 1, 1))
+        env = env_factory() if env_factory is not None else MockContinuousUAVEnv(cfg)
         obs_data, _ = env_reset(env)
         agent_order = infer_agent_order(env, obs_data, cfg)
         obs_array = normalise_obs(agent_order, obs_data)
@@ -606,13 +824,23 @@ def train_imappo(
         intent, episode_mask = algo.sample_episode_intent_and_mask()
 
         episode_return = 0.0
+        episode_collisions = 0.0
+        episode_reward_env = 0.0
+        episode_reward_intent = 0.0
+        episode_task_completion = 0.0
+        episode_reward_dist = 0.0
+        episode_reward_energy = 0.0
+        episode_reward_collision = 0.0
+        episode_reward_safety = 0.0
+        episode_reward_task = 0.0
+        episode_steps = 0
         for _ in range(cfg.max_steps):
             obs_tensor = torch.tensor(obs_array, dtype=torch.float32, device=algo.device)
             state_tensor = torch.tensor(state_array, dtype=torch.float32, device=algo.device)
             actions, log_probs = algo.select_actions(obs_tensor, intent, episode_mask)
 
             action_np = actions.detach().cpu().numpy()
-            next_obs_data, reward_vec, done_flag, truncated_flag, _ = env_step(
+            next_obs_data, reward_vec, done_flag, truncated_flag, info = env_step(
                 env, agent_order, action_np
             )
             next_obs_array = normalise_obs(agent_order, next_obs_data)
@@ -625,6 +853,7 @@ def train_imappo(
             total_reward, _ = algo.compute_shaped_rewards(
                 extrinsic_rewards, state_tensor, next_state_tensor, intent
             )
+            step_info = summarise_step_info(info, agent_order)
 
             done = done_flag or truncated_flag
             done_tensor = torch.tensor(float(done), dtype=torch.float32, device=algo.device)
@@ -643,6 +872,16 @@ def train_imappo(
             )
 
             episode_return += float(total_reward.mean().item())
+            episode_reward_env += float(extrinsic_rewards.mean().item())
+            episode_reward_intent += float((total_reward - extrinsic_rewards).mean().item())
+            episode_collisions += float(extract_collision_count(info, agent_order))
+            episode_task_completion += step_info["task_completion"]
+            episode_reward_dist += step_info["reward_dist"]
+            episode_reward_energy += step_info["reward_energy"]
+            episode_reward_collision += step_info["reward_collision"]
+            episode_reward_safety += step_info["reward_safety"]
+            episode_reward_task += step_info["reward_task"]
+            episode_steps += 1
             obs_array = next_obs_array
             state_array = next_state_array
 
@@ -658,13 +897,74 @@ def train_imappo(
             if done:
                 break
 
-        episode_log = {"episode": float(episode), "episode_return": episode_return}
+        if buffer.storage["states"]:
+            update_log = algo.update(buffer)
+            update_log["episode"] = float(episode)
+            logs.append(update_log)
+            if logger is not None:
+                for key, value in update_log.items():
+                    if key != "episode":
+                        logger.log_stat(key, value, int(episode))
+
+        mean_task_completion = (
+            episode_task_completion / max(episode_steps, 1)
+        )
+        collision_rate = episode_collisions / max(episode_steps, 1)
+        episode_log = {
+            "episode": float(episode),
+            "episode_return": episode_return,
+            "episode_collisions": episode_collisions,
+            "episode_collision_rate": collision_rate,
+            "episode_reward_env": episode_reward_env,
+            "episode_reward_intent": episode_reward_intent,
+            "episode_task_completion": mean_task_completion,
+            "episode_reward_dist": episode_reward_dist,
+            "episode_reward_energy": episode_reward_energy,
+            "episode_reward_collision": episode_reward_collision,
+            "episode_reward_safety": episode_reward_safety,
+            "episode_reward_task": episode_reward_task,
+        }
         logs.append(episode_log)
         if logger is not None:
             logger.log_stat("episode", episode, episode)
             logger.log_stat("episode_return", episode_return, episode)
+            logger.log_stat("episode_collisions", episode_collisions, episode)
+            logger.log_stat("episode_collision_rate", collision_rate, episode)
+            logger.log_stat("episode_reward_env", episode_reward_env, episode)
+            logger.log_stat("episode_reward_intent", episode_reward_intent, episode)
+            logger.log_stat("episode_task_completion", mean_task_completion, episode)
+            logger.log_stat("episode_reward_dist", episode_reward_dist, episode)
+            logger.log_stat("episode_reward_energy", episode_reward_energy, episode)
+            logger.log_stat("episode_reward_collision", episode_reward_collision, episode)
+            logger.log_stat("episode_reward_safety", episode_reward_safety, episode)
+            logger.log_stat("episode_reward_task", episode_reward_task, episode)
+            logger.log_stat("curriculum_spawn_scale", getattr(env.unwrapped, "spawn_region_scale", 0.0), episode)
+            logger.log_stat("curriculum_separation_scale", getattr(env.unwrapped, "spawn_separation_scale", 0.0), episode)
+            logger.log_stat("hard_train_episode", float(cfg._use_hard_train_env), episode)
 
-    env.close()
+        if eval_env_factory is not None and (
+            (episode + 1) % max(cfg.eval_interval, 1) == 0
+            or episode == cfg.max_episodes - 1
+        ):
+            eval_log = evaluate_imappo(algo, eval_env_factory, cfg, prefix="eval")
+            eval_log["episode"] = float(episode)
+            logs.append(eval_log)
+            if logger is not None:
+                for key, value in eval_log.items():
+                    if key != "episode":
+                        logger.log_stat(key, value, episode)
+            if collision_probe_env_factory is not None:
+                probe_log = evaluate_imappo(
+                    algo, collision_probe_env_factory, cfg, prefix="probe"
+                )
+                probe_log["episode"] = float(episode)
+                logs.append(probe_log)
+                if logger is not None:
+                    for key, value in probe_log.items():
+                        if key != "episode":
+                            logger.log_stat(key, value, episode)
+
+        env.close()
     return algo, logs
 
 
@@ -677,11 +977,14 @@ def build_imappo_config_from_args(args) -> IMAPPOConfig:
         intent_dim=getattr(args, "intent_dim", 8),
         gamma=args.gamma,
         gae_lambda=getattr(args, "gae_lambda", 0.95),
-        eps_clip=getattr(args, "eps_clip", 0.2),
+        eps_clip=getattr(args, "eps_clip", 0.1),
         eta=getattr(args, "eta", 0.5),
+        eta_end=getattr(args, "eta_end", 0.1),
         entropy_coef=getattr(args, "entropy_coef", 1e-3),
+        entropy_coef_end=getattr(args, "entropy_coef_end", 1e-4),
         value_coef=getattr(args, "value_coef", 0.5),
-        max_grad_norm=args.grad_norm_clip,
+        max_grad_norm=getattr(args, "grad_norm_clip", 0.5),
+        value_clip=getattr(args, "value_clip", 0.2),
         actor_lr=args.lr,
         critic_lr=getattr(args, "critic_lr", args.lr),
         potential_lr=getattr(args, "potential_lr", args.lr),
@@ -692,6 +995,8 @@ def build_imappo_config_from_args(args) -> IMAPPOConfig:
         rollout_length=getattr(args, "rollout_length", args.batch_size),
         max_episodes=getattr(args, "max_episodes", 100),
         max_steps=args.env_args.get("time_limit", getattr(args, "max_steps", 200)),
+        eval_interval=getattr(args, "eval_interval", 10),
+        eval_episodes=getattr(args, "eval_episodes", 3),
         action_low=getattr(args, "action_low", -1.0),
         action_high=getattr(args, "action_high", 1.0),
         device=args.device,

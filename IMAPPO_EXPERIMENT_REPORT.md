@@ -519,6 +519,272 @@ This corresponds to the strongest single-seed result found in the experiments ab
 - simple critic stabilization tricks did not solve the issue
 - freezing or slowing `Phi` did not outperform the baseline
 
+
+## 13. Stage-2 Continuous Optimization Progress
+
+After the first round of ablations, the work shifted from "can the algorithm run?" to "can the optimization become stable enough to support useful paper plots?".
+
+The second-stage work added four groups of changes:
+
+### 13.1 PPO Stabilization Upgrades
+
+The training path in [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:1) was further upgraded with:
+
+- clipped intrinsic reward:
+  - `R_intent = clamp(gamma * Phi(s_{t+1}, I) - Phi(s_t, I), -1, 1)`
+- tighter PPO clip:
+  - `eps_clip = 0.1`
+- actor and critic gradient clipping:
+  - `max_grad_norm = 0.5`
+- value loss clipping for the critic
+- linear decay of:
+  - `eta`
+  - `entropy_coef`
+- continuous actor changed from
+  - Gaussian sampling + hard action clipping
+  to
+  - `tanh`-squashed Gaussian with aligned log-prob computation
+
+These changes were introduced to reduce target explosions, reduce action-boundary distortion, and make late-stage updates less aggressive.
+
+### 13.2 Environment and Reward Reconstruction
+
+The custom UAV environment in [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:1) was substantially reworked.
+
+New environment-side additions include:
+
+- normalized collision detection
+- explicit episode collision counting
+- reward scaling and clipping
+- progress-based reward terms instead of absolute cumulative task reward
+- configurable spawn density and spawn separation
+- proximity-based safety shaping:
+  - `reward_safety`
+
+The reward is now decomposed into:
+
+- `reward_dist`
+- `reward_energy`
+- `reward_collision`
+- `reward_safety`
+- `reward_task`
+
+This made it possible to diagnose whether failure was caused by:
+
+- not moving toward targets
+- moving too aggressively
+- spending too much time near dangerous pairwise distances
+- or simply not progressing tasks
+
+### 13.3 Curriculum and Multi-Regime Evaluation
+
+The training loop was extended with:
+
+- training curriculum via changing spawn region scale and separation scale
+- periodic hard-training episodes
+- standard evaluation environment
+- crowded evaluation environment
+- fixed evaluation intent and full action mask for deterministic comparison
+
+So the logged metrics now include:
+
+- training:
+  - `episode_return`
+  - `episode_collision_rate`
+  - `episode_reward_env`
+  - `episode_reward_intent`
+  - `episode_reward_safety`
+  - `episode_task_completion`
+- normal evaluation:
+  - `eval_episode_return`
+  - `eval_collision_rate`
+  - `eval_task_completion`
+- crowded evaluation:
+  - `probe_episode_return`
+  - `probe_collision_rate`
+  - `probe_task_completion`
+
+### 13.4 Dedicated Experiment Script
+
+A dedicated experiment script was added:
+
+- [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:1)
+
+This script automates:
+
+- multi-seed training
+- normal evaluation
+- crowded evaluation
+- three-tier risk evaluation
+- figure generation
+- JSON summary export
+
+
+## 14. Stage-2 Experiment Setup
+
+The dedicated stage-2 experiment command used most recently was:
+
+```bash
+PYTHONPATH=src python src/imappo_experiments.py \
+  --episodes 12 \
+  --steps 30 \
+  --rollout 32 \
+  --batch-size 16 \
+  --eval-interval 6 \
+  --eval-episodes 2 \
+  --seeds 7 11 \
+  --output-dir reports/imappo_stage2
+```
+
+Outputs were written under:
+
+- [reports/imappo_stage2](/home/cring/rl/epymarl/reports/imappo_stage2)
+
+The main generated files are:
+
+- [train_return_curve.png](/home/cring/rl/epymarl/reports/imappo_stage2/train_return_curve.png)
+- [train_collision_curve.png](/home/cring/rl/epymarl/reports/imappo_stage2/train_collision_curve.png)
+- [eval_collision_curve.png](/home/cring/rl/epymarl/reports/imappo_stage2/eval_collision_curve.png)
+- [probe_collision_curve.png](/home/cring/rl/epymarl/reports/imappo_stage2/probe_collision_curve.png)
+- [reward_decomposition_curve.png](/home/cring/rl/epymarl/reports/imappo_stage2/reward_decomposition_curve.png)
+- [risk_tier_collision_bar.png](/home/cring/rl/epymarl/reports/imappo_stage2/risk_tier_collision_bar.png)
+- [risk_tier_task_bar.png](/home/cring/rl/epymarl/reports/imappo_stage2/risk_tier_task_bar.png)
+- [summary.json](/home/cring/rl/epymarl/reports/imappo_stage2/summary.json)
+- [seed_7.json](/home/cring/rl/epymarl/reports/imappo_stage2/seed_7.json)
+- [seed_11.json](/home/cring/rl/epymarl/reports/imappo_stage2/seed_11.json)
+
+
+## 15. Stage-2 Experimental Results
+
+The current summary in [summary.json](/home/cring/rl/epymarl/reports/imappo_stage2/summary.json:1) is:
+
+- `final_eval_collision_rate_mean = 0.2583`
+- `final_probe_collision_rate_mean = 0.6083`
+
+This means:
+
+- under the standard evaluation regime, the mean collision rate over the latest small multi-seed run is about `25.8%`
+- under the crowded regime, the mean collision rate is still high at about `60.8%`
+
+This is not yet good enough, but it is much more informative than the earlier state where logs did not cleanly separate training and evaluation difficulty.
+
+### 15.1 Figure Summary
+
+#### Training Return
+
+![stage2 train return](./reports/imappo_stage2/train_return_curve.png)
+
+Interpretation:
+
+- training returns are now much less explosive than in the first-stage unstable runs
+- the optimization path is still noisy, but no longer dominated by critic blow-ups alone
+
+#### Training Collision Rate
+
+![stage2 train collision](./reports/imappo_stage2/train_collision_curve.png)
+
+Interpretation:
+
+- collision behavior during training is now directly observable
+- hard-training episodes and curriculum transitions create visible stress points in the curve
+
+#### Standard Evaluation Collision Rate
+
+![stage2 eval collision](./reports/imappo_stage2/eval_collision_curve.png)
+
+Interpretation:
+
+- the policy can suppress collisions better in the normal evaluation regime than in the crowded one
+- evaluation is now measured under a fixed intent/mask regime, so the metric is cleaner than earlier random-condition evaluation
+
+#### Crowded Evaluation Collision Rate
+
+![stage2 probe collision](./reports/imappo_stage2/probe_collision_curve.png)
+
+Interpretation:
+
+- crowded-scene robustness remains the main unresolved weakness
+- this metric is currently the most important one to push down in future iterations
+
+#### Task Reward Trend
+
+![stage2 reward decomposition](./reports/imappo_stage2/reward_decomposition_curve.png)
+
+Interpretation:
+
+- task progress reward no longer dominates the total return in the pathological way seen in earlier absolute-completion reward designs
+- reward decomposition is now usable for debugging
+
+#### Risk-Tier Collision Comparison
+
+![stage2 risk collision](./reports/imappo_stage2/risk_tier_collision_bar.png)
+
+Interpretation:
+
+- the multi-tier evaluation produces a more paper-friendly safety profile
+- performance can now be compared under loose, medium, and dense regimes instead of a single binary setup
+
+#### Risk-Tier Task Completion Comparison
+
+![stage2 risk task](./reports/imappo_stage2/risk_tier_task_bar.png)
+
+Interpretation:
+
+- task completion stays measurable across risk regimes
+- the next objective is to improve safety without flattening task completion too much
+
+
+## 16. Consolidated Current Conclusion
+
+At the current stage, the project has clearly advanced beyond initial implementation.
+
+What has been completed:
+
+- end-to-end I-MAPPO implementation
+- continuous-action actor/critic path integrated into EPyMARL
+- custom UAV scheduling environment aligned with `rl.md` dimensions
+- first-stage ablations over shaping, intent dimension, entropy, learning rate, rollout length, and potential update strategy
+- second-stage stability work:
+  - reward clipping
+  - critic stabilization
+  - tanh-squashed Gaussian actor
+  - curriculum learning
+  - hard-train episodes
+  - multi-regime evaluation
+  - figure generation script
+
+What the current experiments show:
+
+1. The system is now experimentally tractable.
+   - It is no longer in the "implementation barely works" phase.
+
+2. The main remaining weakness is crowded-scene safety.
+   - `probe_collision_rate` remains substantially higher than desired.
+
+3. The evaluation pipeline is now strong enough to support further optimization and paper-style reporting.
+   - This is an important milestone because future work can now target a clean metric rather than guess from raw training loss alone.
+
+4. The next optimization target should be:
+   - lowering crowded-scene collision rate
+   - while preserving or improving task completion
+
+
+## 17. Recommended Next Steps
+
+The most valuable next steps are now:
+
+1. Sweep the crowded-scene curriculum more systematically.
+   - especially `hard_train_interval`, `hard_train_spawn_scale`, and `hard_train_separation_scale`
+
+2. Tune the safety shaping term.
+   - especially the safety margin width and `reward_safety` coefficient
+
+3. Expand the stage-2 experiment script to 3 to 5 seeds and longer runs.
+   - the current results are still short-run diagnostics, not final benchmark-grade evidence
+
+4. Update the Chinese and English reports again after the next batch of multi-seed runs.
+   - the infrastructure is now ready for more formal result tables
+
 ### 12.3 Most likely interpretation
 
 The current implementation is functionally correct, but the remaining difficulty seems to be optimization stability rather than interface correctness.

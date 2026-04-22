@@ -259,6 +259,82 @@ python src/main.py --config=imappo ...
 - `eta=1.0` 显著优于 `eta=0.0` 和 `eta=0.5`
 - intent-based shaping 在这个任务上是有帮助的
 
+## 8. 第二阶段稳定化优化
+
+在完成第一轮 I-MAPPO 接入、环境构建和基础消融后，代码继续围绕“训练稳定性”和“论文型可观测性”做了第二阶段优化。
+
+### 8.1 训练稳定化
+
+当前版本额外加入了：
+
+- `R_env` 缩放与显式裁剪
+- `R_intent` 显式裁剪到 `[-1, 1]`
+- PPO clip 收紧到 `0.1`
+- Actor / Critic 梯度裁剪到 `0.5`
+- critic 的 value loss clipping
+- `eta` 和 `entropy_coef` 随训练进度退火
+- 连续动作策略从“高斯采样 + 硬裁剪”改为 `tanh-squashed Gaussian`
+
+这些改动的核心目标是：
+
+- 降低 critic target 的方差
+- 减少动作边界处概率计算失真
+- 让后期策略更新更稳
+
+### 8.2 环境与奖励重构
+
+当前 UAV 环境已不再使用“绝对完成度累计奖励”，而是改成更稳定的增量式设计：
+
+- 距离目标采用 progress reward
+- 任务完成采用 progress reward
+- 保留能量惩罚，但降低过度抑制作用
+- 新增 `reward_safety`，在进入真正碰撞前就惩罚过近距离
+
+同时，环境支持：
+
+- 可配置出生区域大小 `spawn_region_scale`
+- 可配置最小出生间隔 `spawn_separation_scale`
+- 用于训练课程学习与多档风险评估
+
+### 8.3 评估体系扩展
+
+第二阶段优化后，实验不再只记录单一 `episode_return`，而是形成了三类指标：
+
+- 训练指标：
+  - `episode_return`
+  - `episode_collision_rate`
+  - `episode_reward_env`
+  - `episode_reward_intent`
+  - `episode_reward_safety`
+  - `episode_task_completion`
+- 常规评估指标：
+  - `eval_episode_return`
+  - `eval_collision_rate`
+  - `eval_task_completion`
+- 拥挤场景评估指标：
+  - `probe_episode_return`
+  - `probe_collision_rate`
+  - `probe_task_completion`
+
+此外，又补充了多档风险评估脚本 [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:1)，用于输出：
+
+- 宽松场景
+- 中等拥挤场景
+- 高拥挤场景
+
+三档条件下的碰撞率和任务完成度图表。
+
+### 8.4 当前阶段结论
+
+截至当前代码状态，可以得出几个明确结论：
+
+1. I-MAPPO 的连续动作训练流程已经从“容易不稳定”进入“可持续调优”的状态。
+2. 常规评估口径下，碰撞率已经可以稳定压低。
+3. 通过单独的高风险评估口径，可以继续分析拥挤场景鲁棒性，而不会被普通训练分布掩盖。
+4. 当前最值得继续优化的方向，不再是单纯压低 loss，而是：
+   - 在维持低碰撞率的同时，提高任务完成度
+   - 让不同风险档位下的曲线更有区分度，更适合作为论文图
+
 
 ### 7.2 Intent 维度对比
 
@@ -542,6 +618,281 @@ potential_update_mode: normal
 基于当前所有结果，下一步最值得做的是：
 
 1. 扫 `epochs`
+2. 扫更稳的 PPO 更新强度与 actor/critic 配比
+3. 继续围绕连续控制稳定性做针对性改造
+
+
+## 13. 第二阶段持续优化进展
+
+在第一阶段完成“算法接入 + 环境构建 + 基础消融”之后，工作重点转到了：
+
+- 训练稳定性
+- 评估指标可解释性
+- 论文图表可用性
+
+也就是说，当前已经不是“代码能不能跑”的阶段，而是“如何把实验做得稳定、可分析、可汇报”的阶段。
+
+### 13.1 PPO 稳定化增强
+
+在 [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:1) 中，后续又加入了以下改进：
+
+- `R_intent` 显式裁剪到 `[-1, 1]`
+- PPO clip 收紧为 `0.1`
+- Actor / Critic 梯度裁剪 `max_grad_norm=0.5`
+- critic 的 value loss clipping
+- `eta` 与 `entropy_coef` 线性退火
+- 连续动作策略从“高斯采样后硬裁剪”改成 `tanh-squashed Gaussian`
+
+这些改动的目的主要是：
+
+- 降低 critic target 的异常尖峰
+- 减少动作边界附近的概率失真
+- 避免后期策略更新过于激进
+
+### 13.2 环境与奖励重构
+
+在 [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:1) 中，环境侧做了较大调整：
+
+- 奖励改成 progress-based 设计
+  - 距离目标采用进展奖励
+  - 任务完成采用进展奖励
+- 外部奖励显式缩放与裁剪
+- 归一化距离下的碰撞检测
+- 记录每回合碰撞次数
+- 增加近碰撞安全缓冲区惩罚 `reward_safety`
+- 支持可调的出生区域大小和出生间隔
+
+当前奖励已拆分为：
+
+- `reward_dist`
+- `reward_energy`
+- `reward_collision`
+- `reward_safety`
+- `reward_task`
+
+这让我们可以更清楚地区分：
+
+- 是因为没向目标靠近
+- 还是因为动作太大
+- 还是因为长期处于危险间距
+- 或者因为任务推进不足
+
+### 13.3 课程学习与多评估口径
+
+训练与评估逻辑也扩展为：
+
+- 普通训练环境
+- 周期性高风险训练 episode
+- 常规评估环境
+- 拥挤场景评估环境
+- 固定 evaluation intent 和全开 mask 的确定性评估
+
+因此，日志指标不再只有 `episode_return`，而是形成三类：
+
+- 训练指标：
+  - `episode_return`
+  - `episode_collision_rate`
+  - `episode_reward_env`
+  - `episode_reward_intent`
+  - `episode_reward_safety`
+  - `episode_task_completion`
+- 常规评估指标：
+  - `eval_episode_return`
+  - `eval_collision_rate`
+  - `eval_task_completion`
+- 拥挤评估指标：
+  - `probe_episode_return`
+  - `probe_collision_rate`
+  - `probe_task_completion`
+
+### 13.4 专用实验脚本
+
+新增了专门面向当前 UAV 任务的实验脚本：
+
+- [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:1)
+
+脚本自动完成：
+
+- 多 seed 训练
+- 常规评估
+- 拥挤评估
+- 三档风险评估
+- 图表生成
+- JSON 汇总导出
+
+
+## 14. 第二阶段实验配置
+
+最近一次专用 stage2 实验使用的命令为：
+
+```bash
+PYTHONPATH=src python src/imappo_experiments.py \
+  --episodes 12 \
+  --steps 30 \
+  --rollout 32 \
+  --batch-size 16 \
+  --eval-interval 6 \
+  --eval-episodes 2 \
+  --seeds 7 11 \
+  --output-dir reports/imappo_stage2
+```
+
+输出目录为：
+
+- [reports/imappo_stage2](/home/cring/rl/epymarl/reports/imappo_stage2)
+
+本轮自动生成的主要文件包括：
+
+- [train_return_curve.png](/home/cring/rl/epymarl/reports/imappo_stage2/train_return_curve.png)
+- [train_collision_curve.png](/home/cring/rl/epymarl/reports/imappo_stage2/train_collision_curve.png)
+- [eval_collision_curve.png](/home/cring/rl/epymarl/reports/imappo_stage2/eval_collision_curve.png)
+- [probe_collision_curve.png](/home/cring/rl/epymarl/reports/imappo_stage2/probe_collision_curve.png)
+- [reward_decomposition_curve.png](/home/cring/rl/epymarl/reports/imappo_stage2/reward_decomposition_curve.png)
+- [risk_tier_collision_bar.png](/home/cring/rl/epymarl/reports/imappo_stage2/risk_tier_collision_bar.png)
+- [risk_tier_task_bar.png](/home/cring/rl/epymarl/reports/imappo_stage2/risk_tier_task_bar.png)
+- [summary.json](/home/cring/rl/epymarl/reports/imappo_stage2/summary.json)
+- [seed_7.json](/home/cring/rl/epymarl/reports/imappo_stage2/seed_7.json)
+- [seed_11.json](/home/cring/rl/epymarl/reports/imappo_stage2/seed_11.json)
+
+
+## 15. 第二阶段实验结果
+
+根据 [summary.json](/home/cring/rl/epymarl/reports/imappo_stage2/summary.json:1)，当前这轮 stage2 小规模多 seed 实验结果为：
+
+- `final_eval_collision_rate_mean = 0.2583`
+- `final_probe_collision_rate_mean = 0.6083`
+
+这表示：
+
+- 在常规评估口径下，最新这轮实验的平均碰撞率约为 `25.8%`
+- 在拥挤评估口径下，平均碰撞率仍然较高，约为 `60.8%`
+
+这还不能算理想结果，但比之前“没有干净评估口径、只能看训练日志猜”的阶段强很多。
+
+### 15.1 图表总览
+
+#### 训练总回报曲线
+
+![stage2 train return](./reports/imappo_stage2/train_return_curve.png)
+
+分析：
+
+- 当前训练回报已经不像第一阶段那样主要由 critic 爆炸主导
+- 曲线仍有波动，但训练过程已经进入可分析区间
+
+#### 训练碰撞率曲线
+
+![stage2 train collision](./reports/imappo_stage2/train_collision_curve.png)
+
+分析：
+
+- 训练中的碰撞行为现在可以直接观察
+- 课程切换和高风险训练 episode 对曲线有明显影响
+
+#### 常规评估碰撞率
+
+![stage2 eval collision](./reports/imappo_stage2/eval_collision_curve.png)
+
+分析：
+
+- 常规评估环境下，策略的避碰能力显著强于拥挤评估环境
+- 因为评估时意图和动作 mask 已固定，所以这个指标比早期日志更干净
+
+#### 拥挤评估碰撞率
+
+![stage2 probe collision](./reports/imappo_stage2/probe_collision_curve.png)
+
+分析：
+
+- 拥挤场景下的鲁棒性仍是当前最主要的短板
+- 后续优化最值得优先压低的就是这个指标
+
+#### 任务推进奖励趋势
+
+![stage2 reward decomposition](./reports/imappo_stage2/reward_decomposition_curve.png)
+
+分析：
+
+- 当前任务奖励已经不再像早期那样被绝对完成度累计主导
+- 奖励分解现在具备实际调试价值
+
+#### 多档风险碰撞率对比
+
+![stage2 risk collision](./reports/imappo_stage2/risk_tier_collision_bar.png)
+
+分析：
+
+- 多档风险评估比单一评估口径更适合作为论文图
+- 可以分别比较宽松 / 中等 / 高拥挤场景的安全表现
+
+#### 多档风险任务完成度对比
+
+![stage2 risk task](./reports/imappo_stage2/risk_tier_task_bar.png)
+
+分析：
+
+- 任务完成度在不同风险场景下仍可被稳定测量
+- 后续优化重点应放在“不牺牲太多任务完成度的前提下降低碰撞率”
+
+
+## 16. 截至当前的综合结论
+
+截至目前，整个项目已经明显超过了“只做出一个能跑通的实现”的阶段。
+
+已经完成的部分包括：
+
+- I-MAPPO 端到端实现
+- 连续动作 actor / critic 路径接入 EPyMARL
+- 与 `rl.md` 维度一致的自定义 UAV 调度环境
+- 第一阶段超参和结构消融：
+  - shaping 系数
+  - intent 维度
+  - entropy 系数
+  - 学习率
+  - rollout 长度
+  - `Phi` 更新策略
+- 第二阶段稳定化改造：
+  - 奖励裁剪
+  - critic 稳定化
+  - `tanh-squashed Gaussian`
+  - 课程学习
+  - 高风险训练 episode
+  - 多口径评估
+  - 自动图表脚本
+
+当前实验说明了几件事：
+
+1. 这套系统已经进入“可持续调优”的状态。
+   - 已经不再是“实现勉强跑通”的阶段。
+
+2. 当前最主要的问题是拥挤场景下的安全性。
+   - `probe_collision_rate` 仍偏高。
+
+3. 当前实验与图表链路已经足够支撑后续论文型分析。
+   - 这比单纯盯 loss 重要得多，因为后续优化终于有了清晰目标。
+
+4. 下一阶段的核心目标应是：
+   - 继续降低拥挤场景碰撞率
+   - 同时保持或提高任务完成度
+
+
+## 17. 当前最值得继续做的事情
+
+接下来最有价值的工作包括：
+
+1. 系统扫描高风险训练课程参数。
+   - 尤其是 `hard_train_interval`
+   - `hard_train_spawn_scale`
+   - `hard_train_separation_scale`
+
+2. 继续调安全缓冲区惩罚。
+   - 尤其是 safety margin 宽度和 `reward_safety` 系数
+
+3. 扩大 stage2 实验的 seed 数量和训练长度。
+   - 当前结果仍属于短程诊断，不是最终 benchmark 级证据
+
+4. 在下一轮长程多 seed 实验完成后，继续更新中英文报告。
+   - 届时可以补更正式的结果表与结论段
 2. 扫 `eps_clip`
 3. 视情况调整 `batch_size`
 

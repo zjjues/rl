@@ -258,6 +258,46 @@ python src/main.py --config=imappo --env-config=gymma with \
   imappo_action_dim=3 \
   action_low=-1.0 \
   action_high=1.0 \
+```
+
+也可以直接运行面向当前 UAV 任务的专用实验脚本：
+
+```sh
+PYTHONPATH=src python src/imappo_experiments.py \
+  --episodes 24 \
+  --steps 40 \
+  --rollout 32 \
+  --batch-size 16 \
+  --eval-interval 6 \
+  --eval-episodes 3 \
+  --seeds 7 11 23
+```
+
+该脚本会自动完成以下工作：
+
+- 运行多 seed 的 I-MAPPO 训练
+- 同时输出常规评估 `eval_*` 与拥挤场景评估 `probe_*`
+- 额外统计宽松 / 中等拥挤 / 高拥挤三档风险下的碰撞率与任务完成度
+- 将图表与 JSON 汇总结果保存到 `reports/imappo_stage2/`
+
+### 当前稳定化实现要点
+
+围绕 `ai_studio_code.md` 和后续持续优化，当前实现已包含：
+
+- 环境奖励缩放与裁剪，避免 `R_env` 爆炸
+- `R_intent` 显式裁剪，抑制 potential difference 尖峰
+- Actor / Critic 梯度裁剪与 critic 的 value loss clipping
+- 训练期课程学习环境和周期性高风险训练 episode
+- 常规评估与高拥挤评估分离，便于画论文图
+- 近碰撞安全缓冲区惩罚 `reward_safety`
+- 训练日志中可直接获取：
+  - `episode_collision_rate`
+  - `eval_collision_rate`
+  - `probe_collision_rate`
+  - `episode_reward_env`
+  - `episode_reward_intent`
+  - `episode_reward_safety`
+  - `episode_task_completion`
   eta=1.0 \
   intent_dim=8 \
   entropy_coef=0.0005 \
