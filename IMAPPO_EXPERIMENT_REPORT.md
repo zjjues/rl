@@ -911,6 +911,98 @@ Short smoke tests were executed for:
 
 The smoke-test checkpoints are not scientifically meaningful, but they verify that the Stage-3 experiment path is executable before starting long runs.
 
+
+## 19. Stage-3 Mid-Run Confirmation Results
+
+A mid-run confirmation experiment was executed before launching the full 3000-episode run.
+
+Command:
+
+```bash
+MPLCONFIGDIR=/tmp/matplotlib PYTHONPATH=src python src/imappo_experiments.py \
+  --algorithm both \
+  --episodes 500 \
+  --steps 50 \
+  --rollout 128 \
+  --batch-size 64 \
+  --eval-interval 50 \
+  --eval-episodes 3 \
+  --save-every 50 \
+  --seeds 7 11 23 \
+  --output-dir reports/imappo_stage3_mid
+```
+
+Outputs:
+
+- [reports/imappo_stage3_mid/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage3_mid/imappo/summary.json)
+- [reports/imappo_stage3_mid/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage3_mid/mappo/summary.json)
+- [reports/imappo_stage3_mid/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage3_mid/intent_mutation_summary.json)
+
+### 19.1 I-MAPPO vs MAPPO Summary
+
+| Algorithm | Seeds | Eval Collision Rate | Dense/Probe Collision Rate |
+|---|---:|---:|---:|
+| I-MAPPO | 7, 11, 23 | 0.0000 | 0.0667 |
+| MAPPO | 7, 11, 23 | 0.0444 | 0.1578 |
+
+Interpretation:
+
+- I-MAPPO outperformed MAPPO on both standard evaluation and dense/probe evaluation.
+- The dense collision rate dropped from `15.78%` with MAPPO to `6.67%` with I-MAPPO.
+- This supports continuing to the full 3000-episode experiment.
+
+### 19.2 Comparison Figures
+
+#### Training Return Comparison
+
+![stage3 mid compare return](./reports/imappo_stage3_mid/comparison/compare_return.png)
+
+#### Standard Evaluation Collision Comparison
+
+![stage3 mid eval collision](./reports/imappo_stage3_mid/comparison/compare_eval_collision.png)
+
+#### Dense Evaluation Collision Comparison
+
+![stage3 mid probe collision](./reports/imappo_stage3_mid/comparison/compare_probe_collision.png)
+
+#### Task Completion Comparison
+
+![stage3 mid task completion](./reports/imappo_stage3_mid/comparison/compare_task_completion.png)
+
+### 19.3 Per-Seed Snapshot
+
+| Algorithm | Seed | Last Train Return | Last Train Collision | Last Task Completion | Last Eval Collision | Last Probe Collision |
+|---|---:|---:|---:|---:|---:|---:|
+| I-MAPPO | 7 | -0.7526 | 0.0000 | 0.6714 | 0.1133 | 0.1133 |
+| I-MAPPO | 11 | -1.8203 | 0.0000 | 0.5012 | 0.0133 | 0.1133 |
+| I-MAPPO | 23 | -1.0771 | 0.0000 | 0.6258 | 0.0000 | 0.1267 |
+| MAPPO | 7 | -1.6766 | 0.0000 | 0.7430 | 0.0000 | 0.0000 |
+| MAPPO | 11 | -0.4319 | 0.0000 | 0.6152 | 0.0533 | 0.1733 |
+| MAPPO | 23 | -5.4272 | 0.3000 | 0.7789 | 0.0467 | 0.2600 |
+
+### 19.4 Intent Mutation Mid-Run Results
+
+Intent mutation was evaluated using the I-MAPPO `checkpoint_best_probe.pt` checkpoints from the mid-run.
+
+| Seed | Checkpoint | Response Latency |
+|---:|---|---:|
+| 7 | `reports/imappo_stage3_mid/imappo/seed_7/checkpoint_best_probe.pt` | 10 |
+| 11 | `reports/imappo_stage3_mid/imappo/seed_11/checkpoint_best_probe.pt` | 0 |
+| 23 | `reports/imappo_stage3_mid/imappo/seed_23/checkpoint_best_probe.pt` | null |
+
+Aggregate:
+
+- valid latency count: `2`
+- mean response latency over valid runs: `5.0` steps
+- max valid latency: `10` steps
+- null latency count: `1`
+
+Interpretation:
+
+- The intent mutation pipeline is functional on mid-run checkpoints.
+- Seed variability remains visible.
+- The full 3000-episode checkpoints should be used for the final zero-shot transfer claim.
+
 ### 12.3 Most likely interpretation
 
 The current implementation is functionally correct, but the remaining difficulty seems to be optimization stability rather than interface correctness.

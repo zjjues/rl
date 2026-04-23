@@ -1,0 +1,32 @@
+{
+  "items": [
+    {
+      "seed": 11,
+      "checkpoint": "reports/imappo_stage3_mid/imappo/seed_11/checkpoint_best_probe.pt",
+      "mutation_step": 21,
+      "response_latency": 0,
+      "total_recorded_steps": 50,
+      "output": "reports/imappo_stage3_mid/intent_mutation_seed_11.json"
+    },
+    {
+      "seed": 23,
+      "checkpoint": "reports/imappo_stage3_mid/imappo/seed_23/checkpoint_best_probe.pt",
+      "mutation_step": 21,
+      "response_latency": null,
+      "total_recorded_steps": 50,
+      "output": "reports/imappo_stage3_mid/intent_mutation_seed_23.json"
+    },
+    {
+      "seed": 7,
+      "checkpoint": "reports/imappo_stage3_mid/imappo/seed_7/checkpoint_best_probe.pt",
+      "mutation_step": 21,
+      "response_latency": 10,
+      "total_recorded_steps": 50,
+      "output": "reports/imappo_stage3_mid/intent_mutation_seed_7.json"
+    }
+  ],
+  "valid_latency_count": 2,
+  "mean_response_latency": 5.0,
+  "max_response_latency": 10,
+  "null_latency_count": 1
+}

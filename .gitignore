@@ -222,6 +222,8 @@ dmypy.json
 # Local smoke-test outputs; formal experiment artifacts can still be committed explicitly.
 reports/stage3_smoke/
 reports/stage3_both_smoke/
+reports/imappo_stage3_mid/**/*.pt
+reports/imappo_stage3/**/*.pt
 
 # Local Codex/session files
 .codex

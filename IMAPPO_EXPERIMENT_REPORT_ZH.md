@@ -1021,6 +1021,98 @@ PYTHONPATH=src python src/test_intent_mutation.py \
 - intent mutation 轨迹导出
 
 这些短测不代表论文结果，但说明 Stage 3 实验链路已经可以执行。下一步可以开始中程和长程训练。
+
+
+## 19. Stage 3 中程确认实验结果
+
+在正式启动 3000 episode 长程实验之前，已经先完成了一轮 500 episode 的中程确认实验。
+
+运行命令：
+
+```bash
+MPLCONFIGDIR=/tmp/matplotlib PYTHONPATH=src python src/imappo_experiments.py \
+  --algorithm both \
+  --episodes 500 \
+  --steps 50 \
+  --rollout 128 \
+  --batch-size 64 \
+  --eval-interval 50 \
+  --eval-episodes 3 \
+  --save-every 50 \
+  --seeds 7 11 23 \
+  --output-dir reports/imappo_stage3_mid
+```
+
+主要输出：
+
+- [reports/imappo_stage3_mid/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage3_mid/imappo/summary.json)
+- [reports/imappo_stage3_mid/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage3_mid/mappo/summary.json)
+- [reports/imappo_stage3_mid/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage3_mid/intent_mutation_summary.json)
+
+### 19.1 I-MAPPO 与 MAPPO 汇总对比
+
+| 算法 | Seeds | 常规评估碰撞率 | Dense/Probe 碰撞率 |
+|---|---:|---:|---:|
+| I-MAPPO | 7, 11, 23 | 0.0000 | 0.0667 |
+| MAPPO | 7, 11, 23 | 0.0444 | 0.1578 |
+
+分析：
+
+- I-MAPPO 在常规评估和拥挤评估下都优于 MAPPO。
+- Dense/Probe 碰撞率从 MAPPO 的 `15.78%` 降到 I-MAPPO 的 `6.67%`。
+- 这个结果支持继续进行 3000 episode 的正式长程实验。
+
+### 19.2 对比图
+
+#### 训练回报对比
+
+![stage3 mid compare return](./reports/imappo_stage3_mid/comparison/compare_return.png)
+
+#### 常规评估碰撞率对比
+
+![stage3 mid eval collision](./reports/imappo_stage3_mid/comparison/compare_eval_collision.png)
+
+#### Dense/Probe 碰撞率对比
+
+![stage3 mid probe collision](./reports/imappo_stage3_mid/comparison/compare_probe_collision.png)
+
+#### 任务完成度对比
+
+![stage3 mid task completion](./reports/imappo_stage3_mid/comparison/compare_task_completion.png)
+
+### 19.3 分 Seed 结果快照
+
+| 算法 | Seed | 最后训练回报 | 最后训练碰撞率 | 最后任务完成度 | 最后常规评估碰撞率 | 最后 Probe 碰撞率 |
+|---|---:|---:|---:|---:|---:|---:|
+| I-MAPPO | 7 | -0.7526 | 0.0000 | 0.6714 | 0.1133 | 0.1133 |
+| I-MAPPO | 11 | -1.8203 | 0.0000 | 0.5012 | 0.0133 | 0.1133 |
+| I-MAPPO | 23 | -1.0771 | 0.0000 | 0.6258 | 0.0000 | 0.1267 |
+| MAPPO | 7 | -1.6766 | 0.0000 | 0.7430 | 0.0000 | 0.0000 |
+| MAPPO | 11 | -0.4319 | 0.0000 | 0.6152 | 0.0533 | 0.1733 |
+| MAPPO | 23 | -5.4272 | 0.3000 | 0.7789 | 0.0467 | 0.2600 |
+
+### 19.4 Intent Mutation 中程结果
+
+使用 I-MAPPO 中程实验产生的 `checkpoint_best_probe.pt` 进行了 intent mutation 测试。
+
+| Seed | Checkpoint | Response Latency |
+|---:|---|---:|
+| 7 | `reports/imappo_stage3_mid/imappo/seed_7/checkpoint_best_probe.pt` | 10 |
+| 11 | `reports/imappo_stage3_mid/imappo/seed_11/checkpoint_best_probe.pt` | 0 |
+| 23 | `reports/imappo_stage3_mid/imappo/seed_23/checkpoint_best_probe.pt` | null |
+
+汇总：
+
+- 有效 latency 数量：`2`
+- 有效 run 的平均响应延迟：`5.0` steps
+- 最大有效响应延迟：`10` steps
+- 未在 50 step 内完成全部反向的数量：`1`
+
+分析：
+
+- intent mutation 测试链路已经可以在中程 checkpoint 上正常工作。
+- seed 间差异仍然存在。
+- 最终 zero-shot transfer 结论应基于 3000 episode 的正式长程 checkpoint 重新评估。
 2. 扫 `eps_clip`
 3. 视情况调整 `batch_size`
 
