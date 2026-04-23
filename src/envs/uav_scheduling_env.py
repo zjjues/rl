@@ -22,11 +22,14 @@ class UAVSchedulingEnv(gym.Env):
         max_episode_steps=100,
         world_size=5.0,
         dt=0.2,
+        n_targets=None,
         d_safe=0.1,
-        reward_clip=1.0,
+        reward_clip=2.0,
         spawn_region_scale=0.35,
         spawn_separation_scale=1.05,
         task_progress_rate=0.03,
+        task_reward_coef=1.20,
+        safety_reward_coef=1.0,
     ):
         super().__init__()
         self.n_agents = n_agents
@@ -36,8 +39,11 @@ class UAVSchedulingEnv(gym.Env):
         self.max_episode_steps = max_episode_steps
         self.world_size = world_size
         self.dt = dt
+        self.n_targets = n_targets or n_agents
         self.spawn_region_scale = spawn_region_scale
         self.task_progress_rate = task_progress_rate
+        self.task_reward_coef = task_reward_coef
+        self.safety_reward_coef = safety_reward_coef
 
         self.agent_names = [f"uav_{i}" for i in range(self.n_agents)]
         self.action_space = spaces.Tuple(
@@ -86,11 +92,13 @@ class UAVSchedulingEnv(gym.Env):
         self.step_count = 0
         self.positions = self._sample_initial_positions().astype(np.float32)
         self.velocities = np.zeros((self.n_agents, 3), dtype=np.float32)
-        self.targets = self.np_random.uniform(
+        target_pool = self.np_random.uniform(
             low=-self.world_size,
             high=self.world_size,
-            size=(self.n_agents, 3),
+            size=(self.n_targets, 3),
         ).astype(np.float32)
+        target_indices = np.arange(self.n_agents) % self.n_targets
+        self.targets = target_pool[target_indices].astype(np.float32)
         self.energy = np.ones((self.n_agents, 1), dtype=np.float32)
         self.pending_tasks = self.np_random.uniform(
             low=0.0,
@@ -134,11 +142,11 @@ class UAVSchedulingEnv(gym.Env):
         collision_penalty = (normalised_pairwise_dist < self.d_safe).astype(np.float32)
         np.fill_diagonal(collision_penalty, 0.0)
         collision_penalty = collision_penalty.sum(axis=1)
-        safety_margin = 1.75 * self.d_safe
+        safety_margin = 2.0 * self.d_safe
         proximity_penalty = np.clip(
-            (safety_margin - normalised_pairwise_dist) / max(safety_margin, 1e-6),
+            safety_margin - normalised_pairwise_dist,
             0.0,
-            1.0,
+            None,
         ).astype(np.float32)
         np.fill_diagonal(proximity_penalty, 0.0)
         proximity_penalty = proximity_penalty.sum(axis=1)
@@ -198,8 +206,8 @@ class UAVSchedulingEnv(gym.Env):
         dist_term = 0.30 * distance_progress
         energy_term = -0.015 * action_norm
         collision_term = -0.35 * np.clip(collision_penalty, 0.0, 1.0)
-        safety_term = -0.12 * np.clip(proximity_penalty, 0.0, 1.5)
-        task_term = 0.60 * task_progress
+        safety_term = -self.safety_reward_coef * proximity_penalty
+        task_term = self.task_reward_coef * task_progress
 
         rewards = (
             dist_term

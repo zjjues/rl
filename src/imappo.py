@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -16,6 +16,10 @@ Tensor = torch.Tensor
 
 @dataclass
 class IMAPPOConfig:
+    algorithm: str = "imappo"
+    critic_mode: str = "attention"
+    use_action_mask: bool = True
+
     n_agents: int = 4
     obs_dim: int = 18
     state_dim: int = 72
@@ -218,12 +222,21 @@ class CrossAttentionCritic(nn.Module):
         obs_all_agents: Tensor,
     ) -> Tuple[Tensor, Tensor]:
         agent_features = self.encode_agent_features(obs_all_agents)
-        query = self.query(intent).unsqueeze(1)
-        key = self.key(agent_features)
         value = self.value(agent_features)
-        scale = float(key.size(-1)) ** 0.5
-        attention_logits = torch.matmul(query, key.transpose(1, 2)) / scale
-        attention_weights = F.softmax(attention_logits, dim=-1)
+        if self.config.critic_mode == "uniform":
+            batch_size = obs_all_agents.size(0)
+            attention_weights = torch.full(
+                (batch_size, 1, self.config.n_agents),
+                1.0 / self.config.n_agents,
+                dtype=obs_all_agents.dtype,
+                device=obs_all_agents.device,
+            )
+        else:
+            query = self.query(intent).unsqueeze(1)
+            key = self.key(agent_features)
+            scale = float(key.size(-1)) ** 0.5
+            attention_logits = torch.matmul(query, key.transpose(1, 2)) / scale
+            attention_weights = F.softmax(attention_logits, dim=-1)
         context = torch.matmul(attention_weights, value).squeeze(1)
         critic_input = torch.cat([state, context], dim=-1)
         return self.value_head(critic_input).squeeze(-1), attention_weights.squeeze(1)
@@ -334,9 +347,20 @@ class IMAPPO:
         )
 
     def sample_episode_intent_and_mask(self) -> Tuple[Tensor, Tensor]:
+        if self.config.algorithm == "mappo":
+            intent = torch.zeros(self.config.intent_dim, device=self.device)
+            mask = torch.ones(
+                self.config.n_agents, self.config.action_dim, device=self.device
+            )
+            return intent, mask
         intent = torch.randn(self.config.intent_dim, device=self.device)
-        mask = (torch.rand(self.config.n_agents, self.config.action_dim, device=self.device) > 0.2).float()
-        mask[:, 0] = 1.0
+        if self.config.use_action_mask:
+            mask = (torch.rand(self.config.n_agents, self.config.action_dim, device=self.device) > 0.2).float()
+            mask[:, 0] = 1.0
+        else:
+            mask = torch.ones(
+                self.config.n_agents, self.config.action_dim, device=self.device
+            )
         return intent, mask
 
     def evaluation_intent_and_mask(self) -> Tuple[Tensor, Tensor]:
@@ -353,6 +377,8 @@ class IMAPPO:
         next_state: Tensor,
         intent: Tensor,
     ) -> Tuple[Tensor, Tensor]:
+        if self.current_eta == 0.0:
+            return env_reward, torch.zeros((), dtype=env_reward.dtype, device=env_reward.device)
         phi_t = self.potential(state.unsqueeze(0), intent.unsqueeze(0)).squeeze(0)
         phi_tp1 = self.potential(next_state.unsqueeze(0), intent.unsqueeze(0)).squeeze(0)
         intrinsic_reward = torch.clamp(
@@ -362,6 +388,51 @@ class IMAPPO:
         )
         total_reward = env_reward + self.current_eta * intrinsic_reward
         return total_reward, intrinsic_reward
+
+    def save_checkpoint(self, path: str, extra: Optional[Dict[str, object]] = None) -> None:
+        config_fields = {field.name for field in fields(IMAPPOConfig)}
+        checkpoint = {
+            "config": {
+                key: value
+                for key, value in self.config.__dict__.items()
+                if key in config_fields
+            },
+            "actor": self.actor.state_dict(),
+            "critic": self.critic.state_dict(),
+            "potential": self.potential.state_dict(),
+            "actor_optim": self.actor_optim.state_dict(),
+            "critic_optim": self.critic_optim.state_dict(),
+            "potential_optim": self.potential_optim.state_dict(),
+            "potential_update_step": self.potential_update_step,
+            "current_eta": self.current_eta,
+            "current_entropy_coef": self.current_entropy_coef,
+            "extra": extra or {},
+        }
+        torch.save(checkpoint, path)
+
+    @classmethod
+    def load_checkpoint(cls, path: str, device: Optional[str] = None) -> "IMAPPO":
+        checkpoint = torch.load(path, map_location=device or "cpu")
+        config_dict = dict(checkpoint["config"])
+        if device is not None:
+            config_dict["device"] = device
+        config = IMAPPOConfig(**config_dict)
+        algo = cls(config)
+        algo.actor.load_state_dict(checkpoint["actor"])
+        algo.critic.load_state_dict(checkpoint["critic"])
+        algo.potential.load_state_dict(checkpoint["potential"])
+        if "actor_optim" in checkpoint:
+            algo.actor_optim.load_state_dict(checkpoint["actor_optim"])
+        if "critic_optim" in checkpoint:
+            algo.critic_optim.load_state_dict(checkpoint["critic_optim"])
+        if "potential_optim" in checkpoint:
+            algo.potential_optim.load_state_dict(checkpoint["potential_optim"])
+        algo.potential_update_step = checkpoint.get("potential_update_step", 0)
+        algo.current_eta = checkpoint.get("current_eta", config.eta)
+        algo.current_entropy_coef = checkpoint.get(
+            "current_entropy_coef", config.entropy_coef
+        )
+        return algo
 
     def compute_gae(
         self,
@@ -804,6 +875,8 @@ def train_imappo(
     collision_probe_env_factory: Optional[Callable[[], object]] = None,
     config: Optional[IMAPPOConfig] = None,
     logger=None,
+    log_callback: Optional[Callable[[Dict[str, float]], None]] = None,
+    checkpoint_callback: Optional[Callable[["IMAPPO", Dict[str, float]], None]] = None,
 ) -> Tuple[IMAPPO, List[Dict[str, float]]]:
     cfg = config or IMAPPOConfig()
     algo = IMAPPO(cfg)
@@ -888,7 +961,10 @@ def train_imappo(
             if buffer.is_ready(cfg.rollout_length):
                 update_log = algo.update(buffer)
                 update_log["episode"] = float(episode)
+                update_log["algorithm"] = cfg.algorithm
                 logs.append(update_log)
+                if log_callback is not None:
+                    log_callback(update_log)
                 if logger is not None:
                     for key, value in update_log.items():
                         if key != "episode":
@@ -900,7 +976,10 @@ def train_imappo(
         if buffer.storage["states"]:
             update_log = algo.update(buffer)
             update_log["episode"] = float(episode)
+            update_log["algorithm"] = cfg.algorithm
             logs.append(update_log)
+            if log_callback is not None:
+                log_callback(update_log)
             if logger is not None:
                 for key, value in update_log.items():
                     if key != "episode":
@@ -923,8 +1002,13 @@ def train_imappo(
             "episode_reward_collision": episode_reward_collision,
             "episode_reward_safety": episode_reward_safety,
             "episode_reward_task": episode_reward_task,
+            "algorithm": cfg.algorithm,
         }
         logs.append(episode_log)
+        if log_callback is not None:
+            log_callback(episode_log)
+        if checkpoint_callback is not None:
+            checkpoint_callback(algo, episode_log)
         if logger is not None:
             logger.log_stat("episode", episode, episode)
             logger.log_stat("episode_return", episode_return, episode)
@@ -948,7 +1032,12 @@ def train_imappo(
         ):
             eval_log = evaluate_imappo(algo, eval_env_factory, cfg, prefix="eval")
             eval_log["episode"] = float(episode)
+            eval_log["algorithm"] = cfg.algorithm
             logs.append(eval_log)
+            if log_callback is not None:
+                log_callback(eval_log)
+            if checkpoint_callback is not None:
+                checkpoint_callback(algo, eval_log)
             if logger is not None:
                 for key, value in eval_log.items():
                     if key != "episode":
@@ -958,7 +1047,12 @@ def train_imappo(
                     algo, collision_probe_env_factory, cfg, prefix="probe"
                 )
                 probe_log["episode"] = float(episode)
+                probe_log["algorithm"] = cfg.algorithm
                 logs.append(probe_log)
+                if log_callback is not None:
+                    log_callback(probe_log)
+                if checkpoint_callback is not None:
+                    checkpoint_callback(algo, probe_log)
                 if logger is not None:
                     for key, value in probe_log.items():
                         if key != "episode":
@@ -970,6 +1064,9 @@ def train_imappo(
 
 def build_imappo_config_from_args(args) -> IMAPPOConfig:
     config = IMAPPOConfig(
+        algorithm=getattr(args, "algorithm", "imappo"),
+        critic_mode=getattr(args, "critic_mode", "attention"),
+        use_action_mask=getattr(args, "use_action_mask", True),
         n_agents=getattr(args, "imappo_n_agents", 4),
         obs_dim=getattr(args, "imappo_obs_dim", 18),
         state_dim=getattr(args, "imappo_state_dim", 72),

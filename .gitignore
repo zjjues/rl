@@ -219,6 +219,10 @@ dmypy.json
 # Ignore all local history of files
 .history
 
+# Local smoke-test outputs; formal experiment artifacts can still be committed explicitly.
+reports/stage3_smoke/
+reports/stage3_both_smoke/
+
 # Local Codex/session files
 .codex
 

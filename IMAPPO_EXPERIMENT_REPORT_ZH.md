@@ -893,6 +893,134 @@ PYTHONPATH=src python src/imappo_experiments.py \
 
 4. 在下一轮长程多 seed 实验完成后，继续更新中英文报告。
    - 届时可以补更正式的结果表与结论段
+
+
+## 18. 第三阶段：长程训练、Baseline 与 Intent Mutation
+
+根据 `a.md` 的要求，当前代码已经进入 Stage 3，即为论文级实验准备长程训练、baseline 对比和 intent mutation 测试。
+
+### 18.1 奖励函数调整
+
+[src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:1) 中的 UAV 环境奖励已经按高密度安全场景做了调整：
+
+- `reward_clip` 改为 `2.0`
+  - 即 `R_env` 被裁剪到 `[-2, 2]`
+- 任务推进奖励翻倍
+  - 强化 target tracking 和任务完成动力
+- `reward_safety` 改为线性斥力势场
+  - 当归一化距离 `d_ij < 2 * D_safe` 时
+  - 施加 `-k * (2 * D_safe - d_ij)` 惩罚
+
+这样 actor 不需要等到真正碰撞后才收到惩罚，而是在进入危险距离之前就能得到预警信号。
+
+### 18.2 MAPPO Baseline 支持
+
+[src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:1) 已支持：
+
+```bash
+--algorithm imappo
+--algorithm mappo
+--algorithm both
+```
+
+其中 `mappo` baseline 的定义为：
+
+- `eta = 0.0`
+- `eta_end = 0.0`
+- 关闭 potential reward shaping
+- 关闭 action mask，使用全 1 mask
+- critic 使用 `uniform` 模式，不再使用 intent-driven attention
+
+这样做比完全换一个 critic 网络更公平，因为主体实现保持一致，主要差异集中在 intent、mask 和 attention 是否参与训练。
+
+### 18.3 长程实验默认参数
+
+Stage 3 专用脚本默认参数已经改为：
+
+```text
+episodes = 3000
+steps = 50
+rollout = 128
+batch_size = 64
+eval_interval = 100
+eval_episodes = 5
+```
+
+正式对比实验建议命令：
+
+```bash
+PYTHONPATH=src python src/imappo_experiments.py \
+  --algorithm both \
+  --episodes 3000 \
+  --steps 50 \
+  --rollout 128 \
+  --batch-size 64 \
+  --eval-interval 100 \
+  --eval-episodes 5 \
+  --save-every 100 \
+  --seeds 7 11 23 \
+  --output-dir reports/imappo_stage3
+```
+
+### 18.4 连续日志与 Checkpoint
+
+每个 algorithm / seed 现在会保存：
+
+- `metrics.jsonl`
+- `metrics.csv`
+- `result.json`
+- `checkpoint_latest.pt`
+- `checkpoint_best_eval.pt`
+- `checkpoint_best_probe.pt`
+- 周期性 `checkpoint_ep*.pt`
+
+这对 3000 episode 长跑是必要的，因为不能只依赖内存日志或最终一次性保存。
+
+### 18.5 Intent Mutation 测试脚本
+
+新增脚本：
+
+- [src/test_intent_mutation.py](/home/cring/rl/epymarl/src/test_intent_mutation.py:1)
+
+该脚本加载训练好的 I-MAPPO checkpoint，并执行强制 intent 切换：
+
+- Phase 1：
+  - `I_1 = [1, 0, 0, ...]`
+  - 表示接近 / 聚集
+- Phase 2：
+  - `I_2 = [0, 1, 0, ...]`
+  - 表示规避 / 分散
+
+脚本会记录：
+
+- UAV 位置
+- UAV 速度
+- 目标点坐标
+- 是否全部 UAV 开始远离目标
+- `response_latency`
+
+示例命令：
+
+```bash
+PYTHONPATH=src python src/test_intent_mutation.py \
+  --checkpoint reports/imappo_stage3/imappo/seed_7/checkpoint_best_probe.pt \
+  --output reports/intent_mutation/mutation_trajectory.json \
+  --total-steps 50 \
+  --approach-steps 21 \
+  --seed 7
+```
+
+### 18.6 当前验证状态
+
+已完成短程 smoke test：
+
+- `--algorithm imappo`
+- `--algorithm mappo`
+- `--algorithm both`
+- checkpoint 保存与加载
+- intent mutation 轨迹导出
+
+这些短测不代表论文结果，但说明 Stage 3 实验链路已经可以执行。下一步可以开始中程和长程训练。
 2. 扫 `eps_clip`
 3. 视情况调整 `batch_size`
 

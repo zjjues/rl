@@ -785,6 +785,132 @@ The most valuable next steps are now:
 4. Update the Chinese and English reports again after the next batch of multi-seed runs.
    - the infrastructure is now ready for more formal result tables
 
+
+## 18. Stage-3 Long-Run and Baseline Infrastructure
+
+Based on `a.md`, the codebase has now been prepared for long-run paper-style experiments.
+
+### 18.1 Reward Changes
+
+The UAV reward in [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:1) was updated for dense-safety training:
+
+- `reward_clip` is now `2.0`, so `R_env` is clamped to `[-2, 2]`
+- task progress reward was doubled to strengthen target tracking
+- safety shaping was changed to a linear repulsive potential field:
+  - when normalized pairwise distance `d_ij < 2 * D_safe`
+  - apply `-k * (2 * D_safe - d_ij)`
+
+This gives the actor a pre-collision warning signal instead of only receiving a hard penalty after collision.
+
+### 18.2 MAPPO Baseline Support
+
+[src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:1) now supports:
+
+```bash
+--algorithm imappo
+--algorithm mappo
+--algorithm both
+```
+
+For `mappo`:
+
+- `eta = 0.0`
+- `eta_end = 0.0`
+- action masks are disabled by using all-one masks
+- potential shaping is disabled
+- critic mode is changed to `uniform`
+
+The baseline still uses the same actor/critic implementation shell, but the critic attention is no longer intent-driven. This keeps the comparison cleaner than replacing the critic with a completely different network.
+
+### 18.3 Long-Run Defaults
+
+The Stage-3 experiment script defaults were changed to:
+
+```text
+episodes = 3000
+steps = 50
+rollout = 128
+batch_size = 64
+eval_interval = 100
+eval_episodes = 5
+```
+
+The intended formal command is:
+
+```bash
+PYTHONPATH=src python src/imappo_experiments.py \
+  --algorithm both \
+  --episodes 3000 \
+  --steps 50 \
+  --rollout 128 \
+  --batch-size 64 \
+  --eval-interval 100 \
+  --eval-episodes 5 \
+  --save-every 100 \
+  --seeds 7 11 23 \
+  --output-dir reports/imappo_stage3
+```
+
+### 18.4 Continuous Logging and Checkpoints
+
+Each algorithm/seed run now writes:
+
+- `metrics.jsonl`
+- `metrics.csv`
+- `result.json`
+- `checkpoint_latest.pt`
+- `checkpoint_best_eval.pt`
+- `checkpoint_best_probe.pt`
+- periodic `checkpoint_ep*.pt`
+
+This is necessary for long-run experiments because a 3000-episode run should not rely on only in-memory logs.
+
+### 18.5 Intent Mutation Evaluation
+
+A new standalone script was added:
+
+- [src/test_intent_mutation.py](/home/cring/rl/epymarl/src/test_intent_mutation.py:1)
+
+It loads an I-MAPPO checkpoint and evaluates a forced intent switch:
+
+- Phase 1:
+  - `I_1 = [1, 0, 0, ...]`
+  - approach/gather behavior
+- Phase 2:
+  - `I_2 = [0, 1, 0, ...]`
+  - evade/disperse behavior
+
+The script records:
+
+- UAV positions
+- UAV velocities
+- target coordinates
+- whether all UAVs are moving away from targets
+- `response_latency`
+
+Output example:
+
+```bash
+PYTHONPATH=src python src/test_intent_mutation.py \
+  --checkpoint reports/imappo_stage3/imappo/seed_7/checkpoint_best_probe.pt \
+  --output reports/intent_mutation/mutation_trajectory.json \
+  --total-steps 50 \
+  --approach-steps 21 \
+  --seed 7
+```
+
+### 18.6 Smoke-Test Verification
+
+Short smoke tests were executed for:
+
+- `--algorithm imappo`
+- `--algorithm mappo`
+- `--algorithm both`
+- checkpoint save/load
+- intent mutation trajectory export
+
+The smoke-test checkpoints are not scientifically meaningful, but they verify that the Stage-3 experiment path is executable before starting long runs.
+
 ### 12.3 Most likely interpretation
 
 The current implementation is functionally correct, but the remaining difficulty seems to be optimization stability rather than interface correctness.

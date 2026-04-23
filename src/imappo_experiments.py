@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from pathlib import Path
 from typing import Callable, Dict, List, Tuple
@@ -9,23 +10,25 @@ import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
 
-from imappo import IMAPPOConfig, build_uav_env_factory, evaluate_imappo, train_imappo
+from imappo import IMAPPO, IMAPPOConfig, build_uav_env_factory, evaluate_imappo, train_imappo
 import envs.uav_scheduling_env  # noqa: F401
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run focused I-MAPPO UAV experiments")
-    parser.add_argument("--episodes", type=int, default=24)
-    parser.add_argument("--steps", type=int, default=40)
-    parser.add_argument("--rollout", type=int, default=32)
-    parser.add_argument("--batch-size", type=int, default=16)
-    parser.add_argument("--eval-interval", type=int, default=6)
-    parser.add_argument("--eval-episodes", type=int, default=3)
+    parser.add_argument("--algorithm", choices=["imappo", "mappo", "both"], default="imappo")
+    parser.add_argument("--episodes", type=int, default=3000)
+    parser.add_argument("--steps", type=int, default=50)
+    parser.add_argument("--rollout", type=int, default=128)
+    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--eval-interval", type=int, default=100)
+    parser.add_argument("--eval-episodes", type=int, default=5)
     parser.add_argument("--seeds", type=int, nargs="+", default=[7, 11, 23])
+    parser.add_argument("--save-every", type=int, default=100)
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("reports/imappo_stage2"),
+        default=Path("reports/imappo_stage3"),
     )
     return parser.parse_args()
 
@@ -42,6 +45,65 @@ def build_custom_uav_factory(
         )
 
     return make_env
+
+
+class JsonlMetricWriter:
+    def __init__(self, path: Path):
+        self.path = path
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.file = open(self.path, "w", encoding="utf-8")
+
+    def write(self, item: Dict[str, float]) -> None:
+        self.file.write(json.dumps(item, ensure_ascii=False) + "\n")
+        self.file.flush()
+
+    def close(self) -> None:
+        self.file.close()
+
+
+class CheckpointManager:
+    def __init__(self, directory: Path, save_every: int):
+        self.directory = directory
+        self.save_every = save_every
+        self.best_eval_collision_rate = float("inf")
+        self.best_probe_collision_rate = float("inf")
+
+    def __call__(self, algo: IMAPPO, item: Dict[str, float]) -> None:
+        episode = int(item.get("episode", -1))
+        if episode < 0:
+            return
+        if "episode_return" in item and self.save_every > 0 and (episode + 1) % self.save_every == 0:
+            algo.save_checkpoint(
+                str(self.directory / f"checkpoint_ep{episode + 1}.pt"),
+                extra={"episode": episode, "kind": "periodic"},
+            )
+            algo.save_checkpoint(
+                str(self.directory / "checkpoint_latest.pt"),
+                extra={"episode": episode, "kind": "latest"},
+            )
+        if "eval_collision_rate" in item and item["eval_collision_rate"] <= self.best_eval_collision_rate:
+            self.best_eval_collision_rate = float(item["eval_collision_rate"])
+            algo.save_checkpoint(
+                str(self.directory / "checkpoint_best_eval.pt"),
+                extra={"episode": episode, "kind": "best_eval_collision_rate"},
+            )
+        if "probe_collision_rate" in item and item["probe_collision_rate"] <= self.best_probe_collision_rate:
+            self.best_probe_collision_rate = float(item["probe_collision_rate"])
+            algo.save_checkpoint(
+                str(self.directory / "checkpoint_best_probe.pt"),
+                extra={"episode": episode, "kind": "best_probe_collision_rate"},
+            )
+
+
+def write_metrics_csv(path: Path, logs: List[Dict[str, float]]) -> None:
+    if not logs:
+        return
+    fieldnames = sorted({key for item in logs for key in item.keys()})
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for item in logs:
+            writer.writerow(item)
 
 
 def collect_episode_series(logs: List[Dict[str, float]], key: str) -> Tuple[np.ndarray, np.ndarray]:
@@ -92,7 +154,13 @@ def save_plot(
 
 
 def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
+    algorithm_dir = output_dir / args.algorithm / f"seed_{seed}"
+    algorithm_dir.mkdir(parents=True, exist_ok=True)
+    is_mappo = args.algorithm == "mappo"
     cfg = IMAPPOConfig(
+        algorithm=args.algorithm,
+        critic_mode="uniform" if is_mappo else "attention",
+        use_action_mask=not is_mappo,
         seed=seed,
         max_episodes=args.episodes,
         max_steps=args.steps,
@@ -100,6 +168,9 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
         minibatch_size=args.batch_size,
         eval_interval=args.eval_interval,
         eval_episodes=args.eval_episodes,
+        eta=0.0 if is_mappo else IMAPPOConfig.eta,
+        eta_end=0.0 if is_mappo else IMAPPOConfig.eta_end,
+        potential_update_mode="frozen" if is_mappo else IMAPPOConfig.potential_update_mode,
     )
 
     train_factory = build_uav_env_factory(cfg, mode="train")
@@ -108,11 +179,24 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
     probe_mid_factory = build_custom_uav_factory(0.31, 0.88)
     probe_hard_factory = build_custom_uav_factory(0.29, 0.82)
 
-    algo, logs = train_imappo(
-        env_factory=train_factory,
-        eval_env_factory=eval_factory,
-        collision_probe_env_factory=probe_hard_factory,
-        config=cfg,
+    jsonl_writer = JsonlMetricWriter(algorithm_dir / "metrics.jsonl")
+    checkpoint_manager = CheckpointManager(algorithm_dir, args.save_every)
+    try:
+        algo, logs = train_imappo(
+            env_factory=train_factory,
+            eval_env_factory=eval_factory,
+            collision_probe_env_factory=probe_hard_factory,
+            config=cfg,
+            log_callback=jsonl_writer.write,
+            checkpoint_callback=checkpoint_manager,
+        )
+    finally:
+        jsonl_writer.close()
+
+    write_metrics_csv(algorithm_dir / "metrics.csv", logs)
+    algo.save_checkpoint(
+        str(algorithm_dir / "checkpoint_latest.pt"),
+        extra={"seed": seed, "algorithm": args.algorithm},
     )
 
     tier_metrics = {
@@ -122,29 +206,26 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
     }
     result = {
         "seed": seed,
+        "algorithm": args.algorithm,
         "config": {
+            "algorithm": args.algorithm,
             "episodes": args.episodes,
             "steps": args.steps,
             "rollout": args.rollout,
             "batch_size": args.batch_size,
             "eval_interval": args.eval_interval,
             "eval_episodes": args.eval_episodes,
+            "save_every": args.save_every,
         },
         "logs": logs,
         "tier_metrics": tier_metrics,
     }
-    with open(output_dir / f"seed_{seed}.json", "w", encoding="utf-8") as f:
+    with open(algorithm_dir / "result.json", "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
     return result
 
 
-def main():
-    args = parse_args()
-    output_dir = args.output_dir
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    seed_results = [run_single_seed(seed, args, output_dir) for seed in args.seeds]
-
+def save_algorithm_plots(output_dir: Path, algorithm: str, seed_results: List[Dict[str, object]]) -> None:
     plot_specs = {
         "train_return_curve.png": ("episode_return", "Training Episode Return", "Episode", "Episode Return"),
         "train_collision_curve.png": ("episode_collision_rate", "Training Collision Rate", "Episode", "Collision Rate"),
@@ -154,13 +235,13 @@ def main():
     }
 
     for filename, (metric, title, xlabel, ylabel) in plot_specs.items():
-        curves = []
         episodes, mean, std = aggregate_seed_curves(
             [collect_episode_series(seed_result["logs"], metric) for seed_result in seed_results]
         )
-        curves.append((metric, episodes, mean, std))
-        save_plot(output_dir / filename, title, xlabel, ylabel, curves)
+        save_plot(output_dir / algorithm / filename, title, xlabel, ylabel, [(metric, episodes, mean, std)])
 
+
+def save_risk_tier_plots(output_dir: Path, algorithm: str, seed_results: List[Dict[str, object]]) -> None:
     risk_levels = ["easy_probe", "mid_probe", "hard_probe"]
     risk_names = ["Loose", "Medium", "Dense"]
     risk_collision = []
@@ -185,7 +266,7 @@ def main():
     plt.title("Collision Rate Across Risk Tiers")
     plt.grid(axis="y", alpha=0.25, linestyle="--")
     plt.tight_layout()
-    plt.savefig(output_dir / "risk_tier_collision_bar.png", dpi=180)
+    plt.savefig(output_dir / algorithm / "risk_tier_collision_bar.png", dpi=180)
     plt.close()
 
     plt.figure(figsize=(7.8, 5.0))
@@ -197,11 +278,33 @@ def main():
     plt.title("Task Completion Across Risk Tiers")
     plt.grid(axis="y", alpha=0.25, linestyle="--")
     plt.tight_layout()
-    plt.savefig(output_dir / "risk_tier_task_bar.png", dpi=180)
+    plt.savefig(output_dir / algorithm / "risk_tier_task_bar.png", dpi=180)
     plt.close()
 
+
+def save_comparison_plots(output_dir: Path, all_results: Dict[str, List[Dict[str, object]]]) -> None:
+    compare_dir = output_dir / "comparison"
+    compare_dir.mkdir(parents=True, exist_ok=True)
+    specs = {
+        "compare_return.png": ("episode_return", "I-MAPPO vs MAPPO Training Return", "Episode Return"),
+        "compare_eval_collision.png": ("eval_collision_rate", "I-MAPPO vs MAPPO Eval Collision", "Collision Rate"),
+        "compare_probe_collision.png": ("probe_collision_rate", "I-MAPPO vs MAPPO Dense Collision", "Collision Rate"),
+        "compare_task_completion.png": ("episode_task_completion", "I-MAPPO vs MAPPO Task Completion", "Task Completion"),
+    }
+    for filename, (metric, title, ylabel) in specs.items():
+        series = []
+        for algorithm, seed_results in all_results.items():
+            episodes, mean, std = aggregate_seed_curves(
+                [collect_episode_series(seed_result["logs"], metric) for seed_result in seed_results]
+            )
+            series.append((algorithm, episodes, mean, std))
+        save_plot(compare_dir / filename, title, "Episode", ylabel, series)
+
+
+def write_summary(output_dir: Path, algorithm: str, args, seed_results: List[Dict[str, object]]) -> Dict[str, object]:
     summary = {
         "seeds": args.seeds,
+        "algorithm": algorithm,
         "output_dir": str(output_dir),
         "final_eval_collision_rate_mean": float(
             np.mean(
@@ -220,10 +323,31 @@ def main():
             )
         ),
     }
-    with open(output_dir / "summary.json", "w", encoding="utf-8") as f:
+    with open(output_dir / algorithm / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
+    return summary
 
-    print(json.dumps(summary, indent=2, ensure_ascii=False))
+
+def main():
+    args = parse_args()
+    output_dir = args.output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    algorithms = ["imappo", "mappo"] if args.algorithm == "both" else [args.algorithm]
+    all_results: Dict[str, List[Dict[str, object]]] = {}
+    summaries = []
+    for algorithm in algorithms:
+        args.algorithm = algorithm
+        seed_results = [run_single_seed(seed, args, output_dir) for seed in args.seeds]
+        all_results[algorithm] = seed_results
+        save_algorithm_plots(output_dir, algorithm, seed_results)
+        save_risk_tier_plots(output_dir, algorithm, seed_results)
+        summaries.append(write_summary(output_dir, algorithm, args, seed_results))
+
+    if len(all_results) > 1:
+        save_comparison_plots(output_dir, all_results)
+
+    print(json.dumps(summaries, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

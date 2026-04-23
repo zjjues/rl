@@ -264,21 +264,53 @@ python src/main.py --config=imappo --env-config=gymma with \
 
 ```sh
 PYTHONPATH=src python src/imappo_experiments.py \
-  --episodes 24 \
-  --steps 40 \
-  --rollout 32 \
-  --batch-size 16 \
-  --eval-interval 6 \
-  --eval-episodes 3 \
+  --algorithm imappo \
+  --episodes 3000 \
+  --steps 50 \
+  --rollout 128 \
+  --batch-size 64 \
+  --eval-interval 100 \
+  --eval-episodes 5 \
   --seeds 7 11 23
+```
+
+如果需要同时生成 I-MAPPO 与 MAPPO baseline 的对比曲线，可以运行：
+
+```sh
+PYTHONPATH=src python src/imappo_experiments.py \
+  --algorithm both \
+  --episodes 3000 \
+  --steps 50 \
+  --rollout 128 \
+  --batch-size 64 \
+  --eval-interval 100 \
+  --eval-episodes 5 \
+  --save-every 100 \
+  --seeds 7 11 23 \
+  --output-dir reports/imappo_stage3
 ```
 
 该脚本会自动完成以下工作：
 
-- 运行多 seed 的 I-MAPPO 训练
+- 运行多 seed 的 I-MAPPO / MAPPO 训练
 - 同时输出常规评估 `eval_*` 与拥挤场景评估 `probe_*`
 - 额外统计宽松 / 中等拥挤 / 高拥挤三档风险下的碰撞率与任务完成度
-- 将图表与 JSON 汇总结果保存到 `reports/imappo_stage2/`
+- 连续写出 `metrics.jsonl` 和 `metrics.csv`
+- 保存 `checkpoint_latest.pt`、`checkpoint_best_eval.pt`、`checkpoint_best_probe.pt`
+- 将图表与 JSON 汇总结果保存到 `reports/imappo_stage3/`
+
+Stage 3 还包含 intent mutation 评估脚本：
+
+```sh
+PYTHONPATH=src python src/test_intent_mutation.py \
+  --checkpoint reports/imappo_stage3/imappo/seed_7/checkpoint_best_probe.pt \
+  --output reports/intent_mutation/mutation_trajectory.json \
+  --total-steps 50 \
+  --approach-steps 21 \
+  --seed 7
+```
+
+该脚本会在第 `approach_steps` 步将 intent 从 `[1, 0, 0, ...]` 切换为 `[0, 1, 0, ...]`，并保存 UAV 轨迹、速度和 `response_latency`。
 
 ### 当前稳定化实现要点
 
