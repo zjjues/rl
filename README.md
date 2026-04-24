@@ -1,6 +1,12 @@
 # Extended Python MARL framework - EPyMARL
 
-EPyMARL is  an extension of [PyMARL](https://github.com/oxwhirl/pymarl), and includes
+当前仓库已经不只是原始 EPyMARL 镜像，而是一个带有 **I-MAPPO + UAV 调度连续控制实验链路** 的扩展版本。若你是为了查看本项目新增工作，建议优先阅读下面三部分：
+
+- [项目快速摘要](#项目快速摘要)
+- [本仓库新增重点](#本仓库新增重点)
+- [I-MAPPO 与 UAV 调度环境](#i-mappo-与-uav-调度环境)
+
+EPyMARL is an extension of [PyMARL](https://github.com/oxwhirl/pymarl), and includes
 - **New!** Support for training in environments with individual rewards for all agents (for all algorithms that support such settings)
 - **New!** Updated EPyMARL to use maintained [Gymnasium](https://gymnasium.farama.org/index.html) library instead of deprecated OpenAI Gym version 0.21.
 - **New!** Support for new environments: native integration of [PettingZoo](https://pettingzoo.farama.org/), [VMAS](https://github.com/proroklab/VectorizedMultiAgentSimulator), [matrix games](https://github.com/uoe-agents/matrix-games), [SMACv2](https://github.com/oxwhirl/smacv2), and [SMAClite](https://github.com/uoe-agents/smaclite)
@@ -12,6 +18,44 @@ EPyMARL is  an extension of [PyMARL](https://github.com/oxwhirl/pymarl), and inc
 - Consistency of implementations between different algorithms (fair comparisons)
 
 See our blog post here: https://agents.inf.ed.ac.uk/blog/epymarl/
+
+## 项目快速摘要
+
+- 基座仍然是 EPyMARL，用于多智能体强化学习训练与对比实验。
+- 本仓库新增了一套连续动作 **I-MAPPO** 算法实现，以及 `uav-scheduling-v0` 无人机调度环境。
+- 已补齐从训练、评估、baseline 对比、checkpoint、intent mutation 到图表和中英文报告的完整实验链路。
+- 当前正式长程实验结果已落库到 `reports/imappo_stage3/`，可直接复现与查阅。
+
+## 本仓库新增重点
+
+### 算法与环境
+
+- 新增 [src/imappo.py](./src/imappo.py)：
+  连续动作 I-MAPPO，支持 I-MAPPO / MAPPO baseline、attention 或 uniform critic、checkpoint 保存与加载。
+- 新增 [src/envs/uav_scheduling_env.py](./src/envs/uav_scheduling_env.py)：
+  `uav-scheduling-v0` 连续 UAV 调度环境，包含碰撞检测、任务推进奖励、安全缓冲惩罚和课程学习相关配置。
+- 新增 [src/test_intent_mutation.py](./src/test_intent_mutation.py)：
+  用于 zero-shot intent mutation 响应测试。
+
+### 实验能力
+
+- 新增 [src/imappo_experiments.py](./src/imappo_experiments.py)：
+  一键运行多 seed 的 I-MAPPO / MAPPO 训练、常规评估、拥挤评估、风险分档统计和图表汇总。
+- 已提供中程确认实验 `reports/imappo_stage3_mid/` 和正式长程实验 `reports/imappo_stage3/`。
+- 已提供中英文完整报告：
+  [IMAPPO_EXPERIMENT_REPORT.md](./IMAPPO_EXPERIMENT_REPORT.md) /
+  [IMAPPO_EXPERIMENT_REPORT_ZH.md](./IMAPPO_EXPERIMENT_REPORT_ZH.md)
+
+### 当前正式结果
+
+- I-MAPPO:
+  `final_eval_collision_rate_mean = 0.0253`
+  `final_probe_collision_rate_mean = 0.0413`
+- MAPPO:
+  `final_eval_collision_rate_mean = 0.0240`
+  `final_probe_collision_rate_mean = 0.0467`
+- 结论：
+  常规评估下两者接近；在更拥挤的 `probe` 场景中，I-MAPPO 仍略优于 MAPPO。
 
 ## Update as of *July 2024*!
 
@@ -62,6 +106,8 @@ python src/main.py --config=pac_ns --env-config=gymma with env_args.time_limit=1
 
 # Table of Contents
 - [Extended Python MARL framework - EPyMARL](#extended-python-marl-framework---epymarl)
+- [项目快速摘要](#项目快速摘要)
+- [本仓库新增重点](#本仓库新增重点)
 - [Table of Contents](#table-of-contents)
 - [Installation & Run instructions](#installation--run-instructions)
   - [Installing Dependencies](#installing-dependencies)
@@ -206,13 +252,19 @@ python src/main.py --config=qmix --env-config=gymma with env_args.time_limit=150
 
 ## I-MAPPO 与 UAV 调度环境
 
-当前仓库额外加入了一套连续控制多智能体算法 **Intent-driven MAPPO (I-MAPPO)**，以及一个轻量级的连续 UAV 调度环境，便于围绕 `rl.md` 中的任务要求开展实现与实验。
+这一节只保留和当前项目直接相关的入口信息。更完整的背景、实验过程、图表与分析，请直接看：
+
+- [IMAPPO_EXPERIMENT_REPORT.md](./IMAPPO_EXPERIMENT_REPORT.md)
+- [IMAPPO_EXPERIMENT_REPORT_ZH.md](./IMAPPO_EXPERIMENT_REPORT_ZH.md)
+- [reports/imappo_stage3](./reports/imappo_stage3)
 
 ### 新增内容
 
 - 在 `src/imappo.py` 中新增连续动作版 I-MAPPO 实现
 - 在 `src/config/algs/imappo.yaml` 中新增算法配置
 - 新增一个注册为 `uav-scheduling-v0` 的 Gymnasium 环境
+- 新增 `src/imappo_experiments.py`，用于 Stage 2 / Stage 3 专项实验
+- 新增 `src/test_intent_mutation.py`，用于 intent mutation 测试
 - 新增中英文实验报告与图表，用于记录实现过程和实验结果
 
 ### I-MAPPO 简介
@@ -348,6 +400,8 @@ PYTHONPATH=src python src/test_intent_mutation.py \
 生成的图表位于：
 
 - [reports/imappo](./reports/imappo)
+- [reports/imappo_stage3_mid](./reports/imappo_stage3_mid)
+- [reports/imappo_stage3](./reports/imappo_stage3)
 
 ## Registering and Running Experiments in Custom Environments
 
