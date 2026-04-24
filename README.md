@@ -63,52 +63,14 @@ See our blog post here: https://agents.inf.ed.ac.uk/blog/epymarl/
 - 结论：
   常规评估下两者接近；在更拥挤的 `probe` 场景中，I-MAPPO 仍略优于 MAPPO。
 
-## Update as of *July 2024*!
+## Upstream update summary
 
-### Update to Gymnasium
-It became increasingly difficult to install and rely on the deprecated OpenAI Gym version 0.21 EPyMARL previously depended on, so we moved EPyMARL to use the maintained [Gymnasium](https://gymnasium.farama.org/index.html) library and API. This move required updating of several environments that were built to work with EPyMARL's `gymma` wrapper, including [level-based foraging](https://github.com/uoe-agents/lb-foraging) and [multi-robot warehouse](https://github.com/uoe-agents/robotic-warehouse). Alongside this update to EPyMARL, we therefore also updated these environments as well as [SMAClite](https://github.com/uoe-agents/smaclite), [matrix games](https://github.com/uoe-agents/matrix-games), and wrote wrappers to maintain compatibility with [SMAC](https://github.com/oxwhirl/smac) and added integration for [SMACv2](https://github.com/oxwhirl/smacv2). We hope these changes will simplify integration of new environments and ensure that EPyMARL remains usable for a longer time.
+- **July 2024**: EPyMARL migrated from legacy OpenAI Gym to maintained [Gymnasium](https://gymnasium.farama.org/index.html), expanded environment support, and improved compatibility for newer wrappers and benchmarks.
+- **General-sum support**: algorithms such as `IA2C`, `IPPO`, `MAA2C`, `MAPPO`, `IQL`, and `PAC` can train with individual rewards by setting `common_reward=False`.
+- **Tooling**: the upstream project also supports W&B logging and simple result plotting.
+- **July 2023**: upstream added the Pareto Actor-Critic (PAC) algorithm. Paper: https://arxiv.org/abs/2209.14344
 
-To use the legacy version of EPyMARL with OpenAI Gym version 0.21, please use the previous version `v1.0.0` of EPyMARL.
-
-For more information on how to install and run experiments in these environments, see [the documentation here](#installation--run-instructions).
-
-
-### Support for training in environments with individual rewards for all agents
-Previously EPyMARL only supported training of MARL algorithms in common-reward environments. To support environments which naturally provide individual rewards for agents (e.g. LBF and RWARE), we previously scalarised the rewards of all agents using a sum operation to obtain a single common reward that was then given to all agents. We are glad to announce that EPyMARL now supports training in general-sum reward environments (for all algorithms that are sound to train in general-sum reward settings)!
-
-- **Algorithms that support general-sum reward envs**: IA2C, IPPO, MAA2C, MAPPO, IQL, PAC
-- Algorithms that only support common-reward envs: COMA, VDN, QMIX, QTRAN
-
-By default, EPyMARL runs experiments with common rewards (as done previously). To run an experiment with individual rewards for all agents, set `common_reward=False`. For example to run MAPPO in a LBF task with individual rewards:
-```sh
-python src/main.py --config=mappo --env-config=gymma with env_args.time_limit=50 env_args.key="lbforaging:Foraging-8x8-2p-3f-v3" common_reward=False
-```
-When using the `common_reward=True` setup in environments which naturally provide individual rewards, by default we scalarise the rewards into a common reward by summing up all rewards. This is now configurable and we support the mean operation as an alternative scalarisation. To use the mean scalarisation, set `reward_scalarisation="mean"`.
-
-### Weights and Biases (W&B) Logging
-We now support logging to W&B! To log data to W&B, you need to install the library with `pip install wandb` and setup W&B (see their [documentation](https://docs.wandb.ai/quickstart)). After, follow [our instructions](#weights-and-biases).
-
-### Plotting script
-We have added a simple plotting script under `plot_results.py` to load data from sacred logs and visualise them for executed experiments. For more details, see [the documentation here](#plotting).
-
-
-## Update as of *15th July 2023*!
-We have released our _Pareto Actor-Critic_ algorithm, accepted in TMLR, as part of the E-PyMARL source code. 
-
-Find the paper here: https://arxiv.org/abs/2209.14344
-
-Pareto-AC (Pareto-AC), is an actor-critic algorithm that utilises a simple principle of no-conflict games (and, in turn, cooperative games with identical rewards): each agent can assume the others will choose actions that will lead to a Pareto-optimal equilibrium.
-Pareto-AC works especially well in environments with multiple suboptimal equilibria (a problem is also known as relative over-generalisation). We have seen impressive results in a diverse set of multi-agent games with suboptimal equilibria, including the matrix games of the MARL benchmark, but also LBF variations with high penalties.
-
-PAC introduces additional dependencies specified in `pac_requirements.txt`. To install its dependencies, run
-```sh
-pip install -r pac_requirements.txt
-```
-
-To run Pareto-AC in an environment, for example the Penalty game, you can run:
-```sh
-python src/main.py --config=pac_ns --env-config=gymma with env_args.time_limit=1 env_args.key=matrixgames:penalty-100-nostate-v0
-```
+For detailed upstream usage, see the later installation / configuration sections in this README.
 
 # Table of Contents
 - [Extended Python MARL framework - EPyMARL](#extended-python-marl-framework---epymarl)
