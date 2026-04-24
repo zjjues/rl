@@ -1,0 +1,11 @@
+{
+  "seeds": [
+    7,
+    11,
+    23
+  ],
+  "algorithm": "mappo",
+  "output_dir": "reports/imappo_stage3",
+  "final_eval_collision_rate_mean": 0.024000000000000004,
+  "final_probe_collision_rate_mean": 0.04666666666666667
+}

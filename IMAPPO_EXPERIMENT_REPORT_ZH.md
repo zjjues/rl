@@ -1113,6 +1113,130 @@ MPLCONFIGDIR=/tmp/matplotlib PYTHONPATH=src python src/imappo_experiments.py \
 - intent mutation 测试链路已经可以在中程 checkpoint 上正常工作。
 - seed 间差异仍然存在。
 - 最终 zero-shot transfer 结论应基于 3000 episode 的正式长程 checkpoint 重新评估。
+
+
+## 20. Stage 3 正式长程实验结果
+
+在中程确认实验之后，已经完成了正式的 3000 episode 长程实验。
+
+运行命令：
+
+```bash
+MPLCONFIGDIR=/tmp/matplotlib PYTHONPATH=src python src/imappo_experiments.py \
+  --algorithm both \
+  --episodes 3000 \
+  --steps 50 \
+  --rollout 128 \
+  --batch-size 64 \
+  --eval-interval 100 \
+  --eval-episodes 5 \
+  --save-every 100 \
+  --seeds 7 11 23 \
+  --output-dir reports/imappo_stage3
+```
+
+主要输出：
+
+- [reports/imappo_stage3/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage3/imappo/summary.json)
+- [reports/imappo_stage3/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage3/mappo/summary.json)
+- [reports/imappo_stage3/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage3/intent_mutation_summary.json)
+
+### 20.1 I-MAPPO 与 MAPPO 汇总对比
+
+| 算法 | Seeds | 常规评估碰撞率 | Dense/Probe 碰撞率 |
+|---|---:|---:|---:|
+| I-MAPPO | 7, 11, 23 | 0.0253 | 0.0413 |
+| MAPPO | 7, 11, 23 | 0.0240 | 0.0467 |
+
+分析：
+
+- 在常规评估口径下，两者结果已经非常接近。
+- 在 Dense/Probe 场景下，I-MAPPO 仍然略优：
+  - `0.0413` vs `0.0467`
+- 中程实验里 I-MAPPO 的优势更大，而在 3000 episode 长程下，MAPPO 在基础避碰能力上有明显追赶。
+- 但在更关键的拥挤场景里，I-MAPPO 仍保留了小幅优势。
+
+### 20.2 长程对比图
+
+#### 训练回报对比
+
+![stage3 full compare return](./reports/imappo_stage3/comparison/compare_return.png)
+
+#### 常规评估碰撞率对比
+
+![stage3 full eval collision](./reports/imappo_stage3/comparison/compare_eval_collision.png)
+
+#### Dense/Probe 碰撞率对比
+
+![stage3 full probe collision](./reports/imappo_stage3/comparison/compare_probe_collision.png)
+
+#### 任务完成度对比
+
+![stage3 full task completion](./reports/imappo_stage3/comparison/compare_task_completion.png)
+
+### 20.3 对正式结果的整体判断
+
+当前正式长程结果可以概括为：
+
+1. Stage 3 长程实验链路是稳定的。
+   - `2 个算法 x 3 个 seeds` 全部完成。
+   - 周期 checkpoint、metrics 和 summary 均成功写出。
+
+2. I-MAPPO 在拥挤场景下仍保留优势，但没有中程结果那么大。
+   - 这说明 intent / mask / attention 的组合是有效的，但在长程训练下并不是压倒性优势。
+
+3. 因此论文表述应更谨慎。
+   - 当前不适合写成“明显全面优于 MAPPO”。
+   - 更稳妥的结论是：
+     - I-MAPPO 在保持常规场景性能接近的同时，在拥挤场景安全性上略优于 MAPPO。
+
+### 20.4 正式长程 Intent Mutation 结果
+
+基于正式长程实验中 I-MAPPO 的 `checkpoint_best_probe.pt`，已经完成 intent mutation 测试。
+
+| Seed | Checkpoint | Response Latency |
+|---:|---|---:|
+| 7 | `reports/imappo_stage3/imappo/seed_7/checkpoint_best_probe.pt` | 12 |
+| 11 | `reports/imappo_stage3/imappo/seed_11/checkpoint_best_probe.pt` | null |
+| 23 | `reports/imappo_stage3/imappo/seed_23/checkpoint_best_probe.pt` | 1 |
+
+汇总：
+
+- 有效 latency 数量：`2`
+- 有效 run 的平均响应延迟：`6.5` steps
+- 最小有效响应延迟：`1` step
+- 最大有效响应延迟：`12` steps
+- 未在 50 step 内完成全部反向的数量：`1`
+
+分析：
+
+- intent mutation 测试链路在正式训练 checkpoint 上是可用的。
+- 但 seed 间差异依然明显。
+- 其中一个 seed 在 50 step 窗口内没有达到“所有 UAV 都远离目标”的条件。
+- 因此当前 zero-shot transfer 可以说“有迹象、可观测”，但还不能说“稳定可靠”。
+
+
+## 21. 更新后的综合结论
+
+截至当前，整个项目已经进入较成熟阶段：
+
+- Stage 3 长程实验基础设施已经跑通
+- baseline 对比已经实现并执行
+- 正式长程结果已经得到
+- intent mutation 已在训练后 checkpoint 上完成验证
+
+当前证据支持如下结论：
+
+1. I-MAPPO 在当前代码库中是可实验、可复现的。
+2. 在拥挤 / 高风险场景下，它相较 MAPPO 仍保留一定优势。
+3. 这个优势是真实的，但在长程训练下并不算非常大。
+4. Zero-shot intent mutation 能力在部分 seed 上成立，但稳定性仍不足以支持“完全鲁棒”的强结论。
+
+因此，下一阶段工作的重点应该从“基础设施建设”转向：
+
+- 进一步压低 Dense/Probe 碰撞率
+- 提高 mutation 响应的一致性
+- 让 I-MAPPO 相对 MAPPO 的差距更加明确
 2. 扫 `eps_clip`
 3. 视情况调整 `batch_size`
 

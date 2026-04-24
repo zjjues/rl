@@ -1003,6 +1003,126 @@ Interpretation:
 - Seed variability remains visible.
 - The full 3000-episode checkpoints should be used for the final zero-shot transfer claim.
 
+
+## 20. Stage-3 Full Long-Run Results
+
+After the mid-run confirmation, the full Stage-3 long-run experiment was executed.
+
+Command:
+
+```bash
+MPLCONFIGDIR=/tmp/matplotlib PYTHONPATH=src python src/imappo_experiments.py \
+  --algorithm both \
+  --episodes 3000 \
+  --steps 50 \
+  --rollout 128 \
+  --batch-size 64 \
+  --eval-interval 100 \
+  --eval-episodes 5 \
+  --save-every 100 \
+  --seeds 7 11 23 \
+  --output-dir reports/imappo_stage3
+```
+
+Outputs:
+
+- [reports/imappo_stage3/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage3/imappo/summary.json)
+- [reports/imappo_stage3/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage3/mappo/summary.json)
+- [reports/imappo_stage3/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage3/intent_mutation_summary.json)
+
+### 20.1 I-MAPPO vs MAPPO Summary
+
+| Algorithm | Seeds | Eval Collision Rate | Dense/Probe Collision Rate |
+|---|---:|---:|---:|
+| I-MAPPO | 7, 11, 23 | 0.0253 | 0.0413 |
+| MAPPO | 7, 11, 23 | 0.0240 | 0.0467 |
+
+Interpretation:
+
+- Under the standard evaluation regime, the two methods are very close.
+- Under the dense/probe regime, I-MAPPO remains slightly better:
+  - `0.0413` vs `0.0467`
+- The large mid-run advantage narrowed after 3000 episodes, which suggests that MAPPO catches up in basic collision control under long training.
+- However, I-MAPPO still preserves a small edge in the crowded regime, which is the more relevant safety condition.
+
+### 20.2 Long-Run Comparison Figures
+
+#### Training Return Comparison
+
+![stage3 full compare return](./reports/imappo_stage3/comparison/compare_return.png)
+
+#### Standard Evaluation Collision Comparison
+
+![stage3 full eval collision](./reports/imappo_stage3/comparison/compare_eval_collision.png)
+
+#### Dense Evaluation Collision Comparison
+
+![stage3 full probe collision](./reports/imappo_stage3/comparison/compare_probe_collision.png)
+
+#### Task Completion Comparison
+
+![stage3 full task completion](./reports/imappo_stage3/comparison/compare_task_completion.png)
+
+### 20.3 High-Level Reading of the Final Result
+
+The Stage-3 long-run outcome can be summarized as follows:
+
+1. The long-run pipeline is stable.
+   - All 6 runs (`2 algorithms x 3 seeds`) completed.
+   - Periodic checkpoints, metrics, and summary files were written successfully.
+
+2. I-MAPPO keeps a dense-scene advantage, but it is smaller than the mid-run gap.
+   - This suggests that the intent/mask/attention mechanism is helpful, but not overwhelmingly dominant under long optimization.
+
+3. The final paper claim should therefore be stated carefully.
+   - A strong claim like "I-MAPPO decisively outperforms MAPPO" would be too aggressive based on the current full-run results.
+   - A defensible claim is:
+     - I-MAPPO maintains slightly better crowded-scene safety while preserving comparable standard-scene performance.
+
+### 20.4 Full-Run Intent Mutation Results
+
+Intent mutation was run using the I-MAPPO `checkpoint_best_probe.pt` checkpoints from the full long-run experiment.
+
+| Seed | Checkpoint | Response Latency |
+|---:|---|---:|
+| 7 | `reports/imappo_stage3/imappo/seed_7/checkpoint_best_probe.pt` | 12 |
+| 11 | `reports/imappo_stage3/imappo/seed_11/checkpoint_best_probe.pt` | null |
+| 23 | `reports/imappo_stage3/imappo/seed_23/checkpoint_best_probe.pt` | 1 |
+
+Aggregate:
+
+- valid latency count: `2`
+- mean response latency over valid runs: `6.5` steps
+- min valid latency: `1` step
+- max valid latency: `12` steps
+- null latency count: `1`
+
+Interpretation:
+
+- The intent mutation pipeline works on fully trained checkpoints.
+- Response quality remains seed-dependent.
+- One seed still failed to produce a full "all UAVs reverse away from targets" response within the 50-step evaluation window.
+- This means the current zero-shot transfer result is promising, but not yet uniformly reliable across seeds.
+
+
+## 21. Updated Overall Conclusion
+
+At this point, the project has reached a much more mature stage:
+
+- the Stage-3 long-run experiment infrastructure works
+- baseline comparison is implemented and executed
+- full-run results have been collected
+- intent mutation evaluation has been executed on trained checkpoints
+
+The current evidence supports the following conclusion:
+
+1. I-MAPPO is experimentally viable in this codebase.
+2. It retains a modest advantage over MAPPO in dense/crowded safety.
+3. The advantage is real but not yet dramatic under long-run training.
+4. Zero-shot intent mutation behavior exists in some seeds, but is not yet consistent enough to be presented as a fully robust capability.
+
+This means the next round of work should focus less on infrastructure and more on squeezing out stronger dense-scene robustness and more reliable mutation response.
+
 ### 12.3 Most likely interpretation
 
 The current implementation is functionally correct, but the remaining difficulty seems to be optimization stability rather than interface correctness.
