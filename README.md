@@ -1,12 +1,16 @@
 # Extended Python MARL framework - EPyMARL
 
-当前仓库已经不只是原始 EPyMARL 镜像，而是一个带有 **I-MAPPO + UAV 调度连续控制实验链路** 的扩展版本。若你是为了查看本项目新增工作，建议优先阅读下面三部分：
+EPyMARL is an extension of [PyMARL](https://github.com/oxwhirl/pymarl) for multi-agent reinforcement learning research. This repository keeps the original EPyMARL codebase and additionally includes a project-specific I-MAPPO + UAV scheduling experiment pipeline.
+
+For the original framework, see the brief English overview below and the standard installation / run instructions in the later sections.
+
+For the project-specific additions and experiment results, see the Chinese sections:
 
 - [项目快速摘要](#项目快速摘要)
 - [本仓库新增重点](#本仓库新增重点)
 - [I-MAPPO 与 UAV 调度环境](#i-mappo-与-uav-调度环境)
 
-EPyMARL is an extension of [PyMARL](https://github.com/oxwhirl/pymarl), and includes
+Core EPyMARL features include:
 - **New!** Support for training in environments with individual rewards for all agents (for all algorithms that support such settings)
 - **New!** Updated EPyMARL to use maintained [Gymnasium](https://gymnasium.farama.org/index.html) library instead of deprecated OpenAI Gym version 0.21.
 - **New!** Support for new environments: native integration of [PettingZoo](https://pettingzoo.farama.org/), [VMAS](https://github.com/proroklab/VectorizedMultiAgentSimulator), [matrix games](https://github.com/uoe-agents/matrix-games), [SMACv2](https://github.com/oxwhirl/smacv2), and [SMAClite](https://github.com/uoe-agents/smaclite)
@@ -18,6 +22,8 @@ EPyMARL is an extension of [PyMARL](https://github.com/oxwhirl/pymarl), and incl
 - Consistency of implementations between different algorithms (fair comparisons)
 
 See our blog post here: https://agents.inf.ed.ac.uk/blog/epymarl/
+
+## Project-specific additions (中文)
 
 ## 项目快速摘要
 
