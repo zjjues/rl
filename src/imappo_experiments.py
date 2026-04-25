@@ -11,13 +11,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from imappo import IMAPPO, IMAPPOConfig, build_uav_env_factory, evaluate_imappo, train_imappo
+from envs.uav_scheduling_env import infer_obs_dim, infer_state_dim
 import envs.uav_scheduling_env  # noqa: F401
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run focused I-MAPPO UAV experiments")
     parser.add_argument("--algorithm", choices=["imappo", "mappo", "both"], default="imappo")
-    parser.add_argument("--episodes", type=int, default=3000)
+    parser.add_argument("--episodes", type=int, default=1500)
     parser.add_argument("--steps", type=int, default=50)
     parser.add_argument("--rollout", type=int, default=128)
     parser.add_argument("--batch-size", type=int, default=64)
@@ -25,23 +26,34 @@ def parse_args():
     parser.add_argument("--eval-episodes", type=int, default=5)
     parser.add_argument("--seeds", type=int, nargs="+", default=[7, 11, 23])
     parser.add_argument("--save-every", type=int, default=100)
+    parser.add_argument("--n-agents", type=int, default=8)
+    parser.add_argument("--n-targets", type=int, default=6)
+    parser.add_argument("--safety-reward-coef", type=float, default=1.0)
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("reports/imappo_stage3"),
+        default=Path("reports/imappo_stage4"),
     )
     return parser.parse_args()
 
 
 def build_custom_uav_factory(
+    n_agents: int,
+    n_targets: int,
+    obs_dim: int,
     spawn_region_scale: float,
     spawn_separation_scale: float,
+    safety_reward_coef: float,
 ) -> Callable[[], object]:
     def make_env():
         return gym.make(
             "uav-scheduling-v0",
+            n_agents=n_agents,
+            n_targets=n_targets,
+            obs_dim=obs_dim,
             spawn_region_scale=spawn_region_scale,
             spawn_separation_scale=spawn_separation_scale,
+            safety_reward_coef=safety_reward_coef,
         )
 
     return make_env
@@ -157,17 +169,24 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
     algorithm_dir = output_dir / args.algorithm / f"seed_{seed}"
     algorithm_dir.mkdir(parents=True, exist_ok=True)
     is_mappo = args.algorithm == "mappo"
+    obs_dim = infer_obs_dim(args.n_agents)
+    state_dim = infer_state_dim(args.n_agents, obs_dim)
     cfg = IMAPPOConfig(
         algorithm=args.algorithm,
         critic_mode="uniform" if is_mappo else "attention",
         use_action_mask=not is_mappo,
         seed=seed,
+        n_agents=args.n_agents,
+        n_targets=args.n_targets,
+        obs_dim=obs_dim,
+        state_dim=state_dim,
         max_episodes=args.episodes,
         max_steps=args.steps,
         rollout_length=args.rollout,
         minibatch_size=args.batch_size,
         eval_interval=args.eval_interval,
         eval_episodes=args.eval_episodes,
+        safety_reward_coef=args.safety_reward_coef,
         eta=0.0 if is_mappo else IMAPPOConfig.eta,
         eta_end=0.0 if is_mappo else IMAPPOConfig.eta_end,
         potential_update_mode="frozen" if is_mappo else IMAPPOConfig.potential_update_mode,
@@ -175,9 +194,15 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
 
     train_factory = build_uav_env_factory(cfg, mode="train")
     eval_factory = build_uav_env_factory(cfg, mode="eval")
-    probe_easy_factory = build_custom_uav_factory(0.34, 0.95)
-    probe_mid_factory = build_custom_uav_factory(0.31, 0.88)
-    probe_hard_factory = build_custom_uav_factory(0.29, 0.82)
+    probe_easy_factory = build_custom_uav_factory(
+        args.n_agents, args.n_targets, obs_dim, 0.42, 0.92, args.safety_reward_coef
+    )
+    probe_mid_factory = build_custom_uav_factory(
+        args.n_agents, args.n_targets, obs_dim, 0.37, 0.86, args.safety_reward_coef
+    )
+    probe_hard_factory = build_custom_uav_factory(
+        args.n_agents, args.n_targets, obs_dim, 0.33, 0.80, args.safety_reward_coef
+    )
 
     jsonl_writer = JsonlMetricWriter(algorithm_dir / "metrics.jsonl")
     checkpoint_manager = CheckpointManager(algorithm_dir, args.save_every)
@@ -200,9 +225,9 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
     )
 
     tier_metrics = {
-        "easy": evaluate_imappo(algo, probe_easy_factory, cfg, prefix="easy_probe"),
-        "mid": evaluate_imappo(algo, probe_mid_factory, cfg, prefix="mid_probe"),
-        "hard": evaluate_imappo(algo, probe_hard_factory, cfg, prefix="hard_probe"),
+        "easy": evaluate_imappo(algo, probe_easy_factory, cfg, prefix="easy_probe", evaluation_mode="dense"),
+        "mid": evaluate_imappo(algo, probe_mid_factory, cfg, prefix="mid_probe", evaluation_mode="dense"),
+        "hard": evaluate_imappo(algo, probe_hard_factory, cfg, prefix="hard_probe", evaluation_mode="dense"),
     }
     result = {
         "seed": seed,
@@ -216,6 +241,11 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
             "eval_interval": args.eval_interval,
             "eval_episodes": args.eval_episodes,
             "save_every": args.save_every,
+            "n_agents": args.n_agents,
+            "n_targets": args.n_targets,
+            "obs_dim": obs_dim,
+            "state_dim": state_dim,
+            "safety_reward_coef": args.safety_reward_coef,
         },
         "logs": logs,
         "tier_metrics": tier_metrics,
@@ -302,6 +332,16 @@ def save_comparison_plots(output_dir: Path, all_results: Dict[str, List[Dict[str
 
 
 def write_summary(output_dir: Path, algorithm: str, args, seed_results: List[Dict[str, object]]) -> Dict[str, object]:
+    def tier_mean(tier_name: str, metric_suffix: str) -> float:
+        return float(
+            np.mean(
+                [
+                    seed_result["tier_metrics"][tier_name][f"{tier_name}_probe_{metric_suffix}"]
+                    for seed_result in seed_results
+                ]
+            )
+        )
+
     summary = {
         "seeds": args.seeds,
         "algorithm": algorithm,
@@ -314,15 +354,14 @@ def write_summary(output_dir: Path, algorithm: str, args, seed_results: List[Dic
                 ]
             )
         ),
-        "final_probe_collision_rate_mean": float(
-            np.mean(
-                [
-                    seed_result["tier_metrics"]["hard"]["hard_probe_collision_rate"]
-                    for seed_result in seed_results
-                ]
-            )
-        ),
+        "final_easy_probe_collision_rate_mean": tier_mean("easy", "collision_rate"),
+        "final_mid_probe_collision_rate_mean": tier_mean("mid", "collision_rate"),
+        "final_hard_probe_collision_rate_mean": tier_mean("hard", "collision_rate"),
+        "final_easy_probe_task_completion_mean": tier_mean("easy", "task_completion"),
+        "final_mid_probe_task_completion_mean": tier_mean("mid", "task_completion"),
+        "final_hard_probe_task_completion_mean": tier_mean("hard", "task_completion"),
     }
+    summary["final_probe_collision_rate_mean"] = summary["final_hard_probe_collision_rate_mean"]
     with open(output_dir / algorithm / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
     return summary

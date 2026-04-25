@@ -3,9 +3,10 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import gymnasium as gym
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
@@ -18,8 +19,8 @@ def parse_args():
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=Path("reports/intent_mutation/mutation_trajectory.json"))
     parser.add_argument("--device", default="cpu")
-    parser.add_argument("--approach-steps", type=int, default=21)
-    parser.add_argument("--total-steps", type=int, default=50)
+    parser.add_argument("--approach-steps", type=int, default=30)
+    parser.add_argument("--total-steps", type=int, default=100)
     parser.add_argument("--seed", type=int, default=7)
     return parser.parse_args()
 
@@ -39,10 +40,60 @@ def get_env_arrays(env) -> Dict[str, np.ndarray]:
     }
 
 
-def all_uavs_moving_away(positions: np.ndarray, velocities: np.ndarray, targets: np.ndarray) -> bool:
-    target_vectors = targets - positions
-    dots = np.sum(velocities * target_vectors, axis=1)
-    return bool(np.all(dots < 0.0))
+def average_distance_to_targets(positions: np.ndarray, targets: np.ndarray) -> float:
+    return float(np.mean(np.linalg.norm(targets - positions, axis=1)))
+
+
+def maybe_compute_response_latency(
+    mutation_step: int,
+    distance_series: List[float],
+    response_latency: Optional[int],
+) -> Optional[int]:
+    if response_latency is not None or len(distance_series) < mutation_step + 4:
+        return response_latency
+
+    # A robust response is declared when the average swarm-to-target distance
+    # increases for three consecutive post-mutation transitions.
+    for current_idx in range(mutation_step + 3, len(distance_series)):
+        inc_1 = distance_series[current_idx - 2] > distance_series[current_idx - 3]
+        inc_2 = distance_series[current_idx - 1] > distance_series[current_idx - 2]
+        inc_3 = distance_series[current_idx] > distance_series[current_idx - 1]
+        if inc_1 and inc_2 and inc_3:
+            return current_idx - mutation_step
+    return response_latency
+
+
+def save_centroid_trajectory_plot(output_path: Path, trajectory: List[Dict[str, object]], mutation_step: int) -> None:
+    if not trajectory:
+        return
+
+    centroid_xy = np.asarray([item["swarm_centroid_xy"] for item in trajectory], dtype=np.float32)
+    plt.figure(figsize=(6.4, 6.0))
+    plt.plot(
+        centroid_xy[: mutation_step + 1, 0],
+        centroid_xy[: mutation_step + 1, 1],
+        color="#4C78A8",
+        linewidth=2.2,
+        label="Gather phase",
+    )
+    plt.plot(
+        centroid_xy[mutation_step:, 0],
+        centroid_xy[mutation_step:, 1],
+        color="#E45756",
+        linewidth=2.2,
+        label="Evade phase",
+    )
+    plt.scatter(centroid_xy[0, 0], centroid_xy[0, 1], color="#4C78A8", s=40, marker="o")
+    plt.scatter(centroid_xy[-1, 0], centroid_xy[-1, 1], color="#E45756", s=40, marker="s")
+    plt.axvline(x=0.0, alpha=0.0)
+    plt.xlabel("Centroid X")
+    plt.ylabel("Centroid Y")
+    plt.title("Intent Mutation Swarm Centroid Trajectory")
+    plt.grid(alpha=0.25, linestyle="--")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=180)
+    plt.close()
 
 
 def run_mutation(args) -> Dict[str, object]:
@@ -50,8 +101,9 @@ def run_mutation(args) -> Dict[str, object]:
     device = algo.device
     env = gym.make(
         "uav-scheduling-v0",
-        n_agents=4,
-        n_targets=3,
+        n_agents=algo.config.n_agents,
+        n_targets=getattr(algo.config, "n_targets", algo.config.n_agents),
+        obs_dim=algo.config.obs_dim,
         max_episode_steps=args.total_steps,
         spawn_region_scale=0.32,
         spawn_separation_scale=0.90,
@@ -68,6 +120,7 @@ def run_mutation(args) -> Dict[str, object]:
     trajectory: List[Dict[str, object]] = []
     response_latency = None
     mutation_step = args.approach_steps
+    average_distance_series: List[float] = []
 
     for step in range(args.total_steps):
         phase = "approach" if step < mutation_step else "evasion"
@@ -81,11 +134,13 @@ def run_mutation(args) -> Dict[str, object]:
         )
 
         arrays = get_env_arrays(env)
-        moving_away = all_uavs_moving_away(
-            arrays["positions"], arrays["velocities"], arrays["targets"]
+        avg_distance = average_distance_to_targets(arrays["positions"], arrays["targets"])
+        average_distance_series.append(avg_distance)
+        response_latency = maybe_compute_response_latency(
+            mutation_step, average_distance_series, response_latency
         )
-        if step >= mutation_step and response_latency is None and moving_away:
-            response_latency = step - mutation_step
+        centroid_xy = arrays["positions"][:, :2].mean(axis=0)
+        positions_xy = arrays["positions"][:, :2]
 
         trajectory.append(
             {
@@ -93,9 +148,11 @@ def run_mutation(args) -> Dict[str, object]:
                 "phase": phase,
                 "intent": intent.detach().cpu().tolist(),
                 "positions": arrays["positions"].tolist(),
+                "positions_xy": positions_xy.tolist(),
+                "swarm_centroid_xy": centroid_xy.tolist(),
                 "velocities": arrays["velocities"].tolist(),
                 "targets": arrays["targets"].tolist(),
-                "moving_away_from_targets": moving_away,
+                "average_distance_to_targets": avg_distance,
                 "info": info,
             }
         )
@@ -111,11 +168,13 @@ def run_mutation(args) -> Dict[str, object]:
         "mutation_step": mutation_step,
         "response_latency": response_latency,
         "total_recorded_steps": len(trajectory),
+        "average_distance_series": average_distance_series,
         "trajectory": trajectory,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
+    save_centroid_trajectory_plot(args.output.with_suffix(".png"), trajectory, mutation_step)
     return result
 
 
@@ -128,6 +187,7 @@ def main():
                 "checkpoint": result["checkpoint"],
                 "mutation_step": result["mutation_step"],
                 "response_latency": result["response_latency"],
+                "trajectory_plot": str(args.output.with_suffix(".png")),
                 "output": str(args.output),
             },
             indent=2,

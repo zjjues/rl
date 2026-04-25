@@ -1,0 +1,17 @@
+{
+  "seeds": [
+    7,
+    11,
+    23
+  ],
+  "algorithm": "mappo",
+  "output_dir": "reports/imappo_stage4_long_v1",
+  "final_eval_collision_rate_mean": 0.16666666666666666,
+  "final_easy_probe_collision_rate_mean": 0.16666666666666666,
+  "final_mid_probe_collision_rate_mean": 0.3688888888888889,
+  "final_hard_probe_collision_rate_mean": 0.5511111111111111,
+  "final_easy_probe_task_completion_mean": 0.6166193521602287,
+  "final_mid_probe_task_completion_mean": 0.6065428688873847,
+  "final_hard_probe_task_completion_mean": 0.6006099717567364,
+  "final_probe_collision_rate_mean": 0.5511111111111111
+}

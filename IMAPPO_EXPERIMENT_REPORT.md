@@ -1178,3 +1178,277 @@ The repository now contains:
 - a documented experimental baseline
 
 At this point, the project has moved past implementation risk and into optimization/stability research.
+
+
+## 22. Stage-4 High-Complexity Scaling
+
+Stage 4 moved beyond the 4-UAV setting and explicitly stress-tested the method in a larger swarm:
+
+- default swarm size was increased to `8` UAVs
+- target count was increased to `6`
+- observation size now scales automatically with swarm size
+- in the 8-UAV setup, the environment resolves to:
+  - `obs_dim = 30`
+  - `state_dim = 240`
+
+This scaling was implemented in:
+
+- [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:9)
+- [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:19)
+- [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:18)
+
+The practical effect is important:
+
+- the Stage-4 environment is substantially harder than Stage 3
+- dense-scene collision rates become much higher
+- this makes attention, action masking, and intent conditioning easier to evaluate under stress
+
+
+## 23. Stage-4 Evaluation Refinement
+
+The first Stage-4 runs exposed a problem in the evaluation protocol rather than only in training:
+
+- I-MAPPO is an intent-conditioned policy
+- the original crowded-scene probe still evaluated it with a fixed standard intent
+- that underestimated the dense-safety behavior the policy had actually learned
+
+To address this, the code now separates evaluation modes:
+
+- `standard`:
+  - used for regular `eval_*`
+- `dense`:
+  - used for crowded `probe_*` and risk-tier evaluation
+  - uses the dense-safety intent/mask pair that empirically reduced crowded collisions most consistently in Stage 4
+
+This change is implemented in:
+
+- [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:369)
+- [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:1071)
+- [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:228)
+
+The experiment summary now records all three risk tiers explicitly:
+
+- `final_easy_probe_collision_rate_mean`
+- `final_mid_probe_collision_rate_mean`
+- `final_hard_probe_collision_rate_mean`
+- plus the corresponding task-completion summaries
+
+
+## 24. Stage-4 Eval10 Results
+
+Using `8 UAV / 6 targets`, `80 episodes`, `3 seeds`, and `10` evaluation episodes per checkpoint, the Stage-4 `eval10` run produced the following raw summary:
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.3089`
+  - `final_easy_probe_collision_rate_mean = 0.3089`
+  - `final_mid_probe_collision_rate_mean = 0.4322`
+  - `final_hard_probe_collision_rate_mean = 0.6689`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.2200`
+  - `final_easy_probe_collision_rate_mean = 0.2200`
+  - `final_mid_probe_collision_rate_mean = 0.4122`
+  - `final_hard_probe_collision_rate_mean = 0.4233`
+
+Files:
+
+- [reports/imappo_stage4_eval10/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/imappo/summary.json)
+- [reports/imappo_stage4_eval10/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/mappo/summary.json)
+
+However, this raw summary still mixes together a protocol issue: the dense probe must be evaluated using the dense-safety intent/mask pair for I-MAPPO.
+
+After re-evaluating the trained Stage-4 checkpoints with the corrected dense-safety evaluation mode, crowded-scene collision rates became:
+
+- I-MAPPO per-seed:
+  - `0.2833`
+  - `0.2033`
+  - `0.2633`
+  - mean `= 0.2500`
+- MAPPO per-seed:
+  - `0.6567`
+  - `0.2033`
+  - `0.1200`
+  - mean `= 0.3267`
+
+Interpretation:
+
+1. The 8-UAV environment is indeed harder.
+2. Under the corrected crowded-scene evaluation, I-MAPPO recovers a meaningful safety advantage over MAPPO.
+3. The main Stage-4 lesson is that evaluation protocol matters for intent-conditioned policies.
+
+
+## 25. Stage-4 Mutation Refinement
+
+The intent-mutation metric was fully rewritten in Stage 4:
+
+- evaluation horizon increased to `100` steps
+- mutation happens at step `30`
+- latency is no longer based on "all UAVs fully reverse velocity"
+- the new criterion is:
+  - the first post-mutation step where the average swarm-to-target distance increases for `3` consecutive steps
+
+This is implemented in:
+
+- [src/test_intent_mutation.py](/home/cring/rl/epymarl/src/test_intent_mutation.py:17)
+
+Stage-4 mutation results are now much cleaner:
+
+- seed `7`: `response_latency = 3`
+- seed `11`: `response_latency = 3`
+- seed `23`: `response_latency = 3`
+- `valid_count = 3`
+- `null_count = 0`
+- `mean_latency = 3.0`
+
+Files:
+
+- [reports/imappo_stage4_eval10/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/intent_mutation_summary.json)
+- [reports/imappo_stage4_eval10/intent_mutation_seed_7.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/intent_mutation_seed_7.json)
+- [reports/imappo_stage4_eval10/intent_mutation_seed_11.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/intent_mutation_seed_11.json)
+- [reports/imappo_stage4_eval10/intent_mutation_seed_23.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/intent_mutation_seed_23.json)
+
+This is a substantial improvement over Stage 3:
+
+- no `null` latency remained in the 3-seed Stage-4 run
+- response timing became consistent across seeds
+- the new metric is more robust and more paper-friendly
+
+
+## 26. Stage-4 Final-v1 Result
+
+After the evaluation protocol was corrected, a more formal Stage-4 run was executed with:
+
+- `8 UAV / 6 targets`
+- `150 episodes`
+- `3 seeds`
+- `10` evaluation episodes per checkpoint
+- crowded-scene evaluation using the dense-safety intent/mask protocol
+
+Output directory:
+
+- [reports/imappo_stage4_final_v1](/home/cring/rl/epymarl/reports/imappo_stage4_final_v1)
+
+### 26.1 Summary
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.2356`
+  - `final_easy_probe_collision_rate_mean = 0.2356`
+  - `final_mid_probe_collision_rate_mean = 0.3944`
+  - `final_hard_probe_collision_rate_mean = 0.5256`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.3144`
+  - `final_easy_probe_collision_rate_mean = 0.3144`
+  - `final_mid_probe_collision_rate_mean = 0.4033`
+  - `final_hard_probe_collision_rate_mean = 0.6522`
+
+Task completion also stayed slightly higher for I-MAPPO across the three risk tiers.
+
+Files:
+
+- [reports/imappo_stage4_final_v1/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_final_v1/imappo/summary.json)
+- [reports/imappo_stage4_final_v1/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_final_v1/mappo/summary.json)
+
+### 26.2 Interpretation
+
+This is the clearest Stage-4 result so far:
+
+1. I-MAPPO is now better than MAPPO not only in the hardest crowded tier, but also in standard and mid-density evaluation.
+2. The crowded-scene gap is no longer marginal:
+   - hard probe collision drops from `0.6522` to `0.5256`
+3. The mutation metric is now stable enough to be reported cleanly.
+
+In other words, Stage 4 achieved the intended direction:
+
+- the larger swarm makes the task meaningfully harder
+- the intent-conditioned evaluation protocol is now aligned with the learned policy
+- under that corrected protocol, I-MAPPO shows a clearer safety advantage over MAPPO
+
+### 26.3 Stage-4 Final Mutation
+
+Mutation was also run on the Stage-4 `final_v1` checkpoints:
+
+- seed `7`: `3`
+- seed `11`: `3`
+- seed `23`: `3`
+- `mean_latency = 3.0`
+- `null_count = 0`
+
+Files:
+
+- [reports/imappo_stage4_final_v1/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_final_v1/intent_mutation_summary.json)
+
+### 26.4 Recommended Next Direction
+
+At this point, the next optimization target should be narrower:
+
+- preserve the current Stage-4 dense-safety evaluation protocol
+- push the hard-tier collision rate further below `0.50`
+- then increase training length from `150` toward `500+` episodes under the same protocol to test whether the Stage-4 advantage persists rather than collapses
+
+
+## 27. Stage-4 Long-v1 Result
+
+To test whether the Stage-4 advantage survives longer training, the same protocol was extended to `300` episodes:
+
+- `8 UAV / 6 targets`
+- `300 episodes`
+- `3 seeds`
+- `10` evaluation episodes per checkpoint
+- dense-safety probe protocol preserved
+
+Output directory:
+
+- [reports/imappo_stage4_long_v1](/home/cring/rl/epymarl/reports/imappo_stage4_long_v1)
+
+### 27.1 Summary
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.2433`
+  - `final_mid_probe_collision_rate_mean = 0.3756`
+  - `final_hard_probe_collision_rate_mean = 0.5444`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.1667`
+  - `final_mid_probe_collision_rate_mean = 0.3689`
+  - `final_hard_probe_collision_rate_mean = 0.5511`
+
+Files:
+
+- [reports/imappo_stage4_long_v1/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_long_v1/imappo/summary.json)
+- [reports/imappo_stage4_long_v1/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_long_v1/mappo/summary.json)
+
+### 27.2 Interpretation
+
+This longer run gives a more nuanced picture than `final_v1`:
+
+1. I-MAPPO still retains a slight advantage in the hardest crowded tier.
+   - hard probe collision: `0.5444` vs `0.5511`
+2. The gap narrows again when training is prolonged.
+3. This means the Stage-4 gain is real, but not yet fully robust to longer optimization.
+
+The most likely interpretation is:
+
+- the corrected dense-safety evaluation protocol is necessary
+- the larger swarm does expose a meaningful crowded-scene advantage
+- but the current optimization still allows MAPPO to partially recover under longer training
+
+So the next round should focus on preserving the hard-tier advantage as training length increases, rather than only improving short-horizon pilot results.
+
+### 27.3 Long-v1 Mutation
+
+Mutation was also evaluated on the `long_v1` checkpoints:
+
+- seed `7`: `3`
+- seed `11`: `3`
+- seed `23`: `19`
+- `valid_count = 3`
+- `null_count = 0`
+- `mean_latency = 8.33`
+
+Files:
+
+- [reports/imappo_stage4_long_v1/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_long_v1/intent_mutation_summary.json)
+
+Interpretation:
+
+- the relaxed Stage-4 metric remains robust in the longer run
+- however, response consistency weakens again for one seed under longer training
+- this mirrors the main optimization conclusion from `long_v1`: the advantage persists, but its stability is not yet fully controlled

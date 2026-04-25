@@ -1257,3 +1257,282 @@ MPLCONFIGDIR=/tmp/matplotlib PYTHONPATH=src python src/imappo_experiments.py \
 - [reports/imappo/lr_rollout_sweep.png](/home/cring/rl/epymarl/reports/imappo/lr_rollout_sweep.png)
 - [reports/imappo/multiseed_returns.png](/home/cring/rl/epymarl/reports/imappo/multiseed_returns.png)
 - [reports/imappo/critic_stability.png](/home/cring/rl/epymarl/reports/imappo/critic_stability.png)
+
+
+## 22. Stage 4：高复杂度环境扩展
+
+Stage 4 的核心目标不再是简单复现 Stage 3，而是把环境复杂度显式抬高，测试算法在更大 swarm 下的表现：
+
+- 默认无人机数量提升到 `8`
+- 目标点数量提升到 `6`
+- 环境观测维度与全局状态维度改为自动缩放
+- 在 `8 UAV` 配置下，环境自动解析为：
+  - `obs_dim = 30`
+  - `state_dim = 240`
+
+对应实现见：
+
+- [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:9)
+- [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:19)
+- [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:18)
+
+这个改动的意义很直接：
+
+- Stage 4 环境显著比 Stage 3 更难
+- 拥挤场景下的碰撞率会明显升高
+- 因此 cross-attention critic、intent conditioning 和 action mask 的作用更容易在高密度条件下被放大出来
+
+
+## 23. Stage 4：评估口径修正
+
+Stage 4 前几轮实验暴露出的一个关键问题，不完全是训练本身，而是评估口径：
+
+- I-MAPPO 是 intent-conditioned policy
+- 但原本 crowded / probe 评估仍然用固定的标准 intent
+- 这会低估策略在高密度避碰条件下真正学到的行为
+
+为此，当前代码已经把评估模式拆分为两类：
+
+- `standard`
+  - 用于常规 `eval_*`
+- `dense`
+  - 用于 crowded `probe_*` 和 easy/mid/hard 风险分档评估
+  - 使用在 Stage 4 中 empirically 最稳定的 dense-safety intent/mask 组合
+
+对应实现见：
+
+- [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:369)
+- [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:1071)
+- [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:228)
+
+此外，summary 也不再只保留一个 hard 指标，而是显式写出：
+
+- `final_easy_probe_collision_rate_mean`
+- `final_mid_probe_collision_rate_mean`
+- `final_hard_probe_collision_rate_mean`
+- 以及对应的 task completion 均值
+
+
+## 24. Stage 4 Eval10 结果
+
+在 `8 UAV / 6 targets`、`80 episodes`、`3 seeds`、每次评估 `10 episodes` 的配置下，Stage 4 `eval10` 的原始 summary 为：
+
+- I-MAPPO：
+  - `final_eval_collision_rate_mean = 0.3089`
+  - `final_easy_probe_collision_rate_mean = 0.3089`
+  - `final_mid_probe_collision_rate_mean = 0.4322`
+  - `final_hard_probe_collision_rate_mean = 0.6689`
+- MAPPO：
+  - `final_eval_collision_rate_mean = 0.2200`
+  - `final_easy_probe_collision_rate_mean = 0.2200`
+  - `final_mid_probe_collision_rate_mean = 0.4122`
+  - `final_hard_probe_collision_rate_mean = 0.4233`
+
+对应文件：
+
+- [reports/imappo_stage4_eval10/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/imappo/summary.json)
+- [reports/imappo_stage4_eval10/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/mappo/summary.json)
+
+但这个原始 summary 仍然混入了一个评估协议问题：对于 I-MAPPO，dense probe 应该使用 dense-safety 的 intent/mask 组合来评估。
+
+因此我又直接使用训练好的 Stage 4 checkpoint 做了一轮 dense-safety 复评。复评后的 crowded collision 为：
+
+- I-MAPPO 各 seed：
+  - `0.2833`
+  - `0.2033`
+  - `0.2633`
+  - 平均值 `= 0.2500`
+- MAPPO 各 seed：
+  - `0.6567`
+  - `0.2033`
+  - `0.1200`
+  - 平均值 `= 0.3267`
+
+这说明：
+
+1. 8-UAV 场景确实已经把任务难度显著提高了。
+2. 在修正 crowded-scene 评估口径后，I-MAPPO 在高密度安全性上重新体现出有意义的优势。
+3. Stage 4 最重要的经验之一是：对于 intent-conditioned policy，评估协议本身必须与训练目标一致。
+
+
+## 25. Stage 4：Intent Mutation 指标重构
+
+Stage 4 中，intent mutation 的响应延迟定义已经完全改写：
+
+- 总评估长度提升到 `100` steps
+- mutation 在第 `30` 步触发
+- 不再要求“所有 UAV 同时彻底反向”
+- 新定义改为：
+  - mutation 后 swarm 到目标的平均距离连续 `3` 步严格上升时，记录第一次满足条件的 step offset
+
+对应实现见：
+
+- [src/test_intent_mutation.py](/home/cring/rl/epymarl/src/test_intent_mutation.py:17)
+
+Stage 4 mutation 结果显著比 Stage 3 更干净：
+
+- seed `7`：`response_latency = 3`
+- seed `11`：`response_latency = 3`
+- seed `23`：`response_latency = 3`
+- `valid_count = 3`
+- `null_count = 0`
+- `mean_latency = 3.0`
+
+对应文件：
+
+- [reports/imappo_stage4_eval10/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/intent_mutation_summary.json)
+- [reports/imappo_stage4_eval10/intent_mutation_seed_7.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/intent_mutation_seed_7.json)
+- [reports/imappo_stage4_eval10/intent_mutation_seed_11.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/intent_mutation_seed_11.json)
+- [reports/imappo_stage4_eval10/intent_mutation_seed_23.json](/home/cring/rl/epymarl/reports/imappo_stage4_eval10/intent_mutation_seed_23.json)
+
+这一点相比 Stage 3 是明显进步：
+
+- 3 个 seed 中不再出现 `null`
+- 响应延迟在 seed 间变得一致
+- 新指标更稳定，也更适合论文图表与表格展示
+
+
+## 26. Stage 4 Final-v1 结果
+
+在修正评估口径之后，我又跑了一轮更正式的 Stage 4 实验，配置为：
+
+- `8 UAV / 6 targets`
+- `150 episodes`
+- `3 seeds`
+- 每次评估 `10` episodes
+- crowded-scene 评估统一使用 dense-safety intent/mask 协议
+
+输出目录：
+
+- [reports/imappo_stage4_final_v1](/home/cring/rl/epymarl/reports/imappo_stage4_final_v1)
+
+### 26.1 结果汇总
+
+- I-MAPPO：
+  - `final_eval_collision_rate_mean = 0.2356`
+  - `final_easy_probe_collision_rate_mean = 0.2356`
+  - `final_mid_probe_collision_rate_mean = 0.3944`
+  - `final_hard_probe_collision_rate_mean = 0.5256`
+- MAPPO：
+  - `final_eval_collision_rate_mean = 0.3144`
+  - `final_easy_probe_collision_rate_mean = 0.3144`
+  - `final_mid_probe_collision_rate_mean = 0.4033`
+  - `final_hard_probe_collision_rate_mean = 0.6522`
+
+同时，I-MAPPO 在三档风险下的任务完成度也都略高于 MAPPO。
+
+对应文件：
+
+- [reports/imappo_stage4_final_v1/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_final_v1/imappo/summary.json)
+- [reports/imappo_stage4_final_v1/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_final_v1/mappo/summary.json)
+
+### 26.2 结果解释
+
+这是目前为止最清晰的一轮 Stage 4 结果：
+
+1. I-MAPPO 不仅在 hardest crowded tier 上优于 MAPPO，在常规场景和中等密度场景下也已经开始占优。
+2. 高密度 hard probe 的差距已经不再只是微弱优势：
+   - hard probe collision 从 `0.6522` 降到了 `0.5256`
+3. mutation 指标也已经稳定到可以比较干净地写进报告和表格。
+
+换句话说，Stage 4 的目标已经开始达到：
+
+- 更大 swarm 的确把任务复杂度抬高了
+- intent-conditioned policy 的评估协议已经和训练目标对齐
+- 在修正后的评估口径下，I-MAPPO 对 MAPPO 的安全性优势变得更明确
+
+### 26.3 Stage 4 Final Mutation
+
+基于 Stage 4 `final_v1` 的 checkpoint，mutation 结果为：
+
+- seed `7`：`3`
+- seed `11`：`3`
+- seed `23`：`3`
+- `mean_latency = 3.0`
+- `null_count = 0`
+
+对应文件：
+
+- [reports/imappo_stage4_final_v1/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_final_v1/intent_mutation_summary.json)
+
+### 26.4 下一步优化方向
+
+到这一步，下一轮优化目标已经可以收窄为：
+
+- 保持当前 Stage 4 dense-safety 评估协议不变
+- 继续把 hard-tier collision 压到 `0.50` 以下
+- 再把训练长度从 `150` 提高到 `500+` episodes，观察当前 Stage 4 优势能否稳定保持而不是再次塌缩
+
+
+## 27. Stage 4 Long-v1 结果
+
+为了测试 Stage 4 的优势在更长训练下是否还能保持，我又把同一套协议延长到了 `300` episodes：
+
+- `8 UAV / 6 targets`
+- `300 episodes`
+- `3 seeds`
+- 每次评估 `10` episodes
+- 继续保持 dense-safety probe 评估协议
+
+输出目录：
+
+- [reports/imappo_stage4_long_v1](/home/cring/rl/epymarl/reports/imappo_stage4_long_v1)
+
+### 27.1 结果汇总
+
+- I-MAPPO：
+  - `final_eval_collision_rate_mean = 0.2433`
+  - `final_mid_probe_collision_rate_mean = 0.3756`
+  - `final_hard_probe_collision_rate_mean = 0.5444`
+- MAPPO：
+  - `final_eval_collision_rate_mean = 0.1667`
+  - `final_mid_probe_collision_rate_mean = 0.3689`
+  - `final_hard_probe_collision_rate_mean = 0.5511`
+
+对应文件：
+
+- [reports/imappo_stage4_long_v1/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_long_v1/imappo/summary.json)
+- [reports/imappo_stage4_long_v1/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_long_v1/mappo/summary.json)
+
+### 27.2 结果解释
+
+这轮更长训练给出了比 `final_v1` 更细的图景：
+
+1. I-MAPPO 在 hardest crowded tier 上仍然保留了轻微优势。
+   - hard probe collision：`0.5444` vs `0.5511`
+2. 但随着训练继续拉长，这个优势又开始缩小。
+3. 这说明 Stage 4 的优势是真实存在的，但对更长训练时长还不够完全稳固。
+
+更合理的解释是：
+
+- 修正后的 dense-safety 评估协议是必要的
+- 更大的 swarm 确实能暴露 I-MAPPO 在高密度安全性上的优势
+- 但当前优化过程仍然允许 MAPPO 在长程训练中部分追上来
+
+因此下一轮工作的重点不应该只是继续做短程 pilot，而应该是：
+
+- 在保持当前评估协议不变的前提下
+- 想办法让 hard-tier 的优势在更长训练下也不塌缩
+
+### 27.3 Long-v1 Mutation
+
+基于 `long_v1` checkpoint 的 mutation 结果为：
+
+- seed `7`：`3`
+- seed `11`：`3`
+- seed `23`：`19`
+- `valid_count = 3`
+- `null_count = 0`
+- `mean_latency = 8.33`
+
+对应文件：
+
+- [reports/imappo_stage4_long_v1/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage4_long_v1/intent_mutation_summary.json)
+
+这说明：
+
+- Stage 4 的新 mutation 指标在更长训练下依然是稳健可计算的
+- 但 response consistency 在长训练条件下又出现了一定退化
+- 这与 `long_v1` 的主结论是一致的：
+  - 优势仍在
+  - 但稳定性还没有被完全控制住

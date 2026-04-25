@@ -224,6 +224,19 @@ reports/stage3_smoke/
 reports/stage3_both_smoke/
 reports/imappo_stage3_mid/**/*.pt
 reports/imappo_stage3/**/*.pt
+reports/imappo_stage4_smoke/
+reports/imappo_stage4/**/*.pt
+reports/imappo_stage4_pilot/**/*.pt
+reports/imappo_stage4_eval10/**/*.pt
+reports/imappo_stage4_final_v1/**/*.pt
+reports/imappo_stage4_long_v1/**/*.pt
+reports/imappo_stage4_pilot/
+reports/imappo_stage4_pilot_v2/
+reports/imappo_stage4_pilot_v2_multi/
+reports/imappo_stage4_pilot_v3/
+reports/imappo_stage4_pilot_v4/
+reports/imappo_stage4_mid_v2/
+reports/imappo_stage4_eval10_reprobe/
 
 # Local Codex/session files
 .codex

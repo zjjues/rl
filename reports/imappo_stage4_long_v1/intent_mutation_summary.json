@@ -1,0 +1,27 @@
+{
+  "items": [
+    {
+      "seed": 7,
+      "response_latency": 3,
+      "output": "reports/imappo_stage4_long_v1/intent_mutation_seed_7.json",
+      "trajectory_plot": "reports/imappo_stage4_long_v1/intent_mutation_seed_7.png"
+    },
+    {
+      "seed": 11,
+      "response_latency": 3,
+      "output": "reports/imappo_stage4_long_v1/intent_mutation_seed_11.json",
+      "trajectory_plot": "reports/imappo_stage4_long_v1/intent_mutation_seed_11.png"
+    },
+    {
+      "seed": 23,
+      "response_latency": 19,
+      "output": "reports/imappo_stage4_long_v1/intent_mutation_seed_23.json",
+      "trajectory_plot": "reports/imappo_stage4_long_v1/intent_mutation_seed_23.png"
+    }
+  ],
+  "valid_count": 3,
+  "null_count": 0,
+  "mean_latency": 8.333333333333334,
+  "min_latency": 3,
+  "max_latency": 19
+}

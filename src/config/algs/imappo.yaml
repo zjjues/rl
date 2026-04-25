@@ -28,9 +28,10 @@ rollout_length: 512
 max_episodes: 100
 
 intent_dim: 8
-imappo_n_agents: 4
-imappo_obs_dim: 18
-imappo_state_dim: 72
+imappo_n_agents: 8
+imappo_n_targets: 6
+imappo_obs_dim: 30
+imappo_state_dim: 240
 imappo_action_dim: 3
 
 action_low: -1.0

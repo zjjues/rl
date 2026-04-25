@@ -1,15 +1,36 @@
+from __future__ import annotations
+
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
+from typing import Optional
+
+
+def infer_neighbor_slots(n_agents: int, neighbor_slots: Optional[int] = None) -> int:
+    if neighbor_slots is not None:
+        return int(max(1, min(neighbor_slots, max(n_agents - 1, 1))))
+    return int(min(3, max(n_agents - 1, 1)))
+
+
+def infer_obs_dim(n_agents: int, neighbor_slots: Optional[int] = None) -> int:
+    # self position(3) + self velocity(3) + assigned target delta(3) + energy(1)
+    # + pending task(2) + K nearest neighbours * (relative position(3) + velocity(3))
+    return 12 + 6 * infer_neighbor_slots(n_agents, neighbor_slots)
+
+
+def infer_state_dim(
+    n_agents: int,
+    obs_dim: Optional[int] = None,
+    neighbor_slots: Optional[int] = None,
+) -> int:
+    resolved_obs_dim = int(obs_dim if obs_dim is not None else infer_obs_dim(n_agents, neighbor_slots))
+    return int(n_agents * resolved_obs_dim)
 
 
 class UAVSchedulingEnv(gym.Env):
     """
-    Lightweight continuous multi-agent UAV scheduling environment matching rl.md:
-    - 4 agents
-    - per-agent observation dim 18
-    - global state dim 72
-    - per-agent continuous action dim 3
+    Lightweight continuous multi-agent UAV scheduling environment.
+    Observation and global state sizes scale automatically with the swarm size.
     """
 
     metadata = {"render_modes": ["human"], "render_fps": 10}
@@ -17,12 +38,13 @@ class UAVSchedulingEnv(gym.Env):
     def __init__(
         self,
         n_agents=4,
-        obs_dim=18,
+        obs_dim=None,
         action_dim=3,
         max_episode_steps=100,
         world_size=5.0,
         dt=0.2,
         n_targets=None,
+        neighbor_slots=None,
         d_safe=0.1,
         reward_clip=2.0,
         spawn_region_scale=0.35,
@@ -33,9 +55,10 @@ class UAVSchedulingEnv(gym.Env):
     ):
         super().__init__()
         self.n_agents = n_agents
-        self.obs_dim = obs_dim
+        self.neighbor_slots = infer_neighbor_slots(n_agents, neighbor_slots)
+        self.obs_dim = int(obs_dim if obs_dim is not None else infer_obs_dim(n_agents, self.neighbor_slots))
         self.action_dim = action_dim
-        self.state_dim = n_agents * obs_dim
+        self.state_dim = infer_state_dim(n_agents, self.obs_dim, self.neighbor_slots)
         self.max_episode_steps = max_episode_steps
         self.world_size = world_size
         self.dt = dt
@@ -256,12 +279,12 @@ class UAVSchedulingEnv(gym.Env):
         pairwise_dist = self._pairwise_distances(self.positions)
         for i in range(self.n_agents):
             rel_target = self.targets[i] - self.positions[i]
-            nearest_indices = [j for j in np.argsort(pairwise_dist[i]) if j != i][:2]
+            nearest_indices = [j for j in np.argsort(pairwise_dist[i]) if j != i][: self.neighbor_slots]
             nearest_feats = []
             for j in nearest_indices:
                 nearest_feats.extend((self.positions[j] - self.positions[i]).tolist())
                 nearest_feats.extend(self.velocities[j].tolist())
-            while len(nearest_feats) < 12:
+            while len(nearest_feats) < 6 * self.neighbor_slots:
                 nearest_feats.append(0.0)
 
             obs_i = np.concatenate(
@@ -271,7 +294,7 @@ class UAVSchedulingEnv(gym.Env):
                     rel_target,
                     self.energy[i],
                     self.pending_tasks[i],
-                    np.asarray(nearest_feats[:6], dtype=np.float32),
+                    np.asarray(nearest_feats, dtype=np.float32),
                 ]
             ).astype(np.float32)
             obs.append(obs_i[: self.obs_dim])
