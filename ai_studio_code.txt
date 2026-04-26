@@ -1,0 +1,48 @@
+# Stage 5: Final Push - Intent-Sensitive Environment and Publication-Ready Plotting
+
+The Stage 4 (8 UAVs, 6 Targets) experiments successfully proved that I-MAPPO crushes MAPPO in the early learning phase and achieves stable 3-step zero-shot intent mutation. However, under long-run training (300 episodes), MAPPO manages to "memorize" basic obstacle avoidance and catches up in the hard-tier collision metric. 
+
+To permanently prove the superiority of I-MAPPO's Cross-Attention Critic and Action Masking, we must introduce a **Dynamic Tactical Conflict** in the environment that standard MAPPO cannot memorize. Furthermore, we need to upgrade the plotting script to generate **publication-ready, academic-style figures**.
+
+Please update the codebase (`uav_scheduling_env.py` and `imappo_experiments.py`) to execute the following 2 tasks. **Do NOT break the existing continuous action PPO mechanics or the 8-UAV scaling.**
+
+## Task 1: Introduce Intent-Sensitive Lethal Penalty in Environment
+Standard MAPPO catches up because avoiding teammates is a static physical rule it can memorize. We need to introduce a dynamic rule tied to the Intent vector `I`.
+Please update the `reward()` function in `uav_scheduling_env.py`:
+1. **Define a Radar Threat Zone:** Assign a "Radar Threat Zone" (e.g., radius `R_threat = 0.3`) to a subset of targets (or fixed points in the map).
+2. **Intent-Sensitive Logic:** 
+   - Use the first dimension of the intent vector `I[0]` as the **Tactical Posture Flag** (e.g., `I[0] > 0.5` means "Aggressive/Attack", `I[0] < 0.5` means "Stealth/Evade").
+   - If a UAV enters the `R_threat` zone while `I[0] < 0.5` (Stealth mode), apply a **massive penalty** (e.g., `reward -= 5.0`) to simulate being shot down. 
+   - If a UAV enters the zone while `I[0] > 0.5` (Attack mode), apply a normal task progress reward.
+   - For standard MAPPO (which runs with a fixed/dummy intent vector in our baseline setup), it will inevitably wander into the radar zone and get destroyed during Stealth phases, permanently preventing its reward curve from catching up to I-MAPPO.
+
+## Task 2: Publication-Ready Academic Plotting
+The generated `.png` files must now be formatted for a top-tier academic journal (e.g., IEEE Transactions style). Please rewrite the matplotlib plotting functions in `imappo_experiments.py` with the following strict requirements:
+
+**General Matplotlib Settings:**
+- Use a clean, academic style: `plt.style.use('seaborn-v0_8-whitegrid')` (or similar clean grid).
+- Font size: Titles (14pt), Axis Labels (12pt), Legends (10pt). Use serif fonts if possible (e.g., Times New Roman).
+- All line plots must include a shaded variance/std area (using `fill_between`) if multiple seeds are plotted.
+- Colors: Use distinct, high-contrast colors (e.g., I-MAPPO = Solid Navy Blue `#003366`, MAPPO = Dashed Crimson Red `#990000`).
+
+**Figure 1: Training Convergence Curve (Line Plot)**
+- **X-axis:** Training Episodes.
+- **Y-axis:** Episode Return (`episode_return`).
+- **Format:** Line plot with shaded variance. I-MAPPO must clearly show a faster rise and a higher asymptote.
+
+**Figure 2: Early-Stage Exploration Safety (Line Plot)**
+- **X-axis:** Training Episodes (Zoomed into the first 100-200 episodes).
+- **Y-axis:** Collision & Boundary Violation Rate (`episode_collision_rate`).
+- **Format:** Line plot. This must show MAPPO starting with massive collisions while I-MAPPO is suppressed safely near zero.
+
+**Figure 3: Multi-Tier Risk Robustness (Grouped Bar Chart)**
+- **X-axis:** Risk Tiers (`Loose`, `Medium`, `Dense`).
+- **Y-axis:** Final Probe Collision Rate.
+- **Format:** Grouped bar chart (side-by-side bars for I-MAPPO and MAPPO). Add error bars (standard deviation) on top of the bars.
+
+**Figure 4: Zero-Shot Intent Mutation Latency (Bar Chart)**
+- **X-axis:** Seed Number (e.g., Seed 7, 11, 23).
+- **Y-axis:** Response Latency (Steps).
+- **Format:** Bar chart showing the latency values (e.g., 3, 3, 3) from `test_intent_mutation.py` for I-MAPPO. Add data labels above the bars.
+
+Please provide the exact code modifications for the new `reward` logic in `uav_scheduling_env.py` and the completely revamped plotting functions in `imappo_experiments.py` (and any necessary updates to `test_intent_mutation.py` to plot Figure 4).
