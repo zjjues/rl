@@ -332,6 +332,43 @@ PYTHONPATH=src python src/test_intent_mutation.py \
 
 该脚本会在第 `approach_steps` 步将 intent 从 `[1, 0, 0, ...]` 切换为 `[0, 1, 0, ...]`，并保存 UAV 轨迹、速度和 `response_latency`。
 
+如果需要运行修正后的 Stage 5 协议版本，可以使用：
+
+```sh
+MPLCONFIGDIR=/tmp/matplotlib PYTHONPATH=src python src/imappo_experiments.py \
+  --algorithm both \
+  --episodes 300 \
+  --steps 50 \
+  --rollout 128 \
+  --batch-size 64 \
+  --eval-interval 25 \
+  --eval-episodes 5 \
+  --save-every 100 \
+  --seeds 7 11 23 \
+  --n-agents 8 \
+  --n-targets 6 \
+  --output-dir reports/imappo_stage5_v3
+```
+
+这一路径对应当前修正后的 Stage 5 规则：
+
+- tactical posture 由环境侧外生协议驱动，而不是由 policy intent 直接决定
+- 训练阶段按 episode 在 `attack` / `stealth` 间切换
+- `standard` 评估使用 `attack`
+- `dense` probe 评估使用 `stealth`
+- threat penalty 默认参与最终 `reward_clip`
+
+对应的 mutation 评估可以在训练完成后运行：
+
+```sh
+PYTHONPATH=src python src/test_intent_mutation.py \
+  --checkpoint reports/imappo_stage5_v3/imappo/seed_7/checkpoint_latest.pt \
+  --output reports/imappo_stage5_v3/comparison/mutation_seed7.json \
+  --total-steps 50 \
+  --approach-steps 30 \
+  --seed 7
+```
+
 ### 当前稳定化实现要点
 
 围绕 `ai_studio_code.md` 和后续持续优化，当前实现已包含：

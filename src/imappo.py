@@ -350,7 +350,10 @@ class IMAPPO:
             self.config.entropy_coef_end - self.config.entropy_coef
         )
 
-    def sample_episode_intent_and_mask(self) -> Tuple[Tensor, Tensor]:
+    def sample_episode_intent_and_mask(
+        self,
+        tactical_posture: Optional[str] = None,
+    ) -> Tuple[Tensor, Tensor]:
         if self.config.algorithm == "mappo":
             intent = torch.zeros(self.config.intent_dim, device=self.device)
             mask = torch.ones(
@@ -360,7 +363,12 @@ class IMAPPO:
         # Use a small bank of structured intents instead of raw Gaussian noise.
         # This keeps the conditioning signal stable enough to be learnable in larger swarms.
         intent = torch.zeros(self.config.intent_dim, device=self.device)
-        intent_mode = int(np.random.randint(0, min(3, self.config.intent_dim)))
+        if tactical_posture == "attack":
+            intent_mode = 0
+        elif tactical_posture == "stealth":
+            intent_mode = min(1, self.config.intent_dim - 1)
+        else:
+            intent_mode = int(np.random.randint(0, min(3, self.config.intent_dim)))
         intent[intent_mode] = 1.0
         if self.config.use_action_mask:
             mask = torch.ones(
@@ -741,6 +749,33 @@ def env_reset(env):
     return reset_out, {}
 
 
+def set_env_intent(env, intent: Tensor | np.ndarray) -> None:
+    base_env = getattr(env, "unwrapped", env)
+    if not hasattr(base_env, "set_intent"):
+        return
+    if isinstance(intent, torch.Tensor):
+        intent_array = intent.detach().cpu().numpy()
+    else:
+        intent_array = np.asarray(intent, dtype=np.float32)
+    base_env.set_intent(intent_array)
+
+
+def set_env_tactical_posture(env, posture: str | float) -> None:
+    base_env = getattr(env, "unwrapped", env)
+    if hasattr(base_env, "set_tactical_posture"):
+        base_env.set_tactical_posture(posture)
+
+
+def training_tactical_posture(episode: int) -> str:
+    # Alternate externally between attack and stealth so both algorithms
+    # experience the same scenario schedule during training.
+    return "attack" if episode % 2 == 0 else "stealth"
+
+
+def evaluation_tactical_posture(mode: str) -> str:
+    return "stealth" if mode == "dense" else "attack"
+
+
 def env_step(env, agent_order: List[str], actions: np.ndarray):
     try:
         step_out = env.step({agent_id: actions[i] for i, agent_id in enumerate(agent_order)})
@@ -792,6 +827,7 @@ def summarise_step_info(infos, agent_order: List[str]) -> Dict[str, float]:
         "reward_collision": 0.0,
         "reward_safety": 0.0,
         "reward_task": 0.0,
+        "reward_threat": 0.0,
     }
     if not isinstance(infos, dict):
         return summary
@@ -867,6 +903,8 @@ def evaluate_imappo(
         agent_order = infer_agent_order(env, obs_data, config)
         obs_array = normalise_obs(agent_order, obs_data)
         intent, episode_mask = algo.evaluation_intent_and_mask(mode=evaluation_mode)
+        set_env_intent(env, intent)
+        set_env_tactical_posture(env, evaluation_tactical_posture(evaluation_mode))
 
         ep_return = 0.0
         ep_collisions = 0.0
@@ -932,7 +970,12 @@ def train_imappo(
         agent_order = infer_agent_order(env, obs_data, cfg)
         obs_array = normalise_obs(agent_order, obs_data)
         state_array = build_global_state(obs_array, cfg)
-        intent, episode_mask = algo.sample_episode_intent_and_mask()
+        tactical_posture = training_tactical_posture(episode)
+        intent, episode_mask = algo.sample_episode_intent_and_mask(
+            tactical_posture=tactical_posture
+        )
+        set_env_intent(env, intent)
+        set_env_tactical_posture(env, tactical_posture)
 
         episode_return = 0.0
         episode_collisions = 0.0
@@ -944,6 +987,7 @@ def train_imappo(
         episode_reward_collision = 0.0
         episode_reward_safety = 0.0
         episode_reward_task = 0.0
+        episode_reward_threat = 0.0
         episode_steps = 0
         for _ in range(cfg.max_steps):
             obs_tensor = torch.tensor(obs_array, dtype=torch.float32, device=algo.device)
@@ -992,6 +1036,7 @@ def train_imappo(
             episode_reward_collision += step_info["reward_collision"]
             episode_reward_safety += step_info["reward_safety"]
             episode_reward_task += step_info["reward_task"]
+            episode_reward_threat += step_info["reward_threat"]
             episode_steps += 1
             obs_array = next_obs_array
             state_array = next_state_array
@@ -1040,6 +1085,7 @@ def train_imappo(
             "episode_reward_collision": episode_reward_collision,
             "episode_reward_safety": episode_reward_safety,
             "episode_reward_task": episode_reward_task,
+            "episode_reward_threat": episode_reward_threat,
             "algorithm": cfg.algorithm,
         }
         logs.append(episode_log)
@@ -1060,6 +1106,7 @@ def train_imappo(
             logger.log_stat("episode_reward_collision", episode_reward_collision, episode)
             logger.log_stat("episode_reward_safety", episode_reward_safety, episode)
             logger.log_stat("episode_reward_task", episode_reward_task, episode)
+            logger.log_stat("episode_reward_threat", episode_reward_threat, episode)
             logger.log_stat("curriculum_spawn_scale", getattr(env.unwrapped, "spawn_region_scale", 0.0), episode)
             logger.log_stat("curriculum_separation_scale", getattr(env.unwrapped, "spawn_separation_scale", 0.0), episode)
             logger.log_stat("hard_train_episode", float(cfg._use_hard_train_env), episode)

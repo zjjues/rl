@@ -237,6 +237,9 @@ reports/imappo_stage4_pilot_v3/
 reports/imappo_stage4_pilot_v4/
 reports/imappo_stage4_mid_v2/
 reports/imappo_stage4_eval10_reprobe/
+reports/imappo_stage5/**/*.pt
+reports/imappo_stage5_v2/**/*.pt
+reports/imappo_stage5_v3/**/*.pt
 
 # Local Codex/session files
 .codex

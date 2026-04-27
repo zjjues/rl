@@ -52,6 +52,11 @@ class UAVSchedulingEnv(gym.Env):
         task_progress_rate=0.03,
         task_reward_coef=1.20,
         safety_reward_coef=1.0,
+        threat_zone_radius=0.45,
+        threat_zone_target_count=2,
+        stealth_threat_penalty=6.0,
+        intent_threshold=0.5,
+        threat_penalty_respects_clip=True,
     ):
         super().__init__()
         self.n_agents = n_agents
@@ -67,6 +72,11 @@ class UAVSchedulingEnv(gym.Env):
         self.task_progress_rate = task_progress_rate
         self.task_reward_coef = task_reward_coef
         self.safety_reward_coef = safety_reward_coef
+        self.threat_zone_radius = float(threat_zone_radius)
+        self.threat_zone_target_count = int(max(1, threat_zone_target_count))
+        self.stealth_threat_penalty = float(stealth_threat_penalty)
+        self.intent_threshold = float(intent_threshold)
+        self.threat_penalty_respects_clip = bool(threat_penalty_respects_clip)
 
         self.agent_names = [f"uav_{i}" for i in range(self.n_agents)]
         self.action_space = spaces.Tuple(
@@ -107,6 +117,20 @@ class UAVSchedulingEnv(gym.Env):
         self.np_random = np.random.default_rng()
         self.collision_count = 0
         self.last_reward_terms = {}
+        self.current_intent = np.zeros((1,), dtype=np.float32)
+        self.current_tactical_posture = 1.0
+        self.threat_zone_centers = np.zeros((0, 3), dtype=np.float32)
+
+    def set_intent(self, intent) -> None:
+        intent_array = np.asarray(intent, dtype=np.float32).reshape(-1)
+        self.current_intent = intent_array
+
+    def set_tactical_posture(self, posture) -> None:
+        if isinstance(posture, str):
+            posture_value = 1.0 if posture.lower() == "attack" else 0.0
+        else:
+            posture_value = float(posture)
+        self.current_tactical_posture = posture_value
 
     def reset(self, seed=None, options=None):
         if seed is not None:
@@ -122,6 +146,10 @@ class UAVSchedulingEnv(gym.Env):
         ).astype(np.float32)
         target_indices = np.arange(self.n_agents) % self.n_targets
         self.targets = target_pool[target_indices].astype(np.float32)
+        threat_zone_count = min(self.threat_zone_target_count, len(target_pool))
+        # Place radar zones on the approach corridor between the spawn basin
+        # and a subset of targets so stealth-mode task pursuit becomes risky.
+        self.threat_zone_centers = (0.5 * target_pool[:threat_zone_count]).astype(np.float32)
         self.energy = np.ones((self.n_agents, 1), dtype=np.float32)
         self.pending_tasks = self.np_random.uniform(
             low=0.0,
@@ -136,6 +164,8 @@ class UAVSchedulingEnv(gym.Env):
         ).astype(np.float32)
         self.collision_count = 0
         self.last_reward_terms = {}
+        self.current_intent = np.zeros((1,), dtype=np.float32)
+        self.current_tactical_posture = 1.0
         obs = self._get_obs()
         info = {agent: {} for agent in self.agent_names}
         return obs, info
@@ -197,11 +227,15 @@ class UAVSchedulingEnv(gym.Env):
                 "collision": collision_occurred,
                 "collision_count": int(self.collision_count),
                 "reward_env": float(rewards[i]),
+                "reward_env_raw": float(self.last_reward_terms["raw_total"][i]),
                 "reward_dist": float(self.last_reward_terms["dist"][i]),
                 "reward_energy": float(self.last_reward_terms["energy"][i]),
                 "reward_collision": float(self.last_reward_terms["collision"][i]),
                 "reward_safety": float(self.last_reward_terms["safety"][i]),
                 "reward_task": float(self.last_reward_terms["task"][i]),
+                "reward_threat": float(self.last_reward_terms["threat"][i]),
+                "threat_zone_violation": bool(self.last_reward_terms["threat_violation"][i] > 0.0),
+                "tactical_posture_flag": float(self.current_tactical_posture),
             }
             for i, agent in enumerate(self.agent_names)
         }
@@ -231,21 +265,39 @@ class UAVSchedulingEnv(gym.Env):
         collision_term = -0.35 * np.clip(collision_penalty, 0.0, 1.0)
         safety_term = -self.safety_reward_coef * proximity_penalty
         task_term = self.task_reward_coef * task_progress
+        posture_flag = float(self.current_tactical_posture)
+        threat_violation = np.zeros((self.n_agents,), dtype=np.float32)
+        threat_term = np.zeros((self.n_agents,), dtype=np.float32)
+        if posture_flag < self.intent_threshold and self.threat_zone_centers.size > 0:
+            threat_distances = np.linalg.norm(
+                self.positions[:, None, :] - self.threat_zone_centers[None, :, :],
+                axis=-1,
+            )
+            threat_violation = (threat_distances <= self.threat_zone_radius).any(axis=1).astype(np.float32)
+            threat_term = -self.stealth_threat_penalty * threat_violation
 
-        rewards = (
+        base_rewards = (
             dist_term
             + energy_term
             + collision_term
             + safety_term
             + task_term
         )
-        clipped_rewards = np.clip(rewards, -self.reward_clip, self.reward_clip).astype(np.float32)
+        total_rewards = base_rewards + threat_term
+        if self.threat_penalty_respects_clip:
+            clipped_rewards = np.clip(total_rewards, -self.reward_clip, self.reward_clip)
+        else:
+            clipped_rewards = np.clip(base_rewards, -self.reward_clip, self.reward_clip) + threat_term
+        clipped_rewards = clipped_rewards.astype(np.float32)
         self.last_reward_terms = {
             "dist": dist_term.astype(np.float32),
             "energy": energy_term.astype(np.float32),
             "collision": collision_term.astype(np.float32),
             "safety": safety_term.astype(np.float32),
             "task": task_term.astype(np.float32),
+            "threat": threat_term.astype(np.float32),
+            "threat_violation": threat_violation.astype(np.float32),
+            "raw_total": total_rewards.astype(np.float32),
         }
         return clipped_rewards
 

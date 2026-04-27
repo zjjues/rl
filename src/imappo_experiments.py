@@ -34,6 +34,13 @@ def parse_args():
         type=Path,
         default=Path("reports/imappo_stage4"),
     )
+    parser.add_argument(
+        "--mutation-results",
+        type=Path,
+        nargs="*",
+        default=[],
+        help="Optional mutation result JSON files from test_intent_mutation.py for Figure 4.",
+    )
     return parser.parse_args()
 
 
@@ -128,9 +135,11 @@ def collect_episode_series(logs: List[Dict[str, float]], key: str) -> Tuple[np.n
     return np.asarray(episodes, dtype=np.int32), np.asarray(values, dtype=np.float32)
 
 
-def aggregate_seed_curves(curves: List[Tuple[np.ndarray, np.ndarray]]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def aggregate_seed_curves(
+    curves: List[Tuple[np.ndarray, np.ndarray]]
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, int]:
     if not curves:
-        return np.asarray([]), np.asarray([]), np.asarray([])
+        return np.asarray([]), np.asarray([]), np.asarray([]), 0
 
     common_episodes = sorted(set.intersection(*(set(ep.tolist()) for ep, _ in curves)))
     common_episodes = np.asarray(common_episodes, dtype=np.int32)
@@ -139,30 +148,176 @@ def aggregate_seed_curves(curves: List[Tuple[np.ndarray, np.ndarray]]) -> Tuple[
         mapping = {int(ep): float(val) for ep, val in zip(episodes, values)}
         stacked.append([mapping[int(ep)] for ep in common_episodes])
     data = np.asarray(stacked, dtype=np.float32)
-    return common_episodes, data.mean(axis=0), data.std(axis=0)
+    return common_episodes, data.mean(axis=0), data.std(axis=0), int(data.shape[0])
 
 
-def save_plot(
+def apply_publication_style() -> None:
+    plt.style.use("seaborn-v0_8-whitegrid")
+    plt.rcParams.update(
+        {
+            "font.family": "serif",
+            "font.serif": ["Times New Roman", "DejaVu Serif", "serif"],
+            "axes.titlesize": 14,
+            "axes.labelsize": 12,
+            "legend.fontsize": 10,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "axes.titleweight": "semibold",
+            "figure.dpi": 180,
+            "savefig.dpi": 240,
+        }
+    )
+
+
+def algorithm_display_name(algorithm: str) -> str:
+    return "I-MAPPO" if algorithm == "imappo" else "MAPPO"
+
+
+def algorithm_style(algorithm: str) -> Dict[str, object]:
+    if algorithm == "imappo":
+        return {"color": "#003366", "linestyle": "-", "label": "I-MAPPO"}
+    return {"color": "#990000", "linestyle": "--", "label": "MAPPO"}
+
+
+def save_publication_line_plot(
     output_path: Path,
     title: str,
     xlabel: str,
     ylabel: str,
-    series: List[Tuple[str, np.ndarray, np.ndarray, np.ndarray]],
-):
-    plt.figure(figsize=(8.5, 5.2))
-    for label, episodes, mean, std in series:
+    series: List[Tuple[str, np.ndarray, np.ndarray, np.ndarray, int]],
+    max_episode: int | None = None,
+) -> None:
+    apply_publication_style()
+    fig, ax = plt.subplots(figsize=(8.6, 5.2))
+    for algorithm, episodes, mean, std, seed_count in series:
         if episodes.size == 0:
             continue
-        plt.plot(episodes, mean, linewidth=2.0, label=label)
-        plt.fill_between(episodes, mean - std, mean + std, alpha=0.18)
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.grid(alpha=0.25, linestyle="--")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=180)
-    plt.close()
+        style = algorithm_style(algorithm)
+        x = episodes
+        y = mean
+        spread = std
+        if max_episode is not None:
+            mask = episodes <= max_episode
+            x = episodes[mask]
+            y = mean[mask]
+            spread = std[mask]
+        if x.size == 0:
+            continue
+        ax.plot(
+            x,
+            y,
+            linewidth=2.3,
+            color=style["color"],
+            linestyle=style["linestyle"],
+            label=style["label"],
+        )
+        if seed_count > 1:
+            ax.fill_between(x, y - spread, y + spread, color=style["color"], alpha=0.16)
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.grid(alpha=0.25, linestyle="--")
+    ax.legend(frameon=True)
+    fig.tight_layout()
+    fig.savefig(output_path)
+    plt.close(fig)
+
+
+def save_publication_grouped_bar(
+    output_path: Path,
+    title: str,
+    xlabel: str,
+    ylabel: str,
+    categories: List[str],
+    series: List[Tuple[str, np.ndarray, np.ndarray]],
+) -> None:
+    apply_publication_style()
+    fig, ax = plt.subplots(figsize=(8.2, 5.0))
+    x = np.arange(len(categories), dtype=np.float32)
+    width = 0.34
+    offsets = np.linspace(-(len(series) - 1) * width / 2.0, (len(series) - 1) * width / 2.0, len(series))
+
+    for idx, (algorithm, means, stds) in enumerate(series):
+        style = algorithm_style(algorithm)
+        ax.bar(
+            x + offsets[idx],
+            means,
+            yerr=stds,
+            width=width,
+            color=style["color"],
+            alpha=0.9,
+            capsize=4,
+            label=style["label"],
+        )
+
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_xticks(x)
+    ax.set_xticklabels(categories)
+    ax.grid(axis="y", alpha=0.25, linestyle="--")
+    ax.legend(frameon=True)
+    fig.tight_layout()
+    fig.savefig(output_path)
+    plt.close(fig)
+
+
+def save_publication_latency_bar(output_path: Path, mutation_results: List[Dict[str, object]]) -> None:
+    if not mutation_results:
+        return
+
+    apply_publication_style()
+    ordered = sorted(mutation_results, key=lambda item: int(item["seed"]))
+    labels = [f"Seed {int(item['seed'])}" for item in ordered]
+    numeric_latencies = []
+    for item in ordered:
+        latency = item.get("response_latency")
+        numeric_latencies.append(np.nan if latency is None else float(latency))
+    latencies = np.asarray(
+        numeric_latencies,
+        dtype=np.float32,
+    )
+
+    fig, ax = plt.subplots(figsize=(8.0, 5.0))
+    bars = ax.bar(labels, latencies, width=0.62, color="#003366", alpha=0.92)
+    ax.set_title("Figure 4. Zero-Shot Intent Mutation Latency")
+    ax.set_xlabel("Seed Number")
+    ax.set_ylabel("Response Latency (Steps)")
+    finite_latencies = latencies[np.isfinite(latencies)]
+    ymax = float(finite_latencies.max()) if finite_latencies.size > 0 else 1.0
+    ax.set_ylim(0.0, max(ymax + 1.0, 1.0))
+    ax.grid(axis="y", alpha=0.25, linestyle="--")
+
+    for bar, latency in zip(bars, latencies):
+        if np.isnan(latency):
+            continue
+        ax.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            bar.get_height() + 0.05,
+            f"{int(latency)}",
+            ha="center",
+            va="bottom",
+            fontsize=10,
+        )
+
+    fig.tight_layout()
+    fig.savefig(output_path)
+    plt.close(fig)
+
+
+def load_mutation_results(paths: List[Path]) -> List[Dict[str, object]]:
+    results = []
+    for path in paths:
+        with open(path, "r", encoding="utf-8") as f:
+            item = json.load(f)
+        results.append(
+            {
+                "seed": int(item["seed"]),
+                "response_latency": item.get("response_latency"),
+                "path": str(path),
+            }
+        )
+    return results
 
 
 def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
@@ -265,10 +420,16 @@ def save_algorithm_plots(output_dir: Path, algorithm: str, seed_results: List[Di
     }
 
     for filename, (metric, title, xlabel, ylabel) in plot_specs.items():
-        episodes, mean, std = aggregate_seed_curves(
+        episodes, mean, std, seed_count = aggregate_seed_curves(
             [collect_episode_series(seed_result["logs"], metric) for seed_result in seed_results]
         )
-        save_plot(output_dir / algorithm / filename, title, xlabel, ylabel, [(metric, episodes, mean, std)])
+        save_publication_line_plot(
+            output_dir / algorithm / filename,
+            title,
+            xlabel,
+            ylabel,
+            [(algorithm, episodes, mean, std, seed_count)],
+        )
 
 
 def save_risk_tier_plots(output_dir: Path, algorithm: str, seed_results: List[Dict[str, object]]) -> None:
@@ -286,49 +447,87 @@ def save_risk_tier_plots(output_dir: Path, algorithm: str, seed_results: List[Di
         risk_collision.append((risk_name, float(np.mean(collision_values)), float(np.std(collision_values))))
         risk_task.append((risk_name, float(np.mean(task_values)), float(np.std(task_values))))
 
-    plt.figure(figsize=(7.8, 5.0))
-    x = np.arange(len(risk_names))
     means = np.asarray([item[1] for item in risk_collision], dtype=np.float32)
     stds = np.asarray([item[2] for item in risk_collision], dtype=np.float32)
-    plt.bar(x, means, yerr=stds, width=0.58, color=["#4C78A8", "#F58518", "#E45756"], alpha=0.88)
-    plt.xticks(x, risk_names)
-    plt.ylabel("Collision Rate")
-    plt.title("Collision Rate Across Risk Tiers")
-    plt.grid(axis="y", alpha=0.25, linestyle="--")
-    plt.tight_layout()
-    plt.savefig(output_dir / algorithm / "risk_tier_collision_bar.png", dpi=180)
-    plt.close()
+    save_publication_grouped_bar(
+        output_dir / algorithm / "risk_tier_collision_bar.png",
+        f"{algorithm_display_name(algorithm)} Risk-Tier Collision Robustness",
+        "Risk Tier",
+        "Collision Rate",
+        risk_names,
+        [(algorithm, means, stds)],
+    )
 
-    plt.figure(figsize=(7.8, 5.0))
     means = np.asarray([item[1] for item in risk_task], dtype=np.float32)
     stds = np.asarray([item[2] for item in risk_task], dtype=np.float32)
-    plt.bar(x, means, yerr=stds, width=0.58, color=["#72B7B2", "#54A24B", "#EECA3B"], alpha=0.88)
-    plt.xticks(x, risk_names)
-    plt.ylabel("Task Completion")
-    plt.title("Task Completion Across Risk Tiers")
-    plt.grid(axis="y", alpha=0.25, linestyle="--")
-    plt.tight_layout()
-    plt.savefig(output_dir / algorithm / "risk_tier_task_bar.png", dpi=180)
-    plt.close()
+    save_publication_grouped_bar(
+        output_dir / algorithm / "risk_tier_task_bar.png",
+        f"{algorithm_display_name(algorithm)} Risk-Tier Task Completion",
+        "Risk Tier",
+        "Task Completion",
+        risk_names,
+        [(algorithm, means, stds)],
+    )
 
 
 def save_comparison_plots(output_dir: Path, all_results: Dict[str, List[Dict[str, object]]]) -> None:
     compare_dir = output_dir / "comparison"
     compare_dir.mkdir(parents=True, exist_ok=True)
-    specs = {
-        "compare_return.png": ("episode_return", "I-MAPPO vs MAPPO Training Return", "Episode Return"),
-        "compare_eval_collision.png": ("eval_collision_rate", "I-MAPPO vs MAPPO Eval Collision", "Collision Rate"),
-        "compare_probe_collision.png": ("probe_collision_rate", "I-MAPPO vs MAPPO Dense Collision", "Collision Rate"),
-        "compare_task_completion.png": ("episode_task_completion", "I-MAPPO vs MAPPO Task Completion", "Task Completion"),
-    }
-    for filename, (metric, title, ylabel) in specs.items():
+    figure_specs = [
+        (
+            "figure1_training_convergence.png",
+            "episode_return",
+            "Figure 1. Training Convergence Curve",
+            "Training Episodes",
+            "Episode Return",
+            None,
+        ),
+        (
+            "figure2_early_stage_safety.png",
+            "episode_collision_rate",
+            "Figure 2. Early-Stage Exploration Safety",
+            "Training Episodes",
+            "Collision & Boundary Violation Rate",
+            200,
+        ),
+    ]
+
+    for filename, metric, title, xlabel, ylabel, max_episode in figure_specs:
         series = []
         for algorithm, seed_results in all_results.items():
-            episodes, mean, std = aggregate_seed_curves(
+            episodes, mean, std, seed_count = aggregate_seed_curves(
                 [collect_episode_series(seed_result["logs"], metric) for seed_result in seed_results]
             )
-            series.append((algorithm, episodes, mean, std))
-        save_plot(compare_dir / filename, title, "Episode", ylabel, series)
+            series.append((algorithm, episodes, mean, std, seed_count))
+        save_publication_line_plot(compare_dir / filename, title, xlabel, ylabel, series, max_episode=max_episode)
+
+    risk_names = ["Loose", "Medium", "Dense"]
+    grouped_series = []
+    for algorithm, seed_results in all_results.items():
+        tier_means = []
+        tier_stds = []
+        for tier_name in ["easy", "mid", "hard"]:
+            collision_values = [
+                float(seed_result["tier_metrics"][tier_name][f"{tier_name}_probe_collision_rate"])
+                for seed_result in seed_results
+            ]
+            tier_means.append(float(np.mean(collision_values)))
+            tier_stds.append(float(np.std(collision_values)))
+        grouped_series.append(
+            (
+                algorithm,
+                np.asarray(tier_means, dtype=np.float32),
+                np.asarray(tier_stds, dtype=np.float32),
+            )
+        )
+    save_publication_grouped_bar(
+        compare_dir / "figure3_risk_robustness.png",
+        "Figure 3. Multi-Tier Risk Robustness",
+        "Risk Tiers",
+        "Final Probe Collision Rate",
+        risk_names,
+        grouped_series,
+    )
 
 
 def write_summary(output_dir: Path, algorithm: str, args, seed_results: List[Dict[str, object]]) -> Dict[str, object]:
@@ -385,6 +584,13 @@ def main():
 
     if len(all_results) > 1:
         save_comparison_plots(output_dir, all_results)
+    if args.mutation_results:
+        compare_dir = output_dir / "comparison"
+        compare_dir.mkdir(parents=True, exist_ok=True)
+        save_publication_latency_bar(
+            compare_dir / "figure4_intent_mutation_latency.png",
+            load_mutation_results(args.mutation_results),
+        )
 
     print(json.dumps(summaries, indent=2, ensure_ascii=False))
 

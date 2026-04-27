@@ -1452,3 +1452,231 @@ Interpretation:
 - the relaxed Stage-4 metric remains robust in the longer run
 - however, response consistency weakens again for one seed under longer training
 - this mirrors the main optimization conclusion from `long_v1`: the advantage persists, but its stability is not yet fully controlled
+
+
+## 28. Stage-5 Audit Note
+
+Stage 5 introduced two substantial code changes:
+
+- an intent-sensitive radar-threat penalty in [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:55)
+- publication-style plotting in [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:34)
+
+The corresponding artifact directories are:
+
+- [reports/imappo_stage5](/home/cring/rl/epymarl/reports/imappo_stage5)
+- [reports/imappo_stage5_v2](/home/cring/rl/epymarl/reports/imappo_stage5_v2)
+
+The second run, `stage5_v2`, should be treated as the more relevant one for audit because it was generated after the environment-side threat logic was updated.
+
+### 28.1 Raw Stage-5-v2 Summary
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.1947`
+  - `final_mid_probe_collision_rate_mean = 0.2760`
+  - `final_hard_probe_collision_rate_mean = 0.4307`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.2053`
+  - `final_mid_probe_collision_rate_mean = 0.3587`
+  - `final_hard_probe_collision_rate_mean = 0.3573`
+
+Files:
+
+- [reports/imappo_stage5_v2/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage5_v2/imappo/summary.json)
+- [reports/imappo_stage5_v2/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage5_v2/mappo/summary.json)
+
+Mutation latency in the Stage-5-v2 comparison outputs remained clean:
+
+- seed `7`: `3`
+- seed `11`: `3`
+- seed `23`: `3`
+
+Files:
+
+- [reports/imappo_stage5_v2/comparison/mutation_seed7.json](/home/cring/rl/epymarl/reports/imappo_stage5_v2/comparison/mutation_seed7.json)
+- [reports/imappo_stage5_v2/comparison/mutation_seed11.json](/home/cring/rl/epymarl/reports/imappo_stage5_v2/comparison/mutation_seed11.json)
+- [reports/imappo_stage5_v2/comparison/mutation_seed23.json](/home/cring/rl/epymarl/reports/imappo_stage5_v2/comparison/mutation_seed23.json)
+
+### 28.2 Audit Findings
+
+The Stage-5 result should not yet be presented as a final benchmark-grade conclusion.
+
+Reason 1:
+the environment reward rule is now coupled directly to the algorithm-provided intent vector.
+
+- training and evaluation call `set_env_intent(...)` from [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:744)
+- the environment then uses `current_intent[0]` to decide whether the radar-threat penalty is active in [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:253)
+
+This means the tactical mode is no longer purely an external task condition.
+It is partly controlled by the same signal that conditions the policy itself.
+That creates a methodological confound:
+I-MAPPO receives a structured intent bank, while MAPPO always uses the all-zero dummy intent in [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:354) and [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:387).
+
+In practice, this makes MAPPO stay in the stealth-triggering regime all the time, whereas I-MAPPO only visits that regime on part of the training distribution.
+
+Reason 2:
+the reward clipping contract is now weakened.
+
+- the code comment says the extrinsic reward should remain in a narrow range for PPO stability
+- but the implementation clips `base_rewards` first and then adds `threat_term` afterward in [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:269)
+
+So the radar penalty can bypass `reward_clip` entirely.
+This is not necessarily wrong, but it is a meaningful design change and should be treated as a new reward regime rather than a minor extension of Stage 4.
+
+Reason 3:
+the Stage-5-v2 summary does not yet show the intended final superiority pattern.
+
+- I-MAPPO improves standard and mid-tier collision metrics
+- but MAPPO is still better on `final_hard_probe_collision_rate_mean`
+  - `0.3573` vs `0.4307`
+
+That means Stage 5 has not yet produced a clean "I-MAPPO dominates MAPPO under dynamic tactical conflict" result.
+
+### 28.3 Practical Interpretation
+
+The current Stage-5 code and figures are useful as an internal research checkpoint:
+
+- the plotting upgrade is valid and should be kept
+- the radar-threat mechanism does materially alter the optimization landscape
+- the mutation-latency result remains strong
+
+However, Stage 5 should currently be interpreted as an audit/prototype round, not as the final paper result.
+
+The next clean experimental version should:
+
+1. drive the tactical posture from an environment-side scenario variable rather than from the algorithm's own conditioning signal
+2. decide explicitly whether the radar penalty should respect `reward_clip`
+3. rerun the multi-seed comparison after that protocol change
+
+
+## 29. Stage-5 Protocol Correction
+
+After the Stage-5 audit, the code path was corrected so that tactical posture is no longer derived from the policy-conditioning intent itself.
+
+The correction was implemented in:
+
+- [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:115)
+- [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:749)
+- [src/test_intent_mutation.py](/home/cring/rl/epymarl/src/test_intent_mutation.py:10)
+
+### 29.1 What Changed
+
+Previously:
+
+- the environment reward logic read `intent[0]`
+- training and evaluation wrote the algorithm intent directly into the environment
+- this made the tactical posture partly endogenous to the policy-conditioning channel
+
+Now:
+
+- the environment owns a separate `current_tactical_posture`
+- training uses an external episode schedule:
+  - even episodes: `attack`
+  - odd episodes: `stealth`
+- evaluation uses an external protocol:
+  - `standard` evaluation: `attack`
+  - `dense` probe evaluation: `stealth`
+- the mutation script now switches posture explicitly:
+  - `approach -> attack`
+  - `evasion -> stealth`
+
+### 29.2 Why This Is Better
+
+This restores the experimental meaning of the threat rule.
+
+- intent remains the policy-conditioning signal used by I-MAPPO
+- tactical posture becomes an environment-side scenario variable shared by both algorithms
+- MAPPO is no longer penalized merely because it always carries a dummy all-zero intent vector
+
+This is the cleaner comparison protocol for the next Stage-5 rerun.
+
+### 29.3 Reward Decision
+
+The reward-clipping question was then resolved explicitly in the corrected Stage-5 path:
+
+- [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:55) now exposes `threat_penalty_respects_clip`
+- the default behavior is `True`
+- with that setting, the final reward is clipped after the threat term is added
+
+This restores the PPO-stability contract more cleanly and makes the Stage-5 reward regime easier to interpret.
+
+
+## 30. Stage-5-v3 Corrected Rerun
+
+Using the corrected Stage-5 protocol above, a full rerun was completed in:
+
+- [reports/imappo_stage5_v3](/home/cring/rl/epymarl/reports/imappo_stage5_v3)
+
+This rerun includes:
+
+- three seeds: `7`, `11`, `23`
+- both algorithms: `imappo`, `mappo`
+- comparison figures `figure1` to `figure4`
+- per-seed checkpoints, metrics, and result files
+- post-training mutation outputs and summary
+
+### 30.1 Raw Stage-5-v3 Summary
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.3307`
+  - `final_mid_probe_collision_rate_mean = 0.4573`
+  - `final_hard_probe_collision_rate_mean = 0.3880`
+  - `final_hard_probe_task_completion_mean = 0.6493`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.2107`
+  - `final_mid_probe_collision_rate_mean = 0.3733`
+  - `final_hard_probe_collision_rate_mean = 0.3947`
+  - `final_hard_probe_task_completion_mean = 0.6827`
+
+Files:
+
+- [reports/imappo_stage5_v3/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/imappo/summary.json)
+- [reports/imappo_stage5_v3/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/mappo/summary.json)
+- [reports/imappo_stage5_v3/comparison/figure1_training_convergence.png](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/figure1_training_convergence.png)
+- [reports/imappo_stage5_v3/comparison/figure2_early_stage_safety.png](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/figure2_early_stage_safety.png)
+- [reports/imappo_stage5_v3/comparison/figure3_risk_robustness.png](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/figure3_risk_robustness.png)
+
+### 30.2 Mutation Results
+
+The corrected-protocol mutation evaluation was then rerun from the new `stage5_v3` I-MAPPO checkpoints.
+
+- seed `7`: `3`
+- seed `11`: `3`
+- seed `23`: `3`
+- `valid_count = 3`
+- `null_count = 0`
+- `mean_latency = 3.0`
+
+Files:
+
+- [reports/imappo_stage5_v3/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/intent_mutation_summary.json)
+- [reports/imappo_stage5_v3/comparison/figure4_intent_mutation_latency.png](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/figure4_intent_mutation_latency.png)
+- [reports/imappo_stage5_v3/comparison/mutation_seed7.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/mutation_seed7.json)
+- [reports/imappo_stage5_v3/comparison/mutation_seed11.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/mutation_seed11.json)
+- [reports/imappo_stage5_v3/comparison/mutation_seed23.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/mutation_seed23.json)
+
+### 30.3 Interpretation
+
+The corrected rerun changes the reading of Stage 5 in an important way.
+
+- the protocol itself is now cleaner than `stage5_v2`
+- the mutation result remains consistently strong
+- but the main benchmark comparison still does not support a broad I-MAPPO win
+
+Specifically:
+
+- MAPPO is clearly better on standard evaluation collision
+  - `0.2107` vs `0.3307`
+- MAPPO is also better on the mid-density probe
+  - `0.3733` vs `0.4573`
+- I-MAPPO retains only a narrow advantage on the hardest probe collision metric
+  - `0.3880` vs `0.3947`
+- MAPPO still has better hard-tier task completion
+  - `0.6827` vs `0.6493`
+
+So the corrected Stage-5 rerun improves the methodology, but it still does not produce a final paper-grade result in which I-MAPPO clearly dominates MAPPO under the dynamic tactical protocol.
+
+The strongest defensible statement from `stage5_v3` is:
+
+1. the protocol correction was necessary and is now implemented
+2. the zero-shot mutation behavior remains stable
+3. the optimization story is still mixed, with I-MAPPO only preserving a small safety edge on the hardest probe

@@ -1536,3 +1536,240 @@ Stage 4 mutation 结果显著比 Stage 3 更干净：
 - 这与 `long_v1` 的主结论是一致的：
   - 优势仍在
   - 但稳定性还没有被完全控制住
+
+
+## 28. Stage-5 审计说明
+
+Stage 5 这一轮主要引入了两类改动：
+
+- 在 [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:55) 中加入 intent-sensitive 的 radar threat penalty
+- 在 [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:34) 中加入论文风格绘图
+
+对应产物目录为：
+
+- [reports/imappo_stage5](/home/cring/rl/epymarl/reports/imappo_stage5)
+- [reports/imappo_stage5_v2](/home/cring/rl/epymarl/reports/imappo_stage5_v2)
+
+其中 `stage5_v2` 更值得作为审计对象，因为它是在环境侧 threat 逻辑更新之后重新生成的结果。
+
+### 28.1 Stage-5-v2 原始摘要
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.1947`
+  - `final_mid_probe_collision_rate_mean = 0.2760`
+  - `final_hard_probe_collision_rate_mean = 0.4307`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.2053`
+  - `final_mid_probe_collision_rate_mean = 0.3587`
+  - `final_hard_probe_collision_rate_mean = 0.3573`
+
+对应文件：
+
+- [reports/imappo_stage5_v2/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage5_v2/imappo/summary.json)
+- [reports/imappo_stage5_v2/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage5_v2/mappo/summary.json)
+
+Stage-5-v2 的 mutation latency 仍然很干净：
+
+- seed `7`：`3`
+- seed `11`：`3`
+- seed `23`：`3`
+
+对应文件：
+
+- [reports/imappo_stage5_v2/comparison/mutation_seed7.json](/home/cring/rl/epymarl/reports/imappo_stage5_v2/comparison/mutation_seed7.json)
+- [reports/imappo_stage5_v2/comparison/mutation_seed11.json](/home/cring/rl/epymarl/reports/imappo_stage5_v2/comparison/mutation_seed11.json)
+- [reports/imappo_stage5_v2/comparison/mutation_seed23.json](/home/cring/rl/epymarl/reports/imappo_stage5_v2/comparison/mutation_seed23.json)
+
+### 28.2 审计结论
+
+目前 Stage 5 还不适合被当作最终 benchmark 级结论直接写进主结果。
+
+原因 1：
+环境中的 reward rule 现在与算法写入的 intent 向量直接绑定。
+
+- 训练和评估通过 [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:744) 中的 `set_env_intent(...)` 把 intent 写入环境
+- 环境再在 [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:253) 中用 `current_intent[0]` 判断是否激活 radar threat penalty
+
+这意味着 tactical mode 不再完全是外生任务条件，
+而是部分由策略本身接收到的 conditioning signal 决定。
+这会带来方法学上的混杂：
+I-MAPPO 在 [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:362) 使用结构化 intent bank，
+而 MAPPO 在 [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:354) 与 [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:387) 中始终使用全零 dummy intent。
+
+实际效果就是：
+MAPPO 会长期停留在触发 stealth penalty 的状态，
+而 I-MAPPO 只会在部分 episode 中进入该状态。
+
+原因 2：
+`reward_clip` 的约束现在被削弱了。
+
+- 代码注释仍然写着 extrinsic reward 应尽量保持在较窄范围以维持 PPO 稳定
+- 但实现上是在 [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:269) 先裁剪 `base_rewards`，再额外叠加 `threat_term`
+
+这意味着 radar penalty 可以绕过 `reward_clip`。
+这不一定是错误，但它已经不再是 Stage 4 reward 的“小扩展”，
+而更像是进入了一个新的 reward regime。
+
+原因 3：
+Stage-5-v2 的摘要数值并没有形成预期中的最终优势格局。
+
+- I-MAPPO 在标准评估和 mid-tier collision 上更好
+- 但 MAPPO 在 `final_hard_probe_collision_rate_mean` 上仍然更好
+  - `0.3573` vs `0.4307`
+
+这说明 Stage 5 还没有产出一个足够干净的
+“I-MAPPO 在 dynamic tactical conflict 下明确优于 MAPPO”
+的主结论。
+
+### 28.3 实际解释
+
+当前 Stage-5 代码与图表仍然有内部研究价值：
+
+- 绘图升级是有效的，应该保留
+- radar threat 机制确实显著改变了优化地形
+- mutation latency 结果仍然稳定
+
+但 Stage 5 目前更适合被视作一轮 audit/prototype，
+而不是论文最终主结果。
+
+下一轮更干净的版本应该：
+
+1. 由环境侧 scenario 变量而不是算法自身的 conditioning signal 来驱动 tactical posture
+2. 明确决定 radar penalty 是否应该遵守 `reward_clip`
+3. 在该协议修正后重新跑多 seed 对比
+
+
+## 29. Stage-5 协议修正
+
+在完成 Stage-5 审计之后，代码路径已经进一步修正：
+tactical posture 不再由 policy-conditioning intent 直接派生。
+
+对应修改落在：
+
+- [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:115)
+- [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:749)
+- [src/test_intent_mutation.py](/home/cring/rl/epymarl/src/test_intent_mutation.py:10)
+
+### 29.1 改了什么
+
+旧协议下：
+
+- 环境 reward 直接读取 `intent[0]`
+- 训练和评估把算法侧 intent 直接写进环境
+- tactical posture 因而部分变成了策略 conditioning 通道的内生变量
+
+新协议下：
+
+- 环境内部维护独立的 `current_tactical_posture`
+- 训练阶段使用外生 episode schedule：
+  - 偶数 episode：`attack`
+  - 奇数 episode：`stealth`
+- 评估阶段使用外生协议：
+  - `standard` 评估：`attack`
+  - `dense` probe 评估：`stealth`
+- mutation 脚本也显式切换 posture：
+  - `approach -> attack`
+  - `evasion -> stealth`
+
+### 29.2 为什么更合理
+
+这样 threat rule 的实验含义被恢复了：
+
+- intent 继续作为 I-MAPPO 的策略 conditioning signal
+- tactical posture 则变成两种算法共享的环境侧 scenario 变量
+- MAPPO 不再因为长期携带全零 dummy intent 而被协议本身额外惩罚
+
+这才是下一轮 Stage-5 重跑应该使用的干净对比协议。
+
+### 29.3 Reward 决策
+
+关于 reward clipping 的问题，修正后的 Stage-5 路径已经明确落定：
+
+- [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:55) 新增了 `threat_penalty_respects_clip`
+- 默认行为为 `True`
+- 在该设定下，threat term 叠加之后再统一做最终裁剪
+
+这样更符合 PPO 稳定性所需的 reward contract，也让 Stage-5 的 reward regime 更容易解释。
+
+
+## 30. Stage-5-v3 修正协议重跑结果
+
+基于上面的修正协议，已经完成一轮完整重跑，产物目录为：
+
+- [reports/imappo_stage5_v3](/home/cring/rl/epymarl/reports/imappo_stage5_v3)
+
+这一轮包含：
+
+- 三个 seed：`7`、`11`、`23`
+- 两种算法：`imappo`、`mappo`
+- `figure1` 到 `figure4` 的对比图
+- 每个 seed 的 checkpoint、metrics 与 result 文件
+- 训练后 mutation 输出与汇总
+
+### 30.1 Stage-5-v3 原始摘要
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.3307`
+  - `final_mid_probe_collision_rate_mean = 0.4573`
+  - `final_hard_probe_collision_rate_mean = 0.3880`
+  - `final_hard_probe_task_completion_mean = 0.6493`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.2107`
+  - `final_mid_probe_collision_rate_mean = 0.3733`
+  - `final_hard_probe_collision_rate_mean = 0.3947`
+  - `final_hard_probe_task_completion_mean = 0.6827`
+
+对应文件：
+
+- [reports/imappo_stage5_v3/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/imappo/summary.json)
+- [reports/imappo_stage5_v3/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/mappo/summary.json)
+- [reports/imappo_stage5_v3/comparison/figure1_training_convergence.png](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/figure1_training_convergence.png)
+- [reports/imappo_stage5_v3/comparison/figure2_early_stage_safety.png](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/figure2_early_stage_safety.png)
+- [reports/imappo_stage5_v3/comparison/figure3_risk_robustness.png](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/figure3_risk_robustness.png)
+
+### 30.2 Mutation 结果
+
+随后又基于新的 `stage5_v3` I-MAPPO checkpoint 完成了修正协议下的 mutation 评估。
+
+- seed `7`：`3`
+- seed `11`：`3`
+- seed `23`：`3`
+- `valid_count = 3`
+- `null_count = 0`
+- `mean_latency = 3.0`
+
+对应文件：
+
+- [reports/imappo_stage5_v3/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/intent_mutation_summary.json)
+- [reports/imappo_stage5_v3/comparison/figure4_intent_mutation_latency.png](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/figure4_intent_mutation_latency.png)
+- [reports/imappo_stage5_v3/comparison/mutation_seed7.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/mutation_seed7.json)
+- [reports/imappo_stage5_v3/comparison/mutation_seed11.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/mutation_seed11.json)
+- [reports/imappo_stage5_v3/comparison/mutation_seed23.json](/home/cring/rl/epymarl/reports/imappo_stage5_v3/comparison/mutation_seed23.json)
+
+### 30.3 结果解释
+
+这一轮 corrected rerun 改变了我们对 Stage 5 的解读方式。
+
+- 协议本身比 `stage5_v2` 更干净
+- mutation 结果依旧稳定
+- 但主 benchmark 对比仍然不能支持 I-MAPPO 的全面胜出
+
+更具体地说：
+
+- MAPPO 在标准评估 collision 上明显更好
+  - `0.2107` vs `0.3307`
+- MAPPO 在 mid-density probe 上也更好
+  - `0.3733` vs `0.4573`
+- I-MAPPO 只在 hardest probe collision 上保留了一个很窄的优势
+  - `0.3880` vs `0.3947`
+- 但 MAPPO 在 hard-tier task completion 上仍更高
+  - `0.6827` vs `0.6493`
+
+因此，修正后的 Stage-5-v3 虽然方法学上更可靠，但仍然没有给出一个足够强的论文级主结论，即：
+I-MAPPO 在 dynamic tactical protocol 下全面优于 MAPPO。
+
+当前最稳妥的结论应当是：
+
+1. 协议修正是必要的，而且已经完成
+2. zero-shot mutation 行为仍然稳定
+3. 主优化结果仍然是 mixed 的，I-MAPPO 只在 hardest probe safety 上保留了一个很小的优势

@@ -2,6 +2,7 @@ from collections import defaultdict
 from hashlib import sha256
 import json
 import logging
+from numbers import Number
 
 import numpy as np
 
@@ -118,12 +119,23 @@ class Logger:
                 continue
             i += 1
             window = 5 if k != "epsilon" else 1
-            try:
-                item = "{:.4f}".format(np.mean([x[1] for x in self.stats[k][-window:]]))
-            except:
-                item = "{:.4f}".format(
-                    np.mean([x[1].item() for x in self.stats[k][-window:]])
-                )
+            values = [x[1] for x in self.stats[k][-window:]]
+            numeric_values = []
+            for value in values:
+                if isinstance(value, Number):
+                    numeric_values.append(float(value))
+                elif hasattr(value, "item"):
+                    try:
+                        scalar_value = value.item()
+                    except Exception:
+                        continue
+                    if isinstance(scalar_value, Number):
+                        numeric_values.append(float(scalar_value))
+
+            if numeric_values:
+                item = "{:.4f}".format(np.mean(numeric_values))
+            else:
+                item = str(values[-1])
             log_str += "{:<25}{:>8}".format(k + ":", item)
             log_str += "\n" if i % 4 == 0 else "\t"
         self.console_logger.info(log_str)

@@ -10,7 +10,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from imappo import IMAPPO, env_reset, env_step, infer_agent_order, normalise_obs
+from imappo import (
+    IMAPPO,
+    env_reset,
+    env_step,
+    infer_agent_order,
+    normalise_obs,
+    set_env_intent,
+    set_env_tactical_posture,
+)
 import envs.uav_scheduling_env  # noqa: F401
 
 
@@ -96,6 +104,60 @@ def save_centroid_trajectory_plot(output_path: Path, trajectory: List[Dict[str, 
     plt.close()
 
 
+def save_latency_bar_plot(output_path: Path, mutation_results: List[Dict[str, object]]) -> None:
+    if not mutation_results:
+        return
+
+    plt.style.use("seaborn-v0_8-whitegrid")
+    plt.rcParams.update(
+        {
+            "font.family": "serif",
+            "font.serif": ["Times New Roman", "DejaVu Serif", "serif"],
+            "axes.titlesize": 14,
+            "axes.labelsize": 12,
+            "legend.fontsize": 10,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+        }
+    )
+
+    labels = [f"Seed {int(item['seed'])}" for item in mutation_results]
+    numeric_latencies = []
+    for item in mutation_results:
+        latency = item.get("response_latency")
+        numeric_latencies.append(np.nan if latency is None else float(latency))
+    latencies = np.asarray(
+        numeric_latencies,
+        dtype=np.float32,
+    )
+
+    fig, ax = plt.subplots(figsize=(8.2, 5.0))
+    bars = ax.bar(labels, latencies, width=0.62, color="#003366", alpha=0.9)
+    ax.set_title("Zero-Shot Intent Mutation Latency")
+    ax.set_xlabel("Seed Number")
+    ax.set_ylabel("Response Latency (Steps)")
+    finite_latencies = latencies[np.isfinite(latencies)]
+    ymax = float(finite_latencies.max()) if finite_latencies.size > 0 else 1.0
+    ax.set_ylim(0.0, max(ymax + 1.0, 1.0))
+    ax.grid(axis="y", alpha=0.25, linestyle="--")
+
+    for bar, latency in zip(bars, latencies):
+        if np.isnan(latency):
+            continue
+        ax.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            bar.get_height() + 0.05,
+            f"{int(latency)}",
+            ha="center",
+            va="bottom",
+            fontsize=10,
+        )
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=240)
+    plt.close(fig)
+
+
 def run_mutation(args) -> Dict[str, object]:
     algo = IMAPPO.load_checkpoint(str(args.checkpoint), device=args.device)
     device = algo.device
@@ -126,6 +188,8 @@ def run_mutation(args) -> Dict[str, object]:
         phase = "approach" if step < mutation_step else "evasion"
         intent = approach_intent if phase == "approach" else evasion_intent
         mask = approach_mask if phase == "approach" else evasion_mask
+        set_env_intent(env, intent)
+        set_env_tactical_posture(env, "attack" if phase == "approach" else "stealth")
 
         obs_tensor = torch.tensor(obs_array, dtype=torch.float32, device=device)
         actions, _ = algo.select_actions(obs_tensor, intent, mask, deterministic=True)
@@ -167,6 +231,10 @@ def run_mutation(args) -> Dict[str, object]:
         "seed": args.seed,
         "mutation_step": mutation_step,
         "response_latency": response_latency,
+        "figure4_record": {
+            "seed": args.seed,
+            "response_latency": response_latency,
+        },
         "total_recorded_steps": len(trajectory),
         "average_distance_series": average_distance_series,
         "trajectory": trajectory,
