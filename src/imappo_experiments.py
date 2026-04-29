@@ -18,7 +18,7 @@ import envs.uav_scheduling_env  # noqa: F401
 def parse_args():
     parser = argparse.ArgumentParser(description="Run focused I-MAPPO UAV experiments")
     parser.add_argument("--algorithm", choices=["imappo", "mappo", "both"], default="imappo")
-    parser.add_argument("--episodes", type=int, default=1500)
+    parser.add_argument("--episodes", type=int, default=3000)
     parser.add_argument("--steps", type=int, default=50)
     parser.add_argument("--rollout", type=int, default=128)
     parser.add_argument("--batch-size", type=int, default=64)
@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("reports/imappo_stage4"),
+        default=Path("reports/imappo_stage6"),
     )
     parser.add_argument(
         "--mutation-results",

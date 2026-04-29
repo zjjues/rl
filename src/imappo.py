@@ -827,6 +827,7 @@ def summarise_step_info(infos, agent_order: List[str]) -> Dict[str, float]:
         "reward_collision": 0.0,
         "reward_safety": 0.0,
         "reward_task": 0.0,
+        "reward_time": 0.0,
         "reward_threat": 0.0,
     }
     if not isinstance(infos, dict):
@@ -987,6 +988,7 @@ def train_imappo(
         episode_reward_collision = 0.0
         episode_reward_safety = 0.0
         episode_reward_task = 0.0
+        episode_reward_time = 0.0
         episode_reward_threat = 0.0
         episode_steps = 0
         for _ in range(cfg.max_steps):
@@ -1036,6 +1038,7 @@ def train_imappo(
             episode_reward_collision += step_info["reward_collision"]
             episode_reward_safety += step_info["reward_safety"]
             episode_reward_task += step_info["reward_task"]
+            episode_reward_time += step_info["reward_time"]
             episode_reward_threat += step_info["reward_threat"]
             episode_steps += 1
             obs_array = next_obs_array
@@ -1085,6 +1088,7 @@ def train_imappo(
             "episode_reward_collision": episode_reward_collision,
             "episode_reward_safety": episode_reward_safety,
             "episode_reward_task": episode_reward_task,
+            "episode_reward_time": episode_reward_time,
             "episode_reward_threat": episode_reward_threat,
             "algorithm": cfg.algorithm,
         }
@@ -1106,6 +1110,7 @@ def train_imappo(
             logger.log_stat("episode_reward_collision", episode_reward_collision, episode)
             logger.log_stat("episode_reward_safety", episode_reward_safety, episode)
             logger.log_stat("episode_reward_task", episode_reward_task, episode)
+            logger.log_stat("episode_reward_time", episode_reward_time, episode)
             logger.log_stat("episode_reward_threat", episode_reward_threat, episode)
             logger.log_stat("curriculum_spawn_scale", getattr(env.unwrapped, "spawn_region_scale", 0.0), episode)
             logger.log_stat("curriculum_separation_scale", getattr(env.unwrapped, "spawn_separation_scale", 0.0), episode)

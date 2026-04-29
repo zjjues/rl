@@ -1,0 +1,16 @@
+{
+  "mutation_step": 30,
+  "seeds": [
+    7,
+    11,
+    23
+  ],
+  "response_latency": {
+    "7": 3,
+    "11": 3,
+    "23": 3
+  },
+  "valid_count": 3,
+  "null_count": 0,
+  "mean_latency": 3.0
+}

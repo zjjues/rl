@@ -219,6 +219,9 @@ dmypy.json
 # Ignore all local history of files
 .history
 
+# Experiment checkpoints are too large/noisy for git; keep summaries and figures tracked.
+reports/**/*.pt
+
 # Local smoke-test outputs; formal experiment artifacts can still be committed explicitly.
 reports/stage3_smoke/
 reports/stage3_both_smoke/

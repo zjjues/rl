@@ -47,14 +47,19 @@ class UAVSchedulingEnv(gym.Env):
         neighbor_slots=None,
         d_safe=0.1,
         reward_clip=2.0,
+        reward_clip_min=-3.0,
+        reward_clip_max=10.0,
         spawn_region_scale=0.35,
         spawn_separation_scale=1.05,
         task_progress_rate=0.03,
         task_reward_coef=1.20,
         safety_reward_coef=1.0,
-        threat_zone_radius=0.45,
+        threat_zone_radius=0.75,
         threat_zone_target_count=2,
         stealth_threat_penalty=6.0,
+        attack_threat_bonus=8.0,
+        active_time_penalty=0.2,
+        target_tracking_radius=1.25,
         intent_threshold=0.5,
         threat_penalty_respects_clip=True,
     ):
@@ -112,6 +117,8 @@ class UAVSchedulingEnv(gym.Env):
         self.step_count = 0
         self.d_safe = d_safe
         self.reward_clip = reward_clip
+        self.reward_clip_min = float(reward_clip_min)
+        self.reward_clip_max = float(reward_clip_max)
         self.spawn_separation_scale = spawn_separation_scale
         self.spawn_separation = self.spawn_separation_scale * self.d_safe * 2.0 * self.world_size
         self.np_random = np.random.default_rng()
@@ -120,6 +127,9 @@ class UAVSchedulingEnv(gym.Env):
         self.current_intent = np.zeros((1,), dtype=np.float32)
         self.current_tactical_posture = 1.0
         self.threat_zone_centers = np.zeros((0, 3), dtype=np.float32)
+        self.attack_threat_bonus = float(attack_threat_bonus)
+        self.active_time_penalty = float(active_time_penalty)
+        self.target_tracking_radius = float(target_tracking_radius)
 
     def set_intent(self, intent) -> None:
         intent_array = np.asarray(intent, dtype=np.float32).reshape(-1)
@@ -147,9 +157,10 @@ class UAVSchedulingEnv(gym.Env):
         target_indices = np.arange(self.n_agents) % self.n_targets
         self.targets = target_pool[target_indices].astype(np.float32)
         threat_zone_count = min(self.threat_zone_target_count, len(target_pool))
-        # Place radar zones on the approach corridor between the spawn basin
-        # and a subset of targets so stealth-mode task pursuit becomes risky.
-        self.threat_zone_centers = (0.5 * target_pool[:threat_zone_count]).astype(np.float32)
+        # In Stage 6 v2, radar zones sit directly on the high-value targets.
+        # Attack-mode success therefore requires entering the threat bubble,
+        # while stealth-mode pursuit remains explicitly hazardous.
+        self.threat_zone_centers = target_pool[:threat_zone_count].astype(np.float32)
         self.energy = np.ones((self.n_agents, 1), dtype=np.float32)
         self.pending_tasks = self.np_random.uniform(
             low=0.0,
@@ -233,6 +244,7 @@ class UAVSchedulingEnv(gym.Env):
                 "reward_collision": float(self.last_reward_terms["collision"][i]),
                 "reward_safety": float(self.last_reward_terms["safety"][i]),
                 "reward_task": float(self.last_reward_terms["task"][i]),
+                "reward_time": float(self.last_reward_terms["time"][i]),
                 "reward_threat": float(self.last_reward_terms["threat"][i]),
                 "threat_zone_violation": bool(self.last_reward_terms["threat_violation"][i] > 0.0),
                 "tactical_posture_flag": float(self.current_tactical_posture),
@@ -265,16 +277,25 @@ class UAVSchedulingEnv(gym.Env):
         collision_term = -0.35 * np.clip(collision_penalty, 0.0, 1.0)
         safety_term = -self.safety_reward_coef * proximity_penalty
         task_term = self.task_reward_coef * task_progress
+        distance_over_radius = np.clip(
+            (dist_to_target - self.target_tracking_radius) / max(self.target_tracking_radius, 1e-6),
+            0.0,
+            3.0,
+        )
+        time_term = (-self.active_time_penalty * distance_over_radius).astype(np.float32)
         posture_flag = float(self.current_tactical_posture)
         threat_violation = np.zeros((self.n_agents,), dtype=np.float32)
         threat_term = np.zeros((self.n_agents,), dtype=np.float32)
-        if posture_flag < self.intent_threshold and self.threat_zone_centers.size > 0:
+        if self.threat_zone_centers.size > 0:
             threat_distances = np.linalg.norm(
                 self.positions[:, None, :] - self.threat_zone_centers[None, :, :],
                 axis=-1,
             )
             threat_violation = (threat_distances <= self.threat_zone_radius).any(axis=1).astype(np.float32)
-            threat_term = -self.stealth_threat_penalty * threat_violation
+            if posture_flag >= self.intent_threshold:
+                task_term = task_term + self.attack_threat_bonus * threat_violation
+            else:
+                threat_term = -self.stealth_threat_penalty * threat_violation
 
         base_rewards = (
             dist_term
@@ -282,12 +303,19 @@ class UAVSchedulingEnv(gym.Env):
             + collision_term
             + safety_term
             + task_term
+            + time_term
         )
         total_rewards = base_rewards + threat_term
         if self.threat_penalty_respects_clip:
-            clipped_rewards = np.clip(total_rewards, -self.reward_clip, self.reward_clip)
+            clipped_rewards = np.clip(
+                total_rewards,
+                self.reward_clip_min,
+                self.reward_clip_max,
+            )
         else:
-            clipped_rewards = np.clip(base_rewards, -self.reward_clip, self.reward_clip) + threat_term
+            clipped_rewards = (
+                np.clip(base_rewards, self.reward_clip_min, self.reward_clip_max) + threat_term
+            )
         clipped_rewards = clipped_rewards.astype(np.float32)
         self.last_reward_terms = {
             "dist": dist_term.astype(np.float32),
@@ -295,6 +323,7 @@ class UAVSchedulingEnv(gym.Env):
             "collision": collision_term.astype(np.float32),
             "safety": safety_term.astype(np.float32),
             "task": task_term.astype(np.float32),
+            "time": time_term.astype(np.float32),
             "threat": threat_term.astype(np.float32),
             "threat_violation": threat_violation.astype(np.float32),
             "raw_total": total_rewards.astype(np.float32),

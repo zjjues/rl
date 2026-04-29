@@ -1680,3 +1680,135 @@ The strongest defensible statement from `stage5_v3` is:
 1. the protocol correction was necessary and is now implemented
 2. the zero-shot mutation behavior remains stable
 3. the optimization story is still mixed, with I-MAPPO only preserving a small safety edge on the hardest probe
+
+
+## 31. Stage-6: Attack/Stealth Reward Contract Update
+
+Stage 6 continues from Stage-5-v3 by modifying the UAV environment protocol so the tactical intent affects the reward contract more directly, rather than acting only as a weak external disturbance.
+
+The code changes are concentrated in [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:1), [src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:1), and [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:1):
+
+- threat-zone radius was increased from `0.45` to `0.75`
+- reward clipping was changed from symmetric `[-2, 2]` to asymmetric `[-3, 10]`
+- attack posture receives an `attack_threat_bonus` for entering a threat bubble
+- stealth posture still receives the `stealth_threat_penalty` for entering a threat bubble
+- an `active_time_penalty` was added for staying too far from the assigned target
+- training logs now include `episode_reward_time`
+- the default experiment length is now `3000` episodes, with default output directory `reports/imappo_stage6`
+
+The full Stage-6 result directory is:
+
+- [reports/imappo_stage6](/home/cring/rl/epymarl/reports/imappo_stage6)
+
+### 31.1 Stage-6 Main Results
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.2733`
+  - `final_mid_probe_collision_rate_mean = 0.3747`
+  - `final_hard_probe_collision_rate_mean = 0.4653`
+  - `final_hard_probe_task_completion_mean = 0.7128`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.0933`
+  - `final_mid_probe_collision_rate_mean = 0.2213`
+  - `final_hard_probe_collision_rate_mean = 0.3187`
+  - `final_hard_probe_task_completion_mean = 0.7072`
+
+Files:
+
+- [reports/imappo_stage6/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage6/imappo/summary.json)
+- [reports/imappo_stage6/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage6/mappo/summary.json)
+- [reports/imappo_stage6/comparison/figure1_training_convergence.png](/home/cring/rl/epymarl/reports/imappo_stage6/comparison/figure1_training_convergence.png)
+- [reports/imappo_stage6/comparison/figure2_early_stage_safety.png](/home/cring/rl/epymarl/reports/imappo_stage6/comparison/figure2_early_stage_safety.png)
+- [reports/imappo_stage6/comparison/figure3_risk_robustness.png](/home/cring/rl/epymarl/reports/imappo_stage6/comparison/figure3_risk_robustness.png)
+
+### 31.2 Stage-6 Mutation Results
+
+- seed `7`: `3`
+- seed `11`: `3`
+- seed `23`: `3`
+- `valid_count = 3`
+- `null_count = 0`
+- `mean_latency = 3.0`
+
+Files:
+
+- [reports/imappo_stage6/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage6/intent_mutation_summary.json)
+- [reports/imappo_stage6/comparison/figure4_intent_mutation_latency.png](/home/cring/rl/epymarl/reports/imappo_stage6/comparison/figure4_intent_mutation_latency.png)
+
+### 31.3 Stage-6 Interpretation
+
+Stage 6 does not improve I-MAPPO safety in the main benchmark. MAPPO has clearly lower collision rates across the easy, mid, and hard tiers. I-MAPPO is slightly better on task completion, especially in the easy and mid tiers, but this does not offset the collision disadvantage.
+
+The Stage-6 conclusion is therefore that simply expanding the threat zone and adding attack bonus/time penalty is not enough to produce a clean I-MAPPO advantage. The protocol still needs a clearer binding between intent-specific behavior and risk-tier structure.
+
+
+## 32. Stage-6-v2: Target-Centered Threat-Zone Rerun
+
+Stage 6-v2 further changes threat-zone placement. Instead of placing radar zones in the corridor between the spawn basin and the targets, the radar zones are placed directly on the high-value targets.
+
+The motivation is to make attack-mode success require entering the threat bubble, while stealth-mode pursuit remains explicitly hazardous. This gives a cleaner behavioral meaning to the attack/stealth intent split.
+
+The full Stage-6-v2 result directory is:
+
+- [reports/imappo_stage6_v2](/home/cring/rl/epymarl/reports/imappo_stage6_v2)
+
+### 32.1 Stage-6-v2 Main Results
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.4400`
+  - `final_mid_probe_collision_rate_mean = 0.5360`
+  - `final_hard_probe_collision_rate_mean = 0.3973`
+  - `final_hard_probe_task_completion_mean = 0.7972`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.4200`
+  - `final_mid_probe_collision_rate_mean = 0.5547`
+  - `final_hard_probe_collision_rate_mean = 0.6160`
+  - `final_hard_probe_task_completion_mean = 0.7667`
+
+Files:
+
+- [reports/imappo_stage6_v2/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/imappo/summary.json)
+- [reports/imappo_stage6_v2/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/mappo/summary.json)
+- [reports/imappo_stage6_v2/comparison/figure1_training_convergence.png](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/figure1_training_convergence.png)
+- [reports/imappo_stage6_v2/comparison/figure2_early_stage_safety.png](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/figure2_early_stage_safety.png)
+- [reports/imappo_stage6_v2/comparison/figure3_risk_robustness.png](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/figure3_risk_robustness.png)
+
+### 32.2 Stage-6-v2 Mutation Results
+
+The Stage-6-v2 mutation evaluation has been completed.
+
+- seed `7`: `3`
+- seed `11`: `3`
+- seed `23`: `3`
+- `valid_count = 3`
+- `null_count = 0`
+- `mean_latency = 3.0`
+
+Files:
+
+- [reports/imappo_stage6_v2/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/intent_mutation_summary.json)
+- [reports/imappo_stage6_v2/comparison/figure4_intent_mutation_latency.png](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/figure4_intent_mutation_latency.png)
+- [reports/imappo_stage6_v2/comparison/mutation_seed7.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/mutation_seed7.json)
+- [reports/imappo_stage6_v2/comparison/mutation_seed11.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/mutation_seed11.json)
+- [reports/imappo_stage6_v2/comparison/mutation_seed23.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/mutation_seed23.json)
+
+### 32.3 Current Latest Conclusion
+
+Stage 6-v2 is the most useful latest result. It is still not a uniform win because MAPPO is slightly better on standard/easy collision:
+
+- standard/easy collision: MAPPO `0.4200`, I-MAPPO `0.4400`
+
+However, it gives the clearest high-risk-tier advantage so far:
+
+- mid collision: I-MAPPO `0.5360`, MAPPO `0.5547`
+- hard collision: I-MAPPO `0.3973`, MAPPO `0.6160`
+- hard task completion: I-MAPPO `0.7972`, MAPPO `0.7667`
+
+This indicates that once the threat zones are directly tied to high-value targets, the intent-conditioned policy begins to show a more meaningful robustness gain in the high-risk setting. The most defensible paper-style statement is:
+
+> I-MAPPO does not uniformly dominate MAPPO across all evaluation tiers, but under the Stage-6-v2 target-centered threat protocol it achieves a substantially better safety-task tradeoff in the densest/highest-risk probe while preserving stable zero-shot intent mutation behavior.
+
+The next steps should focus on Stage 6-v2:
+
+1. freeze the current protocol and add more seeds or bootstrap confidence intervals to check whether the hard-tier advantage survives stronger statistical scrutiny
+2. inspect whether the attack bonus and active time penalty are making early policies too aggressive, which may explain the slightly worse standard/easy collision rate

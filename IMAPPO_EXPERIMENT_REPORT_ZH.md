@@ -1773,3 +1773,135 @@ I-MAPPO 在 dynamic tactical protocol 下全面优于 MAPPO。
 1. 协议修正是必要的，而且已经完成
 2. zero-shot mutation 行为仍然稳定
 3. 主优化结果仍然是 mixed 的，I-MAPPO 只在 hardest probe safety 上保留了一个很小的优势
+
+
+## 31. Stage-6：Attack/Stealth Reward Contract 调整
+
+Stage 6 在 Stage-5-v3 的基础上继续修改 UAV 环境协议，目标是让 tactical intent 的差异更直接地进入 reward contract，而不是只作为弱外部扰动。
+
+本轮代码改动集中在 [src/envs/uav_scheduling_env.py](/home/cring/rl/epymarl/src/envs/uav_scheduling_env.py:1)、[src/imappo.py](/home/cring/rl/epymarl/src/imappo.py:1) 和 [src/imappo_experiments.py](/home/cring/rl/epymarl/src/imappo_experiments.py:1)：
+
+- threat zone 半径从 `0.45` 扩大到 `0.75`
+- reward clip 从对称 `[-2, 2]` 调整为非对称区间 `[-3, 10]`
+- attack posture 下进入 threat bubble 可以获得 `attack_threat_bonus`
+- stealth posture 下进入 threat bubble 仍然受到 `stealth_threat_penalty`
+- 新增离目标过远时的 `active_time_penalty`
+- 训练日志新增 `episode_reward_time`
+- 默认实验长度调整为 `3000` episodes，默认输出目录调整为 `reports/imappo_stage6`
+
+Stage 6 的完整结果目录为：
+
+- [reports/imappo_stage6](/home/cring/rl/epymarl/reports/imappo_stage6)
+
+### 31.1 Stage-6 主结果
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.2733`
+  - `final_mid_probe_collision_rate_mean = 0.3747`
+  - `final_hard_probe_collision_rate_mean = 0.4653`
+  - `final_hard_probe_task_completion_mean = 0.7128`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.0933`
+  - `final_mid_probe_collision_rate_mean = 0.2213`
+  - `final_hard_probe_collision_rate_mean = 0.3187`
+  - `final_hard_probe_task_completion_mean = 0.7072`
+
+对应文件：
+
+- [reports/imappo_stage6/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage6/imappo/summary.json)
+- [reports/imappo_stage6/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage6/mappo/summary.json)
+- [reports/imappo_stage6/comparison/figure1_training_convergence.png](/home/cring/rl/epymarl/reports/imappo_stage6/comparison/figure1_training_convergence.png)
+- [reports/imappo_stage6/comparison/figure2_early_stage_safety.png](/home/cring/rl/epymarl/reports/imappo_stage6/comparison/figure2_early_stage_safety.png)
+- [reports/imappo_stage6/comparison/figure3_risk_robustness.png](/home/cring/rl/epymarl/reports/imappo_stage6/comparison/figure3_risk_robustness.png)
+
+### 31.2 Stage-6 Mutation 结果
+
+- seed `7`：`3`
+- seed `11`：`3`
+- seed `23`：`3`
+- `valid_count = 3`
+- `null_count = 0`
+- `mean_latency = 3.0`
+
+对应文件：
+
+- [reports/imappo_stage6/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage6/intent_mutation_summary.json)
+- [reports/imappo_stage6/comparison/figure4_intent_mutation_latency.png](/home/cring/rl/epymarl/reports/imappo_stage6/comparison/figure4_intent_mutation_latency.png)
+
+### 31.3 Stage-6 解释
+
+Stage 6 没有改善主 benchmark 中的 I-MAPPO 安全性。MAPPO 在 easy、mid、hard 三个 collision 指标上都明显更低。I-MAPPO 的优势主要体现在 task completion 略高，尤其 easy/mid tier，但这个优势不足以抵消 collision 上的劣势。
+
+因此 Stage 6 的结论是：仅扩大 threat zone 并加入 attack bonus/time penalty 还不足以形成干净的 I-MAPPO 优势，协议仍需要进一步把 intent-specific behavior 和风险分层绑定得更明确。
+
+
+## 32. Stage-6-v2：Threat Zone 贴近高价值目标的修正重跑
+
+Stage 6-v2 进一步修改 threat zone placement：不再把 radar zones 放在 spawn 到 target 的中间 corridor，而是直接放到高价值 target 上。
+
+这一改动的动机是：attack-mode success 必须进入 threat bubble，而 stealth-mode pursuit 仍然显式危险。这样 reward contract 更清楚地区分了 attack 与 stealth 的行为含义。
+
+Stage 6-v2 的完整结果目录为：
+
+- [reports/imappo_stage6_v2](/home/cring/rl/epymarl/reports/imappo_stage6_v2)
+
+### 32.1 Stage-6-v2 主结果
+
+- I-MAPPO:
+  - `final_eval_collision_rate_mean = 0.4400`
+  - `final_mid_probe_collision_rate_mean = 0.5360`
+  - `final_hard_probe_collision_rate_mean = 0.3973`
+  - `final_hard_probe_task_completion_mean = 0.7972`
+- MAPPO:
+  - `final_eval_collision_rate_mean = 0.4200`
+  - `final_mid_probe_collision_rate_mean = 0.5547`
+  - `final_hard_probe_collision_rate_mean = 0.6160`
+  - `final_hard_probe_task_completion_mean = 0.7667`
+
+对应文件：
+
+- [reports/imappo_stage6_v2/imappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/imappo/summary.json)
+- [reports/imappo_stage6_v2/mappo/summary.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/mappo/summary.json)
+- [reports/imappo_stage6_v2/comparison/figure1_training_convergence.png](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/figure1_training_convergence.png)
+- [reports/imappo_stage6_v2/comparison/figure2_early_stage_safety.png](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/figure2_early_stage_safety.png)
+- [reports/imappo_stage6_v2/comparison/figure3_risk_robustness.png](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/figure3_risk_robustness.png)
+
+### 32.2 Stage-6-v2 Mutation 结果
+
+Stage 6-v2 的 mutation 评估已经补齐。
+
+- seed `7`：`3`
+- seed `11`：`3`
+- seed `23`：`3`
+- `valid_count = 3`
+- `null_count = 0`
+- `mean_latency = 3.0`
+
+对应文件：
+
+- [reports/imappo_stage6_v2/intent_mutation_summary.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/intent_mutation_summary.json)
+- [reports/imappo_stage6_v2/comparison/figure4_intent_mutation_latency.png](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/figure4_intent_mutation_latency.png)
+- [reports/imappo_stage6_v2/comparison/mutation_seed7.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/mutation_seed7.json)
+- [reports/imappo_stage6_v2/comparison/mutation_seed11.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/mutation_seed11.json)
+- [reports/imappo_stage6_v2/comparison/mutation_seed23.json](/home/cring/rl/epymarl/reports/imappo_stage6_v2/comparison/mutation_seed23.json)
+
+### 32.3 当前最新结论
+
+Stage 6-v2 是目前最值得保留的最新结果。它仍不是“全面胜出”的结论，因为 MAPPO 在 standard/easy collision 上略优：
+
+- standard/easy collision：MAPPO `0.4200`，I-MAPPO `0.4400`
+
+但它首次给出了更清楚的 high-risk tier 优势：
+
+- mid collision：I-MAPPO `0.5360`，MAPPO `0.5547`
+- hard collision：I-MAPPO `0.3973`，MAPPO `0.6160`
+- hard task completion：I-MAPPO `0.7972`，MAPPO `0.7667`
+
+这说明把 threat zone 直接绑定到高价值目标后，intent-conditioned policy 在高风险场景下开始表现出更有意义的鲁棒性收益。当前最稳妥的论文式表述应当是：
+
+> I-MAPPO does not uniformly dominate MAPPO across all evaluation tiers, but under the Stage-6-v2 target-centered threat protocol it achieves a substantially better safety-task tradeoff in the densest/highest-risk probe while preserving stable zero-shot intent mutation behavior.
+
+下一步应围绕 Stage 6-v2 做两件事：
+
+1. 固定当前协议，增加更多 seed 或 bootstrap confidence interval，确认 hard-tier 优势不是三 seed 偶然结果
+2. 针对 standard/easy collision 略差的问题，检查 attack bonus 与 active time penalty 是否把早期策略推得过激
