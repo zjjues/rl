@@ -1,0 +1,19 @@
+# Stage 7: Final Polish - Taming the Over-Aggressiveness and Generating Paper Figures
+
+The Stage 6-v2 target-centered threat protocol is a massive success! I-MAPPO dominates MAPPO in the Hard/Dense risk tier (0.39 vs 0.61 collision rate) and perfectly executes the 3-step zero-shot intent mutation. 
+However, I-MAPPO is slightly worse than MAPPO in the Easy/Standard tier (0.44 vs 0.42 collision rate) because the aggressive attack bonus and time penalty are making I-MAPPO fly too recklessly in safe zones.
+
+To achieve a flawless, monotonic advantage across all risk tiers for the final academic paper, please make the following minor adjustments to the environment and launch the definitive multi-seed run.
+
+## Task 1: Tame the Over-Aggressiveness in `uav_scheduling_env.py`
+1. **Reduce Time Penalty:** Decrease the `active_time_penalty` (the step penalty for lingering outside target radii) by 50% (e.g., from -0.1 to -0.05).
+2. **Increase Safety Margin Penalty:** Slightly increase the negative multiplier for the repulsive safety field (when distance < `2 * D_safe`) by 20% to encourage smoother maneuvering during aggressive attacks.
+
+## Task 2: Launch the Final Definitive Run
+Please update the default arguments in `imappo_experiments.py` for the absolute final run:
+- `--output-dir reports/imappo_stage7_final`
+- Keep `episodes = 3000`, `steps = 50`.
+- **Increase Seeds:** Run on **5 seeds** (e.g., `7 11 23 42 99`) instead of 3 to narrow the confidence intervals and prove statistical significance.
+- Ensure `figure1` (Training Convergence), `figure2` (Early Safety), `figure3` (Risk Tier Bar Charts), and `figure4` (Mutation Latency) are generated with shaded error bands (std) and clear legends, using high-resolution `.png` or `.pdf` outputs.
+
+Please provide the specific tweak for the `reward()` function and confirm the execution of the Stage 7 script. This will be the final data used in the paper.
