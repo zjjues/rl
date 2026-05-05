@@ -11,6 +11,7 @@ from torch.distributions import Normal
 import gymnasium as gym
 
 from envs.uav_scheduling_env import infer_obs_dim, infer_state_dim
+from intent_llm import IntentLibrary
 
 
 Tensor = torch.Tensor
@@ -21,13 +22,15 @@ class IMAPPOConfig:
     algorithm: str = "imappo"
     critic_mode: str = "attention"
     use_action_mask: bool = True
+    intent_source: str = "onehot"
 
     n_agents: int = 8
     n_targets: int = 6
     obs_dim: int = 30
     state_dim: int = 240
     action_dim: int = 3
-    intent_dim: int = 8
+    intent_dim: int = 64
+    intent_library_path: str = ""
 
     gamma: float = 0.99
     gae_lambda: float = 0.95
@@ -322,6 +325,11 @@ class IMAPPO:
         torch.manual_seed(config.seed)
         np.random.seed(config.seed)
 
+        self.intent_library: Optional[IntentLibrary] = None
+        self._eval_intent_cache: Optional[Dict[str, Tensor]] = None
+        if config.intent_source == "llm_library":
+            self._init_intent_library()
+
         self.actor = IntentConditionedActor(config).to(self.device)
         self.critic = CrossAttentionCritic(config).to(self.device)
         self.potential = StateIntentPotential(config).to(self.device)
@@ -341,6 +349,48 @@ class IMAPPO:
             for param in self.potential.parameters():
                 param.requires_grad = False
 
+    def _init_intent_library(self) -> None:
+        """Load or create the intent vector library for LLM-based intents."""
+        lib_path = self.config.intent_library_path
+        if lib_path and Path(lib_path).with_suffix(".npz").exists():
+            self.intent_library = IntentLibrary.load(lib_path)
+        else:
+            self.intent_library = IntentLibrary.create_static(
+                intent_dim=self.config.intent_dim,
+            )
+        if self.intent_library.intent_dim != self.config.intent_dim:
+            raise ValueError(
+                f"Intent library dim ({self.intent_library.intent_dim}) "
+                f"does not match config intent_dim ({self.config.intent_dim})"
+            )
+
+    def _sample_intent_vector(self, rng: Optional[np.random.Generator] = None) -> Tensor:
+        """Sample a single intent vector from the library as a torch Tensor."""
+        vec = self.intent_library.sample_single(rng=rng)
+        return torch.from_numpy(vec).to(self.device)
+
+    def _build_eval_intent_cache(self) -> Dict[str, Tensor]:
+        """Pre-compute intent vectors for evaluation modes."""
+        lib = self.intent_library
+        standard = lib.get_by_label("balanced")
+        if standard is None:
+            standard = lib.sample_single()
+        dense = lib.get_by_label("safety_first")
+        if dense is None:
+            dense = lib.sample_single()
+        attack = lib.get_by_label("aggressive_pursuit")
+        if attack is None:
+            attack = lib.sample_single()
+        stealth = lib.get_by_label("stealth_approach")
+        if stealth is None:
+            stealth = lib.sample_single()
+        return {
+            "standard": torch.from_numpy(standard).to(self.device),
+            "dense": torch.from_numpy(dense).to(self.device),
+            "attack_probe": torch.from_numpy(attack).to(self.device),
+            "stealth_probe": torch.from_numpy(stealth).to(self.device),
+        }
+
     def set_training_progress(self, progress: float) -> None:
         progress = float(np.clip(progress, 0.0, 1.0))
         self.current_eta = self.config.eta + progress * (
@@ -353,27 +403,33 @@ class IMAPPO:
     def sample_episode_intent_and_mask(
         self,
         tactical_posture: Optional[str] = None,
-    ) -> Tuple[Tensor, Tensor]:
+    ) -> Tuple[Tensor, Tensor, str]:
+        uniform_mask = torch.ones(
+            self.config.n_agents, self.config.action_dim, device=self.device
+        )
         if self.config.algorithm == "mappo":
-            intent = torch.zeros(self.config.intent_dim, device=self.device)
-            mask = torch.ones(
-                self.config.n_agents, self.config.action_dim, device=self.device
-            )
-            return intent, mask
-        # Use a small bank of structured intents instead of raw Gaussian noise.
-        # This keeps the conditioning signal stable enough to be learnable in larger swarms.
+            return torch.zeros(self.config.intent_dim, device=self.device), uniform_mask, ""
+
+        # LLM library mode: sample semantic intent from library, uniform mask
+        if self.config.intent_source == "llm_library" and self.intent_library is not None:
+            vecs, labels, _ = self.intent_library.sample_with_info(1)
+            intent = torch.from_numpy(vecs[0]).to(self.device)
+            return intent, uniform_mask, labels[0] if labels else ""
+
+        # Original one-hot mode
         intent = torch.zeros(self.config.intent_dim, device=self.device)
         if tactical_posture == "attack":
             intent_mode = 0
+            label = "attack"
         elif tactical_posture == "stealth":
             intent_mode = min(1, self.config.intent_dim - 1)
+            label = "stealth"
         else:
             intent_mode = int(np.random.randint(0, min(3, self.config.intent_dim)))
+            label = ["attack", "stealth", "frozen"][intent_mode]
         intent[intent_mode] = 1.0
         if self.config.use_action_mask:
-            mask = torch.ones(
-                self.config.n_agents, self.config.action_dim, device=self.device
-            )
+            mask = uniform_mask.clone()
             if intent_mode == 1:
                 mask[:, 2] = 0.0
             elif intent_mode == 2:
@@ -385,31 +441,42 @@ class IMAPPO:
                 )
                 mask[selected, 1] = 0.0
         else:
-            mask = torch.ones(
-                self.config.n_agents, self.config.action_dim, device=self.device
-            )
-        return intent, mask
+            mask = uniform_mask
+        return intent, mask, label
 
-    def evaluation_intent_and_mask(self, mode: str = "standard") -> Tuple[Tensor, Tensor]:
-        if self.config.algorithm == "mappo":
-            intent = torch.zeros(self.config.intent_dim, device=self.device)
-            mask = torch.ones(
-                self.config.n_agents, self.config.action_dim, device=self.device
-            )
-            return intent, mask
-
-        intent = torch.zeros(self.config.intent_dim, device=self.device)
-        mask = torch.ones(
+    def evaluation_intent_and_mask(self, mode: str = "standard") -> Tuple[Tensor, Tensor, str]:
+        uniform_mask = torch.ones(
             self.config.n_agents, self.config.action_dim, device=self.device
         )
+        if self.config.algorithm == "mappo":
+            return torch.zeros(self.config.intent_dim, device=self.device), uniform_mask, ""
+
+        # LLM library mode: use pre-cached semantic intents for evaluation
+        if self.config.intent_source == "llm_library" and self.intent_library is not None:
+            if self._eval_intent_cache is None:
+                self._eval_intent_cache = self._build_eval_intent_cache()
+            cache_key = mode if mode in self._eval_intent_cache else "standard"
+            intent = self._eval_intent_cache[cache_key]
+            # Find the label for this cached intent
+            label = ""
+            for lab in ["balanced", "safety_first", "aggressive_pursuit", "stealth_approach"]:
+                cached = self.intent_library.get_by_label(lab)
+                if cached is not None and np.allclose(intent.cpu().numpy(), cached):
+                    label = lab
+                    break
+            return intent, uniform_mask, label
+
+        # Original one-hot mode
+        intent = torch.zeros(self.config.intent_dim, device=self.device)
+        mask = uniform_mask.clone()
         if mode == "dense":
-            # Dense-safety evaluation uses the intent/mask pair that most consistently
-            # reduced probe collisions during Stage-4 sweeps.
             intent[min(1, self.config.intent_dim - 1)] = 1.0
             mask[:, 2] = 0.0
+            label = "stealth"
         else:
             intent[0] = 1.0
-        return intent, mask
+            label = "attack"
+        return intent, mask, label
 
     def compute_shaped_rewards(
         self,
@@ -749,7 +816,7 @@ def env_reset(env):
     return reset_out, {}
 
 
-def set_env_intent(env, intent: Tensor | np.ndarray) -> None:
+def set_env_intent(env, intent: Tensor | np.ndarray, label: str = "") -> None:
     base_env = getattr(env, "unwrapped", env)
     if not hasattr(base_env, "set_intent"):
         return
@@ -757,7 +824,10 @@ def set_env_intent(env, intent: Tensor | np.ndarray) -> None:
         intent_array = intent.detach().cpu().numpy()
     else:
         intent_array = np.asarray(intent, dtype=np.float32)
-    base_env.set_intent(intent_array)
+    try:
+        base_env.set_intent(intent_array, label)
+    except TypeError:
+        base_env.set_intent(intent_array)
 
 
 def set_env_tactical_posture(env, posture: str | float) -> None:
@@ -903,8 +973,8 @@ def evaluate_imappo(
         obs_data, _ = env_reset(env)
         agent_order = infer_agent_order(env, obs_data, config)
         obs_array = normalise_obs(agent_order, obs_data)
-        intent, episode_mask = algo.evaluation_intent_and_mask(mode=evaluation_mode)
-        set_env_intent(env, intent)
+        intent, episode_mask, intent_label = algo.evaluation_intent_and_mask(mode=evaluation_mode)
+        set_env_intent(env, intent, intent_label)
         set_env_tactical_posture(env, evaluation_tactical_posture(evaluation_mode))
 
         ep_return = 0.0
@@ -972,10 +1042,10 @@ def train_imappo(
         obs_array = normalise_obs(agent_order, obs_data)
         state_array = build_global_state(obs_array, cfg)
         tactical_posture = training_tactical_posture(episode)
-        intent, episode_mask = algo.sample_episode_intent_and_mask(
+        intent, episode_mask, intent_label = algo.sample_episode_intent_and_mask(
             tactical_posture=tactical_posture
         )
-        set_env_intent(env, intent)
+        set_env_intent(env, intent, intent_label)
         set_env_tactical_posture(env, tactical_posture)
 
         episode_return = 0.0
@@ -1165,6 +1235,8 @@ def build_imappo_config_from_args(args) -> IMAPPOConfig:
         algorithm=getattr(args, "algorithm", "imappo"),
         critic_mode=getattr(args, "critic_mode", "attention"),
         use_action_mask=getattr(args, "use_action_mask", True),
+        intent_source=getattr(args, "intent_source", "onehot"),
+        intent_library_path=getattr(args, "intent_library_path", ""),
         n_agents=n_agents,
         n_targets=n_targets,
         obs_dim=resolved_obs_dim,

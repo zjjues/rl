@@ -3,8 +3,12 @@ import sys
 
 from .multiagentenv import MultiAgentEnv
 from .gymma import GymmaWrapper
-from .smaclite_wrapper import SMACliteWrapper
 from .uav_scheduling_env import UAVSchedulingEnv  # noqa: F401
+
+try:
+    from .smaclite_wrapper import SMACliteWrapper
+except ImportError:
+    SMACliteWrapper = None
 
 
 if sys.platform == "linux":

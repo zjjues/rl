@@ -126,14 +126,16 @@ class UAVSchedulingEnv(gym.Env):
         self.last_reward_terms = {}
         self.current_intent = np.zeros((1,), dtype=np.float32)
         self.current_tactical_posture = 1.0
+        self.current_intent_label = ""
         self.threat_zone_centers = np.zeros((0, 3), dtype=np.float32)
         self.attack_threat_bonus = float(attack_threat_bonus)
         self.active_time_penalty = float(active_time_penalty)
         self.target_tracking_radius = float(target_tracking_radius)
 
-    def set_intent(self, intent) -> None:
+    def set_intent(self, intent, label: str = "") -> None:
         intent_array = np.asarray(intent, dtype=np.float32).reshape(-1)
         self.current_intent = intent_array
+        self.current_intent_label = str(label) if label else ""
 
     def set_tactical_posture(self, posture) -> None:
         if isinstance(posture, str):
@@ -177,6 +179,7 @@ class UAVSchedulingEnv(gym.Env):
         self.last_reward_terms = {}
         self.current_intent = np.zeros((1,), dtype=np.float32)
         self.current_tactical_posture = 1.0
+        self.current_intent_label = ""
         obs = self._get_obs()
         info = {agent: {} for agent in self.agent_names}
         return obs, info
@@ -248,6 +251,7 @@ class UAVSchedulingEnv(gym.Env):
                 "reward_threat": float(self.last_reward_terms["threat"][i]),
                 "threat_zone_violation": bool(self.last_reward_terms["threat_violation"][i] > 0.0),
                 "tactical_posture_flag": float(self.current_tactical_posture),
+                "intent_label": self.current_intent_label,
             }
             for i, agent in enumerate(self.agent_names)
         }

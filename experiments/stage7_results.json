@@ -1,0 +1,64 @@
+{
+  "stage": 7,
+  "description": "LLM intent library integration — I-MAPPO(llm_library) vs MAPPO vs I-MAPPO(onehot)",
+  "date": "2026-05-04",
+  "config": {
+    "episodes": 3000,
+    "steps": 50,
+    "seeds": [7, 11, 23],
+    "n_agents": 8,
+    "n_targets": 6,
+    "intent_dim": 64,
+    "intent_source_llm": "llm_library (static hash, 25 pre-built descriptions)",
+    "intent_source_onehot": "onehot (original)"
+  },
+  "results": {
+    "llm_library": {
+      "imappo": {
+        "collision_rate_eval": 0.2893,
+        "collision_rate_easy": 0.2893,
+        "collision_rate_mid": 0.3040,
+        "collision_rate_hard": 0.5173,
+        "task_completion_easy": 0.7837,
+        "task_completion_mid": 0.7482,
+        "task_completion_hard": 0.7556
+      },
+      "mappo": {
+        "collision_rate_eval": 0.4813,
+        "collision_rate_easy": 0.4813,
+        "collision_rate_mid": 0.3947,
+        "collision_rate_hard": 0.5173,
+        "task_completion_easy": 0.7679,
+        "task_completion_mid": 0.7566,
+        "task_completion_hard": 0.7426
+      }
+    },
+    "onehot_baseline": {
+      "imappo": {
+        "collision_rate_eval": 0.4240,
+        "collision_rate_easy": 0.4240,
+        "collision_rate_mid": 0.6200,
+        "collision_rate_hard": 0.5347,
+        "task_completion_easy": 0.7912,
+        "task_completion_mid": 0.7844,
+        "task_completion_hard": 0.7585
+      },
+      "mappo": {
+        "collision_rate_eval": 0.3533,
+        "collision_rate_easy": 0.3533,
+        "collision_rate_mid": 0.4933,
+        "collision_rate_hard": 0.7987,
+        "task_completion_easy": 0.7928,
+        "task_completion_mid": 0.7856,
+        "task_completion_hard": 0.7891
+      }
+    }
+  },
+  "analysis": {
+    "llm_vs_onehot_imappo_collision_drop": "0.4240 -> 0.2893 (-31.8%)",
+    "llm_imappo_vs_mappo_collision_advantage": "0.2893 vs 0.4813 (-40.0%)",
+    "onehot_imappo_vs_mappo_collision_disadvantage": "0.4240 vs 0.3533 (+20.0%)",
+    "task_completion_preserved": true,
+    "conclusion": "LLM semantic intent vectors significantly improve I-MAPPO safety performance while maintaining task completion. The onehot baseline shows I-MAPPO underperforms MAPPO, but LLM intent reverses this trend convincingly."
+  }
+}

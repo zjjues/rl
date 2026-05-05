@@ -29,6 +29,9 @@ def parse_args():
     parser.add_argument("--n-agents", type=int, default=8)
     parser.add_argument("--n-targets", type=int, default=6)
     parser.add_argument("--safety-reward-coef", type=float, default=1.0)
+    parser.add_argument("--intent-source", choices=["onehot", "llm_library"], default="onehot")
+    parser.add_argument("--intent-dim", type=int, default=64)
+    parser.add_argument("--intent-library-path", type=str, default="")
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -330,6 +333,9 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
         algorithm=args.algorithm,
         critic_mode="uniform" if is_mappo else "attention",
         use_action_mask=not is_mappo,
+        intent_source=args.intent_source,
+        intent_library_path=args.intent_library_path,
+        intent_dim=args.intent_dim,
         seed=seed,
         n_agents=args.n_agents,
         n_targets=args.n_targets,
