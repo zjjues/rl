@@ -48,6 +48,36 @@ DEFAULT_INTENT_DESCRIPTIONS = [
     ("hover_and_observe", "Hover and observe: station-keep at safe altitude, only move when target is clearly identified"),
 ]
 
+# ── VMAS / Multi-Agent Particle intent descriptions ────────────────────────────
+
+VMAS_INTENT_DESCRIPTIONS = [
+    ("cautious_navigation", "Maintain safe distance from all other agents, prioritize collision-free paths even at the cost of slower coverage"),
+    ("aggressive_intercept", "Rush directly to the nearest uncovered landmark, accept close proximity to other agents"),
+    ("balanced_coverage", "Equal weight on covering all landmarks quickly and maintaining agent separation"),
+    ("formation_spread", "Distribute agents evenly across the spatial area, maintaining a geometric formation while approaching landmarks"),
+    ("cooperative_signaling", "Agents take turns approaching landmarks, coordinating to maximize overall coverage"),
+    ("perimeter_first", "Cover landmarks on the outer boundary first, then move inward"),
+    ("center_priority", "Prioritize landmarks near the center of the environment"),
+    ("greedy_nearest", "Each agent independently moves to its nearest uncovered landmark"),
+    ("energy_efficient", "Minimize acceleration and movement, prefer slow steady trajectories"),
+    ("speed_optimized", "Maximize speed to reach landmarks as quickly as possible"),
+    ("reactive_avoidance", "Only avoid other agents when collision is imminent"),
+    ("predictive_planning", "Anticipate other agents' movements several steps ahead"),
+    ("territorial_division", "Each agent takes responsibility for a fixed spatial sector"),
+    ("load_balanced", "Dynamically reassign landmark targets to balance workload across agents"),
+    ("communication_minimal", "Operate with minimal awareness of other agents' positions"),
+    ("full_awareness", "Maintain tight awareness of all agent positions and landmark assignments"),
+    ("sequential_sweep", "Agents sweep the environment in a coordinated sequential pattern"),
+    ("random_exploration", "Explore the environment with high entropy, accept temporary inefficiency"),
+    ("boundary_patrol", "Circle the environment boundary, intercept landmarks at the edge"),
+    ("cluster_then_spread", "Initially cluster together, then spread out once landmark positions are known"),
+    ("landmark_priority", "Prioritize landmarks that are currently uncovered over maintaining agent separation"),
+    ("safe_conservative", "Move only when a clear path to the next landmark is available"),
+    ("hierarchical_leader", "One agent acts as coordinator, others follow its assignments"),
+    ("emergent_swarm", "Use simple local rules to achieve emergent coverage behavior"),
+    ("minimal_movement", "Stay as still as possible, only move to cover a landmark when absolutely necessary"),
+]
+
 
 # ── LLM prompt templates ───────────────────────────────────────────────────
 
@@ -264,13 +294,25 @@ class IntentLibrary:
         cls,
         intent_dim: int = 64,
         descriptions: Optional[List[Tuple[str, str]]] = None,
+        domain: str = "uav",
     ) -> "IntentLibrary":
         """Create library from pre-built descriptions using deterministic hash embedding.
 
         This requires NO API calls and is the fastest way to get started.
         Each description is hashed to a deterministic unit vector via SHA256→PRNG.
+
+        Args:
+            intent_dim: Dimensionality of intent vectors.
+            descriptions: Optional custom list of (label, description) pairs.
+            domain: "uav" (default) uses UAV intent descriptions,
+                    "vmas" uses VMAS/Multi-Agent Particle descriptions.
         """
-        entries = descriptions or DEFAULT_INTENT_DESCRIPTIONS
+        if descriptions is not None:
+            entries = descriptions
+        elif domain == "vmas":
+            entries = VMAS_INTENT_DESCRIPTIONS
+        else:
+            entries = DEFAULT_INTENT_DESCRIPTIONS
         labels = [e[0] for e in entries]
         texts = [e[1] for e in entries]
 
