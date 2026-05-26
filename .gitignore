@@ -221,6 +221,7 @@ dmypy.json
 
 # Experiment checkpoints are too large/noisy for git; keep summaries and figures tracked.
 reports/**/*.pt
+experiments/**/*.pt
 
 # Local smoke-test outputs; formal experiment artifacts can still be committed explicitly.
 reports/stage3_smoke/
@@ -246,6 +247,7 @@ reports/imappo_stage5_v3/**/*.pt
 
 # Local Codex/session files
 .codex
+.claude/
 
 # Experiment outputs
 results/

@@ -1,0 +1,15 @@
+{
+  "seeds": [
+    42
+  ],
+  "algorithm": "imappo",
+  "output_dir": "experiments\\uav_smoke_backcompat",
+  "final_eval_collision_rate_mean": 0.44800000000000006,
+  "final_easy_probe_collision_rate_mean": 0.44800000000000006,
+  "final_mid_probe_collision_rate_mean": 0.616,
+  "final_hard_probe_collision_rate_mean": 0.728,
+  "final_easy_probe_task_completion_mean": 0.5193018761277199,
+  "final_mid_probe_task_completion_mean": 0.49958435302972787,
+  "final_hard_probe_task_completion_mean": 0.508279993891716,
+  "final_probe_collision_rate_mean": 0.728
+}

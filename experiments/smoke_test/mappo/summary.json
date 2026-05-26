@@ -1,0 +1,15 @@
+{
+  "seeds": [
+    0
+  ],
+  "algorithm": "mappo",
+  "output_dir": "experiments\\smoke_test",
+  "final_eval_collision_rate_mean": 0.476,
+  "final_easy_probe_collision_rate_mean": 0.476,
+  "final_mid_probe_collision_rate_mean": 0.43599999999999994,
+  "final_hard_probe_collision_rate_mean": 0.672,
+  "final_easy_probe_task_completion_mean": 0.620402298361063,
+  "final_mid_probe_task_completion_mean": 0.5859591003060342,
+  "final_hard_probe_task_completion_mean": 0.5774667357802391,
+  "final_probe_collision_rate_mean": 0.672
+}
