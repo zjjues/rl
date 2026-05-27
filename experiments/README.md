@@ -4,9 +4,10 @@
 
 ## 保留内容
 
-- `stage7_llm/`：语义意图编码库条件。历史目录名仍为 `llm`，论文中建议表述为“语义意图编码库”。
+- `stage7_semantic_library/`：语义意图编码库条件，论文中建议表述为“语义意图编码库”。
 - `stage7_baseline_onehot/`：one-hot 意图编码基线。
 - `vmas_stage1/`：VMAS dispersion 验证实验，用于说明跨环境接入和方法适用边界。
+- `closed_loop_tuning/`：闭环调参脚本的短配置验证结果，用于确认 5 seed 多候选流程可运行；不作为论文主结果。
 - `STAGE7_REPORT.md`：Stage7 结果摘要。
 - `stage7_results.json`：Stage7 关键指标汇总。
 

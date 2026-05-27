@@ -12,7 +12,6 @@
 - `requirements.txt`、`env_requirements.txt`、`pac_requirements.txt`：依赖文件。
 - `run.sh`、`runalgo.sh`、`run_interactive.sh`：原有运行入口。
 - `plot_results.py`：结果绘图脚本。
-- `P0实验完整报告.md`：当前 P0 阶段实验综合说明。
 
 已删除旧版 `reports/`、smoke 测试、中间日志、checkpoint 和过时英文报告，方便后续继续增加实验。
 
@@ -24,17 +23,17 @@
 
 路径：
 
-- `experiments/stage7_llm/`
+- `experiments/stage7_semantic_library/`
 - `experiments/stage7_baseline_onehot/`
 - `experiments/STAGE7_REPORT.md`
 - `experiments/stage7_results.json`
 
 说明：
 
-- `stage7_llm/` 实际对应“语义意图编码库”条件，历史目录名仍保留为 `stage7_llm`。
+- `stage7_semantic_library/` 对应“语义意图编码库”条件。
 - `stage7_baseline_onehot/` 对应 one-hot 意图编码基线。
 - 两组均包含 I-MAPPO 与 MAPPO 对比，seed 为 `7, 11, 23`。
-- 当前论文写作时建议称为“语义意图编码库”或 “semantic intent library”，不建议继续把它作为真实 LLM 在线推理实验表述。
+- 当前论文写作时建议称为“语义意图编码库”或 “semantic intent library”，不建议继续把它作为真实在线推理实验表述。
 
 核心结论：
 
@@ -96,9 +95,10 @@ pip install -r env_requirements.txt
 
 - `src/imappo_experiments.py`
 - `src/imappo_vmas_experiments.py`
-- `src/intent_llm.py`
+- `src/intent_semantic_encoder.py`
 - `src/imappo.py`
 - `src/envs/uav_scheduling_env.py`
+- `automated_closed_loop_tuner.py`
 
 具体参数以脚本内 CLI 定义为准。新增正式实验前，建议先确定输出目录命名，避免再次混入 smoke 或临时结果。
 
@@ -108,9 +108,9 @@ pip install -r env_requirements.txt
 
 - “意图编码驱动的多智能体强化学习”
 - “语义意图编码库相较 one-hot 意图编码可降低碰撞率”
-- “高层意图可由规则、专家知识库或大模型生成，本文重点研究意图表示如何注入底层 MARL 决策”
+- “高层意图可由规则、专家知识库或上层规划器生成，本文重点研究意图表示如何注入底层 MARL 决策”
 
-不建议把现有 Stage7 结果直接表述为“真实 LLM 在线推理闭环实验”，因为当前 `stage7_llm` 使用的是静态语义意图库和 hash embedding。
+不建议把现有 Stage7 结果直接表述为“真实在线推理闭环实验”，因为当前 `stage7_semantic_library` 使用的是静态语义意图库和 hash embedding。
 
 ## 许可证
 

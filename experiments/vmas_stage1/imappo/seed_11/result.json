@@ -10,7 +10,7 @@
     "obs_dim": 13,
     "state_dim": 39,
     "action_dim": 2,
-    "intent_source": "llm_library",
+    "intent_source": "semantic_library",
     "intent_dim": 64
   },
   "eval_metrics": {

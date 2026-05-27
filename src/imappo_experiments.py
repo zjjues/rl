@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument("--n-agents", type=int, default=8)
     parser.add_argument("--n-targets", type=int, default=6)
     parser.add_argument("--safety-reward-coef", type=float, default=1.0)
-    parser.add_argument("--intent-source", choices=["onehot", "llm_library"], default="onehot")
+    parser.add_argument("--intent-source", choices=["onehot", "semantic_library"], default="onehot")
     parser.add_argument("--intent-dim", type=int, default=64)
     parser.add_argument("--intent-library-path", type=str, default="")
     parser.add_argument(

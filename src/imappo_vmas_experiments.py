@@ -9,7 +9,7 @@ Usage:
 
     # Full comparison
     python src/imappo_vmas_experiments.py --algorithm both --scenario dispersion \\
-        --episodes 3000 --seeds 7 11 23 --intent-source llm_library
+        --episodes 3000 --seeds 7 11 23 --intent-source semantic_library
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ from envs.vmas_adapter import (
     VMAS_SCENARIOS,
     infer_vmas_dims,
 )
-from intent_llm import IntentLibrary
+from intent_semantic_encoder import IntentLibrary
 
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ def parse_args():
     parser.add_argument("--seeds", type=int, nargs="+", default=[7, 11, 23])
     parser.add_argument("--save-every", type=int, default=100)
     parser.add_argument("--n-agents", type=int, default=3)
-    parser.add_argument("--intent-source", choices=["onehot", "llm_library"], default="llm_library")
+    parser.add_argument("--intent-source", choices=["onehot", "semantic_library"], default="semantic_library")
     parser.add_argument("--intent-dim", type=int, default=64)
     parser.add_argument("--intent-library-path", type=str, default="")
     parser.add_argument("--output-dir", type=Path, default=Path("experiments/vmas_stage1"))
@@ -297,9 +297,9 @@ def main():
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Build intent library for logging/metadata (llm_library mode only)
+    # Build intent library for logging/metadata (semantic_library mode only)
     intent_library = None
-    if args.intent_source == "llm_library":
+    if args.intent_source == "semantic_library":
         intent_library = IntentLibrary.create_static(
             intent_dim=args.intent_dim,
             domain="vmas",

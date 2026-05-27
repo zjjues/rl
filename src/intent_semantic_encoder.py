@@ -1,8 +1,8 @@
-"""LLM-powered intent generation and vector library for I-MAPPO.
+"""Offline semantic intent intent generation and vector library for I-MAPPO.
 
 Provides:
 - IntentLibrary: manage, persist, and sample semantic intent vectors
-- LLM-powered description generation (Anthropic / OpenAI)
+- Offline semantic intent description generation (Anthropic / OpenAI)
 - Embedding via OpenAI API or deterministic hash (offline mode)
 - Pre-built intent descriptions for UAV scheduling domain
 """
@@ -79,11 +79,11 @@ VMAS_INTENT_DESCRIPTIONS = [
 ]
 
 
-# ── LLM prompt templates ───────────────────────────────────────────────────
+# ── semantic intent prompt templates ───────────────────────────────────────────────────
 
 def _build_intent_generation_prompt(n: int, domain: str) -> str:
     return f"""You are designing strategic intent vectors for a multi-UAV reinforcement learning system.
-Each intent is a natural-language description of a high-level strategy that UAVs should follow during a mission.
+Each intent is a textual description of a high-level strategy that UAVs should follow during a mission.
 
 Domain: {domain}
 Number of intents needed: {n}
@@ -108,7 +108,7 @@ Generate exactly {n} diverse intents. Return ONLY the JSON array, no other text.
 
 def _build_intent_generation_prompt_zh(n: int, domain: str) -> str:
     return f"""你正在为一个多无人机强化学习系统设计策略意图向量。
-每个意图是一段自然语言描述，表示无人机在任务中应遵循的高层策略。
+每个意图是一段文本描述，表示无人机在任务中应遵循的高层策略。
 
 领域: {domain}
 需要的意图数量: {n}
@@ -131,7 +131,7 @@ def _build_intent_generation_prompt_zh(n: int, domain: str) -> str:
 生成恰好 {n} 个多样化的意图。只返回 JSON 数组，不要其他文字。"""
 
 
-# ── LLM calling helpers ────────────────────────────────────────────────────
+# ── optional description-generation helpers ────────────────────────────────────────────────────
 
 def _call_anthropic(client, model: str, prompt: str) -> str:
     response = client.messages.create(
@@ -152,7 +152,7 @@ def _call_openai(client, model: str, prompt: str) -> str:
 
 
 def _parse_intent_response(text: str) -> Tuple[List[str], List[str]]:
-    """Parse LLM JSON response into (descriptions, labels)."""
+    """Parse semantic intent JSON response into (descriptions, labels)."""
     # Try to extract JSON array from the response
     text = text.strip()
     # Remove markdown code fences if present
@@ -383,15 +383,15 @@ class IntentLibrary:
             vectors=embeddings,
             descriptions=descriptions,
             labels=labels or [],
-            metadata={"embed_model": embed_model, "source": "llm_embedding"},
+            metadata={"embed_model": embed_model, "source": "semantic_library_embedding"},
         )
 
     @classmethod
-    def generate_from_llm(
+    def generate_from_semantic_library(
         cls,
         n: int = 50,
-        llm_client: Optional[object] = None,
-        llm_model: str = "claude-sonnet-4-20250514",
+        semantic_library_client: Optional[object] = None,
+        semantic_library_model: str = "claude-sonnet-4-20250514",
         embed_model: str = "static",
         embed_client: Optional[object] = None,
         intent_dim: int = 64,
@@ -399,12 +399,12 @@ class IntentLibrary:
         domain: str = "uav_scheduling",
         language: str = "en",
     ) -> "IntentLibrary":
-        """Full pipeline: LLM generates descriptions → embed → IntentLibrary.
+        """Full pipeline: offline semantic-intent workflow prepares descriptions → embed → IntentLibrary.
 
         Args:
             n: Number of intent descriptions to generate.
-            llm_client: Anthropic or OpenAI client instance.
-            llm_model: Model name for text generation.
+            semantic_library_client: Anthropic or OpenAI client instance.
+            semantic_library_model: Model name for text generation.
             embed_model: Embedding model ("static", "text-embedding-3-small", etc.).
             embed_client: Client for embedding API.
             intent_dim: Target intent vector dimension.
@@ -412,9 +412,9 @@ class IntentLibrary:
             domain: Domain description for the generation prompt.
             language: "en" or "zh".
         """
-        # 1. Generate descriptions via LLM
-        descriptions, labels = _generate_intents_from_llm(
-            n=n, client=llm_client, model=llm_model,
+        # 1. Prepare semantic descriptions
+        descriptions, labels = _generate_intents_from_semantic_library(
+            n=n, client=semantic_library_client, model=semantic_library_model,
             api_key=api_key, domain=domain, language=language,
         )
         # 2. Embed
@@ -428,7 +428,7 @@ class IntentLibrary:
         )
 
 
-def _generate_intents_from_llm(
+def _generate_intents_from_semantic_library(
     n: int,
     client: Optional[object],
     model: str,
@@ -436,7 +436,7 @@ def _generate_intents_from_llm(
     domain: str,
     language: str,
 ) -> Tuple[List[str], List[str]]:
-    """Call an LLM to generate intent descriptions. Returns (descriptions, labels)."""
+    """Generate candidate text descriptions to generate intent descriptions. Returns (descriptions, labels)."""
     if language == "zh":
         prompt = _build_intent_generation_prompt_zh(n, domain)
     else:
@@ -452,7 +452,7 @@ def _generate_intents_from_llm(
             try:
                 response_text = _call_openai(client, model, prompt)
             except Exception as e:
-                raise RuntimeError(f"LLM call failed with provided client: {e}")
+                raise RuntimeError(f"description generation failed with provided client: {e}")
 
     # Auto-detect and try Anthropic SDK
     if response_text is None:
@@ -479,10 +479,10 @@ def _generate_intents_from_llm(
 
     if response_text is None:
         raise RuntimeError(
-            "Failed to generate intents via LLM. Ensure you have either:\n"
+            "Failed to generate intents. Ensure you have either:\n"
             "  - anthropic SDK installed and ANTHROPIC_API_KEY set, or\n"
             "  - openai SDK installed and OPENAI_API_KEY set, or\n"
-            "  - Pass a pre-configured client via llm_client parameter.\n"
+            "  - Pass a pre-configured client via semantic_library_client parameter.\n"
             "Alternatively, use IntentLibrary.create_static() for offline mode."
         )
 

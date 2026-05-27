@@ -109,10 +109,13 @@ class UAVSchedulingEnv(gym.Env):
 
         self.positions = None
         self.velocities = None
+        self.target_positions = None
+        self.target_velocities = None
         self.targets = None
         self.energy = None
         self.pending_tasks = None
         self.prev_dist_to_target = None
+        self.prev_task_cost = None
         self.prev_task_completion = None
         self.step_count = 0
         self.d_safe = d_safe
@@ -151,18 +154,23 @@ class UAVSchedulingEnv(gym.Env):
         self.step_count = 0
         self.positions = self._sample_initial_positions().astype(np.float32)
         self.velocities = np.zeros((self.n_agents, 3), dtype=np.float32)
-        target_pool = self.np_random.uniform(
+        self.target_positions = self.np_random.uniform(
             low=-self.world_size,
             high=self.world_size,
             size=(self.n_targets, 3),
         ).astype(np.float32)
+        self.target_velocities = self.np_random.uniform(
+            low=-0.08,
+            high=0.08,
+            size=(self.n_targets, 3),
+        ).astype(np.float32)
         target_indices = np.arange(self.n_agents) % self.n_targets
-        self.targets = target_pool[target_indices].astype(np.float32)
-        threat_zone_count = min(self.threat_zone_target_count, len(target_pool))
+        self.targets = self.target_positions[target_indices].astype(np.float32)
+        threat_zone_count = min(self.threat_zone_target_count, len(self.target_positions))
         # In Stage 6 v2, radar zones sit directly on the high-value targets.
         # Attack-mode success therefore requires entering the threat bubble,
         # while stealth-mode pursuit remains explicitly hazardous.
-        self.threat_zone_centers = target_pool[:threat_zone_count].astype(np.float32)
+        self.threat_zone_centers = self.target_positions[:threat_zone_count].astype(np.float32)
         self.energy = np.ones((self.n_agents, 1), dtype=np.float32)
         self.pending_tasks = self.np_random.uniform(
             low=0.0,
@@ -172,6 +180,7 @@ class UAVSchedulingEnv(gym.Env):
         self.prev_dist_to_target = np.linalg.norm(
             self.targets - self.positions, axis=1
         ).astype(np.float32)
+        self.prev_task_cost = self._compute_task_cost()
         self.prev_task_completion = (
             1.0 - self.pending_tasks.mean(axis=1)
         ).astype(np.float32)
@@ -192,6 +201,22 @@ class UAVSchedulingEnv(gym.Env):
         self.velocities = 0.7 * self.velocities + 0.3 * actions
         self.positions = self.positions + self.dt * self.velocities
         self.positions = np.clip(self.positions, -self.world_size, self.world_size)
+        self.target_positions = self.target_positions + self.dt * self.target_velocities
+        target_out_of_bounds = np.abs(self.target_positions) >= self.world_size
+        self.target_velocities = np.where(
+            target_out_of_bounds,
+            -self.target_velocities,
+            self.target_velocities,
+        )
+        self.target_positions = np.clip(
+            self.target_positions,
+            -self.world_size,
+            self.world_size,
+        )
+        target_indices = np.arange(self.n_agents) % self.n_targets
+        self.targets = self.target_positions[target_indices].astype(np.float32)
+        threat_zone_count = min(self.threat_zone_target_count, len(self.target_positions))
+        self.threat_zone_centers = self.target_positions[:threat_zone_count].astype(np.float32)
         self.energy = np.clip(
             self.energy - 0.02 * np.linalg.norm(actions, axis=1, keepdims=True),
             0.0,
@@ -204,6 +229,7 @@ class UAVSchedulingEnv(gym.Env):
         )
 
         dist_to_target = np.linalg.norm(self.targets - self.positions, axis=1)
+        task_cost = self._compute_task_cost()
         pairwise_dist = self._pairwise_distances(self.positions)
         normalised_pairwise_dist = pairwise_dist / max(2.0 * self.world_size, 1e-6)
         collision_penalty = (normalised_pairwise_dist < self.d_safe).astype(np.float32)
@@ -228,8 +254,10 @@ class UAVSchedulingEnv(gym.Env):
             collision_penalty=collision_penalty,
             proximity_penalty=proximity_penalty,
             task_completion=task_completion,
+            task_cost=task_cost,
         )
         self.prev_dist_to_target = dist_to_target.astype(np.float32)
+        self.prev_task_cost = float(task_cost)
         self.prev_task_completion = task_completion.astype(np.float32)
 
         done = self.step_count >= self.max_episode_steps
@@ -247,6 +275,7 @@ class UAVSchedulingEnv(gym.Env):
                 "reward_collision": float(self.last_reward_terms["collision"][i]),
                 "reward_safety": float(self.last_reward_terms["safety"][i]),
                 "reward_task": float(self.last_reward_terms["task"][i]),
+                "task_cost": float(self.last_reward_terms["task_cost"]),
                 "reward_time": float(self.last_reward_terms["time"][i]),
                 "reward_threat": float(self.last_reward_terms["threat"][i]),
                 "threat_zone_violation": bool(self.last_reward_terms["threat_violation"][i] > 0.0),
@@ -264,12 +293,19 @@ class UAVSchedulingEnv(gym.Env):
         collision_penalty,
         proximity_penalty,
         task_completion,
+        task_cost,
     ):
         # Keep the extrinsic reward in a narrow range so PPO targets remain stable.
-        distance_progress = np.clip(
-            (self.prev_dist_to_target - dist_to_target) / max(self.world_size, 1e-6),
+        task_cost_progress = np.clip(
+            (float(self.prev_task_cost) - float(task_cost))
+            / max(self.n_targets * self.world_size, 1e-6),
             -1.0,
             1.0,
+        )
+        distance_progress = np.full(
+            (self.n_agents,),
+            task_cost_progress,
+            dtype=np.float32,
         )
         task_progress = np.clip(
             task_completion - self.prev_task_completion,
@@ -327,6 +363,7 @@ class UAVSchedulingEnv(gym.Env):
             "collision": collision_term.astype(np.float32),
             "safety": safety_term.astype(np.float32),
             "task": task_term.astype(np.float32),
+            "task_cost": float(task_cost),
             "time": time_term.astype(np.float32),
             "threat": threat_term.astype(np.float32),
             "threat_violation": threat_violation.astype(np.float32),
@@ -358,6 +395,13 @@ class UAVSchedulingEnv(gym.Env):
     def _pairwise_distances(self, positions):
         diff = positions[:, None, :] - positions[None, :, :]
         return np.linalg.norm(diff, axis=-1)
+
+    def _compute_task_cost(self) -> float:
+        distances = np.linalg.norm(
+            self.positions[:, None, :] - self.target_positions[None, :, :],
+            axis=-1,
+        )
+        return float(np.min(distances, axis=0).sum())
 
     def _get_obs(self):
         obs = []

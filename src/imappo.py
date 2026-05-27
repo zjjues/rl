@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -11,7 +12,7 @@ from torch.distributions import Normal
 import gymnasium as gym
 
 from envs.uav_scheduling_env import infer_obs_dim, infer_state_dim
-from intent_llm import IntentLibrary
+from intent_semantic_encoder import IntentLibrary
 
 
 Tensor = torch.Tensor
@@ -327,7 +328,7 @@ class IMAPPO:
 
         self.intent_library: Optional[IntentLibrary] = None
         self._eval_intent_cache: Optional[Dict[str, Tensor]] = None
-        if config.intent_source == "llm_library":
+        if config.intent_source == "semantic_library":
             self._init_intent_library()
 
         self.actor = IntentConditionedActor(config).to(self.device)
@@ -350,7 +351,7 @@ class IMAPPO:
                 param.requires_grad = False
 
     def _init_intent_library(self) -> None:
-        """Load or create the intent vector library for LLM-based intents."""
+        """Load or create the offline semantic intent vector library."""
         lib_path = self.config.intent_library_path
         if lib_path and Path(lib_path).with_suffix(".npz").exists():
             self.intent_library = IntentLibrary.load(lib_path)
@@ -410,8 +411,8 @@ class IMAPPO:
         if self.config.algorithm == "mappo":
             return torch.zeros(self.config.intent_dim, device=self.device), uniform_mask, ""
 
-        # LLM library mode: sample semantic intent from library, uniform mask
-        if self.config.intent_source == "llm_library" and self.intent_library is not None:
+        # Semantic-library mode: sample an offline semantic intent vector.
+        if self.config.intent_source == "semantic_library" and self.intent_library is not None:
             vecs, labels, _ = self.intent_library.sample_with_info(1)
             intent = torch.from_numpy(vecs[0]).to(self.device)
             return intent, uniform_mask, labels[0] if labels else ""
@@ -451,8 +452,8 @@ class IMAPPO:
         if self.config.algorithm == "mappo":
             return torch.zeros(self.config.intent_dim, device=self.device), uniform_mask, ""
 
-        # LLM library mode: use pre-cached semantic intents for evaluation
-        if self.config.intent_source == "llm_library" and self.intent_library is not None:
+        # Semantic-library mode: use pre-cached semantic intents for evaluation.
+        if self.config.intent_source == "semantic_library" and self.intent_library is not None:
             if self._eval_intent_cache is None:
                 self._eval_intent_cache = self._build_eval_intent_cache()
             cache_key = mode if mode in self._eval_intent_cache else "standard"
@@ -489,11 +490,7 @@ class IMAPPO:
             return env_reward, torch.zeros((), dtype=env_reward.dtype, device=env_reward.device)
         phi_t = self.potential(state.unsqueeze(0), intent.unsqueeze(0)).squeeze(0)
         phi_tp1 = self.potential(next_state.unsqueeze(0), intent.unsqueeze(0)).squeeze(0)
-        intrinsic_reward = torch.clamp(
-            self.config.gamma * phi_tp1 - phi_t,
-            min=-1.0,
-            max=1.0,
-        )
+        intrinsic_reward = self.config.gamma * phi_tp1 - phi_t
         total_reward = env_reward + self.current_eta * intrinsic_reward
         return total_reward, intrinsic_reward
 
@@ -897,6 +894,7 @@ def summarise_step_info(infos, agent_order: List[str]) -> Dict[str, float]:
         "reward_collision": 0.0,
         "reward_safety": 0.0,
         "reward_task": 0.0,
+        "task_cost": 0.0,
         "reward_time": 0.0,
         "reward_threat": 0.0,
     }

@@ -1,6 +1,6 @@
 {
   "stage": 7,
-  "description": "LLM intent library integration — I-MAPPO(llm_library) vs MAPPO vs I-MAPPO(onehot)",
+  "description": "semantic intent library integration — I-MAPPO(semantic_library) vs MAPPO vs I-MAPPO(onehot)",
   "date": "2026-05-04",
   "config": {
     "episodes": 3000,
@@ -9,11 +9,11 @@
     "n_agents": 8,
     "n_targets": 6,
     "intent_dim": 64,
-    "intent_source_llm": "llm_library (static hash, 25 pre-built descriptions)",
+    "intent_source_semantic_library": "semantic_library (static hash, 25 pre-built descriptions)",
     "intent_source_onehot": "onehot (original)"
   },
   "results": {
-    "llm_library": {
+    "semantic_library": {
       "imappo": {
         "collision_rate_eval": 0.2893,
         "collision_rate_easy": 0.2893,
@@ -55,10 +55,10 @@
     }
   },
   "analysis": {
-    "llm_vs_onehot_imappo_collision_drop": "0.4240 -> 0.2893 (-31.8%)",
-    "llm_imappo_vs_mappo_collision_advantage": "0.2893 vs 0.4813 (-40.0%)",
+    "semantic_library_vs_onehot_imappo_collision_drop": "0.4240 -> 0.2893 (-31.8%)",
+    "semantic_library_imappo_vs_mappo_collision_advantage": "0.2893 vs 0.4813 (-40.0%)",
     "onehot_imappo_vs_mappo_collision_disadvantage": "0.4240 vs 0.3533 (+20.0%)",
     "task_completion_preserved": true,
-    "conclusion": "LLM semantic intent vectors significantly improve I-MAPPO safety performance while maintaining task completion. The onehot baseline shows I-MAPPO underperforms MAPPO, but LLM intent reverses this trend convincingly."
+    "conclusion": "semantic intent vectors significantly improve I-MAPPO safety performance while maintaining task completion. The onehot baseline shows I-MAPPO underperforms MAPPO, but semantic intent reverses this trend convincingly."
   }
 }
