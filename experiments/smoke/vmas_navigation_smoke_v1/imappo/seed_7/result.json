@@ -1,0 +1,94 @@
+{
+  "seed": 7,
+  "algorithm": "imappo",
+  "scenario": "navigation",
+  "config": {
+    "algorithm": "imappo",
+    "episodes": 2,
+    "steps": 20,
+    "n_agents": 3,
+    "obs_dim": 18,
+    "state_dim": 54,
+    "action_dim": 2,
+    "intent_source": "onehot",
+    "intent_dim": 25
+  },
+  "eval_metrics": {
+    "eval_episode_return": 0.05634555220603943,
+    "eval_episode_collisions": 0.0,
+    "eval_collision_rate": 0.0,
+    "eval_task_completion": 0.0
+  },
+  "logs": [
+    {
+      "episode": 0.0,
+      "episode_return": 0.09504042379558086,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_reward_env": 0.09071601927280426,
+      "episode_reward_intent": 0.0043244026601314545,
+      "episode_task_completion": 0.0,
+      "episode_reward_dist": 0.0,
+      "episode_reward_energy": 0.0,
+      "episode_reward_collision": 0.0,
+      "episode_reward_safety": 0.0,
+      "episode_reward_task": 0.0,
+      "episode_reward_time": 0.0,
+      "episode_reward_threat": 0.0,
+      "algorithm": "imappo",
+      "intent_label": "aggressive_pursuit",
+      "tactical_posture": "attack",
+      "intent_source": "onehot"
+    },
+    {
+      "actor_loss": -0.008797620423138142,
+      "critic_loss": 0.00041294738184660673,
+      "entropy": 0.8327219486236572,
+      "potential_loss": 0.0838906317949295,
+      "return_mean": 0.0007589984452351928,
+      "eta": 0.09999999999999998,
+      "entropy_coef": 0.00010000000000000005,
+      "episode": 1.0,
+      "algorithm": "imappo"
+    },
+    {
+      "actor_loss": -0.016230283305048943,
+      "critic_loss": 0.00012893803068436682,
+      "entropy": 0.8316223621368408,
+      "potential_loss": 0.07494300603866577,
+      "return_mean": -0.008402680046856403,
+      "eta": 0.09999999999999998,
+      "entropy_coef": 0.00010000000000000005,
+      "episode": 1.0,
+      "algorithm": "imappo"
+    },
+    {
+      "episode": 1.0,
+      "episode_return": -0.13797392055857927,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_reward_env": -0.13881897926330566,
+      "episode_reward_intent": 0.0008450577734038234,
+      "episode_task_completion": 0.0,
+      "episode_reward_dist": 0.0,
+      "episode_reward_energy": 0.0,
+      "episode_reward_collision": 0.0,
+      "episode_reward_safety": 0.0,
+      "episode_reward_task": 0.0,
+      "episode_reward_time": 0.0,
+      "episode_reward_threat": 0.0,
+      "algorithm": "imappo",
+      "intent_label": "coverage_maximization",
+      "tactical_posture": "stealth",
+      "intent_source": "onehot"
+    },
+    {
+      "eval_episode_return": 0.020006179809570312,
+      "eval_episode_collisions": 0.0,
+      "eval_collision_rate": 0.0,
+      "eval_task_completion": 0.0,
+      "episode": 1.0,
+      "algorithm": "imappo"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+actor_loss,algorithm,critic_loss,entropy,entropy_coef,episode,episode_collision_rate,episode_collisions,episode_return,episode_reward_collision,episode_reward_dist,episode_reward_energy,episode_reward_env,episode_reward_intent,episode_reward_safety,episode_reward_task,episode_reward_threat,episode_reward_time,episode_task_completion,eta,eval_collision_rate,eval_episode_collisions,eval_episode_return,eval_task_completion,intent_label,intent_source,potential_loss,return_mean,tactical_posture
+,imappo,,,,0.0,0.0,0.0,0.09504042379558086,0.0,0.0,0.0,0.09071601927280426,0.0043244026601314545,0.0,0.0,0.0,0.0,0.0,,,,,,aggressive_pursuit,onehot,,,attack
+-0.008797620423138142,imappo,0.00041294738184660673,0.8327219486236572,0.00010000000000000005,1.0,,,,,,,,,,,,,,0.09999999999999998,,,,,,,0.0838906317949295,0.0007589984452351928,
+-0.016230283305048943,imappo,0.00012893803068436682,0.8316223621368408,0.00010000000000000005,1.0,,,,,,,,,,,,,,0.09999999999999998,,,,,,,0.07494300603866577,-0.008402680046856403,
+,imappo,,,,1.0,0.0,0.0,-0.13797392055857927,0.0,0.0,0.0,-0.13881897926330566,0.0008450577734038234,0.0,0.0,0.0,0.0,0.0,,,,,,coverage_maximization,onehot,,,stealth
+,imappo,,,,1.0,,,,,,,,,,,,,,,0.0,0.0,0.020006179809570312,0.0,,,,,

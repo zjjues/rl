@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_semantic_cbf_smoke_v1",
+  "level": "smoke",
+  "objective": "Verify intent-conditioned pairwise CBF action projection, residual compatibility, and safety-margin controllability.",
+  "seeds": [7],
+  "bootstrap_seed": 20260801,
+  "environment": {"name": "uav-scheduling-v2", "n_agents": 4, "n_targets": 4, "safety_reward_coef": 1.0, "task_reward_coef": 1.2, "intent_reward_profiles_enabled": true},
+  "training": {"episodes": 50, "steps": 20, "rollout_length": 64, "minibatch_size": 64, "eval_interval": 25, "actor_lr": 0.0003, "critic_lr": 0.0003, "eta": 0.0, "eta_end": 0.0, "potential_update_mode": "frozen", "device": "cpu"},
+  "intent": {"dim": 64, "encoder_model": "sentence-transformers/all-MiniLM-L6-v2", "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41", "projection_seed": 17, "code_seed": 29, "adapter_ridge": 0.01, "semantic_weight": 0.0, "objective_weight": 1.0},
+  "treatment_key": "prototype_residual_cbf",
+  "variants": [
+    {"key": "prototype_residual_cbf", "intent_source": "objective_grounded_semantic", "intent_profile_decoder": "prototype_ridge", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "residual_rule", "rule_prior_context": "objective_profile", "residual_action_scale": 0.50, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false, "disable_intent_reward": true},
+    {"key": "prototype_prior_cbf", "intent_source": "objective_grounded_semantic", "intent_profile_decoder": "prototype_ridge", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "residual_rule", "rule_prior_context": "objective_profile", "residual_action_scale": 0.0, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false, "disable_intent_reward": true},
+    {"key": "prototype_prior_no_filter", "intent_source": "objective_grounded_semantic", "intent_profile_decoder": "prototype_ridge", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "residual_rule", "rule_prior_context": "objective_profile", "residual_action_scale": 0.0, "safety_filter_mode": "none", "use_action_mask": false, "disable_intent_reward": true},
+    {"key": "nonsemantic_residual_cbf", "intent_source": "onehot", "algorithm": "mappo", "critic_mode": "uniform", "policy_mode": "residual_rule", "rule_prior_context": "neutral", "residual_action_scale": 0.50, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false},
+    {"key": "objective_profile_oracle_cbf", "intent_source": "onehot", "algorithm": "rule_planner", "critic_mode": "rule", "rule_prior_context": "oracle_profile", "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false}
+  ],
+  "generalization": {"suite": "configs/research/uav_intent_generalization_suite.v2.json"},
+  "evaluation": {"episodes": 3, "risk_tiers": {"hard": {"spawn_region_scale": 0.33, "spawn_separation_scale": 0.80, "intent_mode": "dense"}, "critical": {"spawn_region_scale": 0.24, "spawn_separation_scale": 0.55, "intent_mode": "dense"}}}
+}

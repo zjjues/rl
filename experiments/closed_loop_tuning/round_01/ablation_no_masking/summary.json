@@ -1,0 +1,38 @@
+{
+  "variant": {
+    "key": "ablation_no_masking",
+    "display_name": "I-MAPPO (w/o Masking)",
+    "family": "ablation",
+    "intent_source": "semantic_library",
+    "algorithm": "imappo",
+    "critic_mode": "attention",
+    "use_action_mask": false,
+    "eta_override": null,
+    "eta_end_override": null,
+    "runnable_note": ""
+  },
+  "seed_count": 5,
+  "early_exploration_collision_rate_mean": 0.33073600000000003,
+  "replanning_latency_mean": 3.0,
+  "replanning_latency_std": 0.0,
+  "risk_tiers": {
+    "easy": {
+      "collision_rate_mean": 0.2272,
+      "collision_rate_std": 0.09789463723820625,
+      "task_completion_mean": 0.7061209264636038,
+      "task_completion_std": 0.022703333126287518
+    },
+    "medium": {
+      "collision_rate_mean": 0.1984,
+      "collision_rate_std": 0.0871449367433358,
+      "task_completion_mean": 0.7146091321766377,
+      "task_completion_std": 0.03422557002878215
+    },
+    "hard": {
+      "collision_rate_mean": 0.25680000000000003,
+      "collision_rate_std": 0.09013412228451555,
+      "task_completion_mean": 0.7224686585366726,
+      "task_completion_std": 0.017229258202094554
+    }
+  }
+}

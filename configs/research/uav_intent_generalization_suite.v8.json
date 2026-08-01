@@ -1,0 +1,13 @@
+{
+  "schema_version": 8,
+  "suite_id": "uav_intent_generalization_v8_safety_contract",
+  "description": "Six negotiable language preferences with collision removed from the preference space and retained as a non-relaxable safety constraint.",
+  "extends": "uav_intent_generalization_suite.v7.json",
+  "preference_objectives": ["distance", "energy", "safety", "task", "time", "threat"],
+  "safety_constraints": ["collision"],
+  "exclude_query_keys": [
+    "cf_collision_low",
+    "cf_collision_mid",
+    "cf_collision_high"
+  ]
+}

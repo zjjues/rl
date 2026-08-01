@@ -1,0 +1,626 @@
+{
+  "seed": 7,
+  "variant": {
+    "key": "onehot",
+    "intent_source": "onehot",
+    "intent_dim": 25,
+    "algorithm": "imappo",
+    "critic_mode": "attention",
+    "use_action_mask": true
+  },
+  "config": {
+    "algorithm": "imappo",
+    "critic_mode": "attention",
+    "use_action_mask": true,
+    "intent_source": "onehot",
+    "n_agents": 4,
+    "n_targets": 4,
+    "obs_dim": 30,
+    "state_dim": 120,
+    "action_dim": 3,
+    "intent_dim": 25,
+    "intent_library_path": "",
+    "intent_encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "intent_encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "intent_encoder_batch_size": 32,
+    "intent_projection_seed": 17,
+    "intent_code_seed": 29,
+    "intent_encoder_device": "",
+    "intent_train_labels": [
+      "safety_first",
+      "efficiency_first",
+      "balanced",
+      "aggressive_pursuit",
+      "cautious_exploration",
+      "load_balancing",
+      "formation_keeping",
+      "threat_avoidance",
+      "threat_engagement",
+      "perimeter_patrol",
+      "center_convergence",
+      "decentralized_sweep",
+      "minimal_communication",
+      "full_coordination",
+      "altitude_separation",
+      "speed_modulation",
+      "reactive_avoidance",
+      "target_priority",
+      "stealth_approach"
+    ],
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "eps_clip": 0.1,
+    "eta": 0.5,
+    "eta_end": 0.1,
+    "entropy_coef": 0.001,
+    "entropy_coef_end": 0.0001,
+    "value_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "value_clip": 0.2,
+    "actor_lr": 0.0003,
+    "critic_lr": 0.0003,
+    "potential_lr": 0.0003,
+    "potential_update_mode": "normal",
+    "potential_update_interval": 4,
+    "ppo_epochs": 4,
+    "minibatch_size": 8,
+    "rollout_length": 8,
+    "max_episodes": 2,
+    "max_steps": 8,
+    "eval_interval": 2,
+    "eval_episodes": 1,
+    "curriculum_spawn_scale_start": 0.45,
+    "curriculum_spawn_scale_end": 0.3,
+    "curriculum_separation_start": 0.95,
+    "curriculum_separation_end": 1.2,
+    "eval_spawn_scale": 0.34,
+    "eval_separation_scale": 0.95,
+    "collision_probe_spawn_scale": 0.29,
+    "collision_probe_separation_scale": 0.82,
+    "hard_train_interval": 6,
+    "hard_train_spawn_scale": 0.31,
+    "hard_train_separation_scale": 0.86,
+    "safety_reward_coef": 1.0,
+    "intent_reward_profiles_enabled": true,
+    "actor_hidden_dims": [
+      256,
+      256,
+      128
+    ],
+    "critic_hidden_dims": [
+      256,
+      256,
+      128
+    ],
+    "feature_hidden_dim": 128,
+    "attention_dim": 128,
+    "action_low": -1.0,
+    "action_high": 1.0,
+    "log_std_min": -5.0,
+    "log_std_max": 0.5,
+    "device": "cpu",
+    "seed": 7,
+    "task_reward_coef": 1.2,
+    "_env_progress": 1.0,
+    "_use_hard_train_env": false
+  },
+  "intent_representation": {
+    "representation_type": "onehot",
+    "embed_model": "identity",
+    "semantic_geometry": false,
+    "source": "prebuilt",
+    "domain": "uav",
+    "catalog_size": 25,
+    "postures": [
+      "stealth",
+      "attack",
+      "neutral",
+      "attack",
+      "stealth",
+      "neutral",
+      "neutral",
+      "stealth",
+      "attack",
+      "neutral",
+      "attack",
+      "neutral",
+      "neutral",
+      "neutral",
+      "stealth",
+      "neutral",
+      "attack",
+      "attack",
+      "stealth"
+    ],
+    "parent_library_size": 25,
+    "train_labels": [
+      "safety_first",
+      "efficiency_first",
+      "balanced",
+      "aggressive_pursuit",
+      "cautious_exploration",
+      "load_balancing",
+      "formation_keeping",
+      "threat_avoidance",
+      "threat_engagement",
+      "perimeter_patrol",
+      "center_convergence",
+      "decentralized_sweep",
+      "minimal_communication",
+      "full_coordination",
+      "altitude_separation",
+      "speed_modulation",
+      "reactive_avoidance",
+      "target_priority",
+      "stealth_approach"
+    ]
+  },
+  "tier_metrics": {
+    "easy": {
+      "easy_episode_return": -3.496201753616333,
+      "easy_episode_collisions": 0.0,
+      "easy_collision_rate": 0.0,
+      "easy_task_completion": 0.5745957661420107
+    }
+  },
+  "logs": [
+    {
+      "actor_loss": -0.0362091101706028,
+      "critic_loss": 1.857620120048523,
+      "entropy": 1.2463284730911255,
+      "potential_loss": 0.08717012405395508,
+      "return_mean": -0.4920068681240082,
+      "eta": 0.5,
+      "entropy_coef": 0.001,
+      "episode": 0.0,
+      "algorithm": "imappo"
+    },
+    {
+      "episode": 0.0,
+      "episode_return": -3.936054915189743,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_reward_env": -3.9389676451683044,
+      "episode_reward_intent": 0.0029128044843673706,
+      "episode_task_completion": 0.6223376244306564,
+      "episode_reward_dist": 0.001585492955200607,
+      "episode_reward_energy": -0.07095364888664335,
+      "episode_reward_collision": 0.0,
+      "episode_reward_safety": -0.005477232043631375,
+      "episode_reward_task": 0.0817782261146931,
+      "episode_reward_time": -3.945900544524193,
+      "episode_reward_threat": 0.0,
+      "algorithm": "imappo",
+      "intent_label": "minimal_communication",
+      "tactical_posture": "attack",
+      "intent_source": "onehot"
+    },
+    {
+      "actor_loss": -0.05461416766047478,
+      "critic_loss": 2.60796856880188,
+      "entropy": -2.765503406524658,
+      "potential_loss": 0.07922270894050598,
+      "return_mean": -0.5537165403366089,
+      "eta": 0.09999999999999998,
+      "entropy_coef": 0.00010000000000000005,
+      "episode": 1.0,
+      "algorithm": "imappo"
+    },
+    {
+      "episode": 1.0,
+      "episode_return": -4.429732620716095,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_reward_env": -4.4305999875068665,
+      "episode_reward_intent": 0.0008675605058670044,
+      "episode_task_completion": 0.46874026767909527,
+      "episode_reward_dist": -0.01098063524113968,
+      "episode_reward_energy": -0.049323660670779645,
+      "episode_reward_collision": 0.0,
+      "episode_reward_safety": -0.34488232829608023,
+      "episode_reward_task": 0.0924630694789812,
+      "episode_reward_time": -4.11787661164999,
+      "episode_reward_threat": 0.0,
+      "algorithm": "imappo",
+      "intent_label": "full_coordination",
+      "tactical_posture": "stealth",
+      "intent_source": "onehot"
+    },
+    {
+      "eval_episode_return": -3.4761413037776947,
+      "eval_episode_collisions": 0.0,
+      "eval_collision_rate": 0.0,
+      "eval_task_completion": 0.472872830927372,
+      "episode": 1.0,
+      "algorithm": "imappo"
+    },
+    {
+      "probe_episode_return": -3.6170242726802826,
+      "probe_episode_collisions": 0.0,
+      "probe_collision_rate": 0.0,
+      "probe_task_completion": 0.724213195964694,
+      "episode": 1.0,
+      "algorithm": "imappo"
+    }
+  ],
+  "intent_generalization": {
+    "suite_id": "uav_intent_generalization_v1",
+    "train_labels": [
+      "safety_first",
+      "efficiency_first",
+      "balanced",
+      "aggressive_pursuit",
+      "cautious_exploration",
+      "load_balancing",
+      "formation_keeping",
+      "threat_avoidance",
+      "threat_engagement",
+      "perimeter_patrol",
+      "center_convergence",
+      "decentralized_sweep",
+      "minimal_communication",
+      "full_coordination",
+      "altitude_separation",
+      "speed_modulation",
+      "reactive_avoidance",
+      "target_priority",
+      "stealth_approach"
+    ],
+    "representation_diagnostics": {
+      "by_split": {
+        "paraphrase": {
+          "n_queries": 4,
+          "n_retrievable": 4,
+          "top1_retrieval_accuracy": 1.0,
+          "posture_retrieval_accuracy": 1.0,
+          "mean_matched_cosine": 1.0,
+          "mean_semantic_margin": 1.0
+        },
+        "seen": {
+          "n_queries": 2,
+          "n_retrievable": 2,
+          "top1_retrieval_accuracy": 1.0,
+          "posture_retrieval_accuracy": 1.0,
+          "mean_matched_cosine": 1.0,
+          "mean_semantic_margin": 1.0
+        },
+        "unseen": {
+          "n_queries": 6,
+          "n_retrievable": 0,
+          "top1_retrieval_accuracy": null,
+          "posture_retrieval_accuracy": 0.5,
+          "mean_matched_cosine": null,
+          "mean_semantic_margin": null
+        }
+      },
+      "queries": [
+        {
+          "key": "seen_balanced",
+          "split": "seen",
+          "canonical_label": "balanced",
+          "posture": "neutral",
+          "nearest_train_label": "balanced",
+          "nearest_train_posture": "neutral",
+          "nearest_cosine": 1.0,
+          "matched_cosine": 1.0,
+          "best_incorrect_cosine": 0.0,
+          "semantic_margin": 1.0,
+          "retrieval_correct": true,
+          "posture_retrieval_correct": true
+        },
+        {
+          "key": "seen_safety_first",
+          "split": "seen",
+          "canonical_label": "safety_first",
+          "posture": "stealth",
+          "nearest_train_label": "safety_first",
+          "nearest_train_posture": "stealth",
+          "nearest_cosine": 1.0,
+          "matched_cosine": 1.0,
+          "best_incorrect_cosine": 0.0,
+          "semantic_margin": 1.0,
+          "retrieval_correct": true,
+          "posture_retrieval_correct": true
+        },
+        {
+          "key": "paraphrase_safety_first",
+          "split": "paraphrase",
+          "canonical_label": "safety_first",
+          "posture": "stealth",
+          "nearest_train_label": "safety_first",
+          "nearest_train_posture": "stealth",
+          "nearest_cosine": 1.0,
+          "matched_cosine": 1.0,
+          "best_incorrect_cosine": 0.0,
+          "semantic_margin": 1.0,
+          "retrieval_correct": true,
+          "posture_retrieval_correct": true
+        },
+        {
+          "key": "paraphrase_aggressive_pursuit",
+          "split": "paraphrase",
+          "canonical_label": "aggressive_pursuit",
+          "posture": "attack",
+          "nearest_train_label": "aggressive_pursuit",
+          "nearest_train_posture": "attack",
+          "nearest_cosine": 1.0,
+          "matched_cosine": 1.0,
+          "best_incorrect_cosine": 0.0,
+          "semantic_margin": 1.0,
+          "retrieval_correct": true,
+          "posture_retrieval_correct": true
+        },
+        {
+          "key": "paraphrase_balanced",
+          "split": "paraphrase",
+          "canonical_label": "balanced",
+          "posture": "neutral",
+          "nearest_train_label": "balanced",
+          "nearest_train_posture": "neutral",
+          "nearest_cosine": 1.0,
+          "matched_cosine": 1.0,
+          "best_incorrect_cosine": 0.0,
+          "semantic_margin": 1.0,
+          "retrieval_correct": true,
+          "posture_retrieval_correct": true
+        },
+        {
+          "key": "paraphrase_stealth_approach",
+          "split": "paraphrase",
+          "canonical_label": "stealth_approach",
+          "posture": "stealth",
+          "nearest_train_label": "stealth_approach",
+          "nearest_train_posture": "stealth",
+          "nearest_cosine": 1.0,
+          "matched_cosine": 1.0,
+          "best_incorrect_cosine": 0.0,
+          "semantic_margin": 1.0,
+          "retrieval_correct": true,
+          "posture_retrieval_correct": true
+        },
+        {
+          "key": "unseen_energy_saving",
+          "split": "unseen",
+          "canonical_label": "energy_saving",
+          "posture": "stealth",
+          "nearest_train_label": "safety_first",
+          "nearest_train_posture": "stealth",
+          "nearest_cosine": 0.0,
+          "matched_cosine": null,
+          "best_incorrect_cosine": null,
+          "semantic_margin": null,
+          "retrieval_correct": null,
+          "posture_retrieval_correct": true
+        },
+        {
+          "key": "unseen_relay_coordination",
+          "split": "unseen",
+          "canonical_label": "relay_coordination",
+          "posture": "neutral",
+          "nearest_train_label": "safety_first",
+          "nearest_train_posture": "stealth",
+          "nearest_cosine": 0.0,
+          "matched_cosine": null,
+          "best_incorrect_cosine": null,
+          "semantic_margin": null,
+          "retrieval_correct": null,
+          "posture_retrieval_correct": false
+        },
+        {
+          "key": "unseen_predictive_planning",
+          "split": "unseen",
+          "canonical_label": "predictive_planning",
+          "posture": "stealth",
+          "nearest_train_label": "safety_first",
+          "nearest_train_posture": "stealth",
+          "nearest_cosine": 0.0,
+          "matched_cosine": null,
+          "best_incorrect_cosine": null,
+          "semantic_margin": null,
+          "retrieval_correct": null,
+          "posture_retrieval_correct": true
+        },
+        {
+          "key": "unseen_coverage_maximization",
+          "split": "unseen",
+          "canonical_label": "coverage_maximization",
+          "posture": "neutral",
+          "nearest_train_label": "safety_first",
+          "nearest_train_posture": "stealth",
+          "nearest_cosine": 0.0,
+          "matched_cosine": null,
+          "best_incorrect_cosine": null,
+          "semantic_margin": null,
+          "retrieval_correct": null,
+          "posture_retrieval_correct": false
+        },
+        {
+          "key": "unseen_rapid_response",
+          "split": "unseen",
+          "canonical_label": "rapid_response",
+          "posture": "attack",
+          "nearest_train_label": "safety_first",
+          "nearest_train_posture": "stealth",
+          "nearest_cosine": 0.0,
+          "matched_cosine": null,
+          "best_incorrect_cosine": null,
+          "semantic_margin": null,
+          "retrieval_correct": null,
+          "posture_retrieval_correct": false
+        },
+        {
+          "key": "unseen_hover_and_observe",
+          "split": "unseen",
+          "canonical_label": "hover_and_observe",
+          "posture": "stealth",
+          "nearest_train_label": "safety_first",
+          "nearest_train_posture": "stealth",
+          "nearest_cosine": 0.0,
+          "matched_cosine": null,
+          "best_incorrect_cosine": null,
+          "semantic_margin": null,
+          "retrieval_correct": null,
+          "posture_retrieval_correct": true
+        }
+      ]
+    },
+    "behavior": {
+      "seen_balanced": {
+        "split": "seen",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -4.205322980880737,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.4113185051828623
+          }
+        }
+      },
+      "seen_safety_first": {
+        "split": "seen",
+        "canonical_label": "safety_first",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -3.9688416719436646,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6664021406322718
+          }
+        }
+      },
+      "paraphrase_safety_first": {
+        "split": "paraphrase",
+        "canonical_label": "safety_first",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -2.9084195494651794,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.4427530523389578
+          }
+        }
+      },
+      "paraphrase_aggressive_pursuit": {
+        "split": "paraphrase",
+        "canonical_label": "aggressive_pursuit",
+        "posture": "attack",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -5.513585269451141,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5494569018483162
+          }
+        }
+      },
+      "paraphrase_balanced": {
+        "split": "paraphrase",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -3.7740990817546844,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.46228240244090557
+          }
+        }
+      },
+      "paraphrase_stealth_approach": {
+        "split": "paraphrase",
+        "canonical_label": "stealth_approach",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -3.2875587046146393,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.4896915424615145
+          }
+        }
+      },
+      "unseen_energy_saving": {
+        "split": "unseen",
+        "canonical_label": "energy_saving",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -2.1731839776039124,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.4864601846784353
+          }
+        }
+      },
+      "unseen_relay_coordination": {
+        "split": "unseen",
+        "canonical_label": "relay_coordination",
+        "posture": "neutral",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -4.202190458774567,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.3971812706440687
+          }
+        }
+      },
+      "unseen_predictive_planning": {
+        "split": "unseen",
+        "canonical_label": "predictive_planning",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -3.982190638780594,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.4145437590777874
+          }
+        }
+      },
+      "unseen_coverage_maximization": {
+        "split": "unseen",
+        "canonical_label": "coverage_maximization",
+        "posture": "neutral",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -4.190541625022888,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5738477539271116
+          }
+        }
+      },
+      "unseen_rapid_response": {
+        "split": "unseen",
+        "canonical_label": "rapid_response",
+        "posture": "attack",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.291351556777954,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5045532155781984
+          }
+        }
+      },
+      "unseen_hover_and_observe": {
+        "split": "unseen",
+        "canonical_label": "hover_and_observe",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -1.974178746342659,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6287516690790653
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_intent_generalization_smoke_v8",
+  "level": "smoke",
+  "objective": "Verify leakage-resistant seen, paraphrase, and held-out intent evaluation for semantic and identity-code representations.",
+  "seeds": [
+    7
+  ],
+  "environment": {
+    "name": "uav-scheduling-v0",
+    "n_agents": 4,
+    "n_targets": 4,
+    "safety_reward_coef": 1.0,
+    "task_reward_coef": 1.2,
+    "intent_reward_profiles_enabled": true
+  },
+  "training": {
+    "episodes": 2,
+    "steps": 8,
+    "rollout_length": 8,
+    "minibatch_size": 8,
+    "eval_interval": 2,
+    "device": "cpu"
+  },
+  "intent": {
+    "dim": 16,
+    "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "projection_seed": 17,
+    "code_seed": 29,
+    "adapter_ridge": 0.01,
+    "semantic_weight": 0.0,
+    "objective_weight": 1.0
+  },
+  "treatment_key": "objective_grounded_semantic",
+  "variants": [
+    {
+      "key": "objective_grounded_semantic",
+      "intent_source": "objective_grounded_semantic",
+      "algorithm": "imappo",
+      "critic_mode": "attention",
+      "use_action_mask": true
+    },
+    {
+      "key": "pretrained_semantic",
+      "intent_source": "pretrained_semantic",
+      "algorithm": "imappo",
+      "critic_mode": "attention",
+      "use_action_mask": true
+    },
+    {
+      "key": "random_dense",
+      "intent_source": "random_dense",
+      "algorithm": "imappo",
+      "critic_mode": "attention",
+      "use_action_mask": true
+    },
+    {
+      "key": "legacy_hash",
+      "intent_source": "legacy_hash",
+      "algorithm": "imappo",
+      "critic_mode": "attention",
+      "use_action_mask": true
+    },
+    {
+      "key": "onehot",
+      "intent_source": "onehot",
+      "intent_dim": 25,
+      "algorithm": "imappo",
+      "critic_mode": "attention",
+      "use_action_mask": true
+    },
+    {
+      "key": "ippo",
+      "intent_source": "onehot",
+      "algorithm": "ippo",
+      "critic_mode": "local",
+      "use_action_mask": false
+    },
+    {
+      "key": "rule_planner",
+      "intent_source": "onehot",
+      "algorithm": "rule_planner",
+      "critic_mode": "rule",
+      "use_action_mask": false
+    }
+  ],
+  "generalization": {
+    "suite": "configs/research/uav_intent_generalization_suite.v1.json"
+  },
+  "evaluation": {
+    "episodes": 1,
+    "risk_tiers": {
+      "easy": {
+        "spawn_region_scale": 0.42,
+        "spawn_separation_scale": 0.92,
+        "intent_mode": "standard"
+      }
+    }
+  }
+}

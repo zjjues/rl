@@ -1,0 +1,2297 @@
+{
+  "seed": 23,
+  "variant": {
+    "key": "objective_profile_oracle",
+    "intent_source": "onehot",
+    "algorithm": "rule_planner",
+    "critic_mode": "rule",
+    "rule_prior_context": "oracle_profile",
+    "use_action_mask": false
+  },
+  "config": {
+    "algorithm": "rule_planner",
+    "critic_mode": "rule",
+    "use_action_mask": false,
+    "intent_source": "onehot",
+    "policy_mode": "direct",
+    "residual_action_scale": 0.25,
+    "residual_initial_log_std": -2.0,
+    "rule_prior_context": "oracle_profile",
+    "replay_capacity": 100000,
+    "matd3_warmup_steps": 200,
+    "matd3_exploration_noise": 0.1,
+    "matd3_policy_noise": 0.2,
+    "matd3_noise_clip": 0.5,
+    "matd3_policy_delay": 2,
+    "matd3_tau": 0.005,
+    "n_agents": 4,
+    "n_targets": 4,
+    "obs_dim": 33,
+    "state_dim": 132,
+    "action_dim": 3,
+    "intent_dim": 64,
+    "intent_library_path": "",
+    "intent_encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "intent_encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "intent_encoder_batch_size": 32,
+    "intent_projection_seed": 17,
+    "intent_code_seed": 29,
+    "intent_encoder_device": "",
+    "intent_train_labels": [
+      "safety_first",
+      "efficiency_first",
+      "balanced",
+      "aggressive_pursuit",
+      "cautious_exploration",
+      "load_balancing",
+      "formation_keeping",
+      "threat_avoidance",
+      "threat_engagement",
+      "perimeter_patrol",
+      "center_convergence",
+      "decentralized_sweep",
+      "minimal_communication",
+      "full_coordination",
+      "altitude_separation",
+      "speed_modulation",
+      "reactive_avoidance",
+      "target_priority",
+      "stealth_approach"
+    ],
+    "intent_adapter_ridge": 0.01,
+    "intent_profile_decoder": "dual_ridge",
+    "intent_semantic_weight": 0.0,
+    "intent_objective_weight": 1.0,
+    "align_intent_posture": true,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "eps_clip": 0.1,
+    "eta": 0.0,
+    "eta_end": 0.0,
+    "entropy_coef": 0.001,
+    "entropy_coef_end": 0.0001,
+    "value_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "value_clip": 0.2,
+    "actor_lr": 0.0003,
+    "critic_lr": 0.0003,
+    "potential_lr": 0.0003,
+    "potential_update_mode": "frozen",
+    "potential_update_interval": 4,
+    "ppo_epochs": 4,
+    "minibatch_size": 64,
+    "rollout_length": 64,
+    "max_episodes": 50,
+    "max_steps": 20,
+    "eval_interval": 25,
+    "eval_episodes": 3,
+    "curriculum_spawn_scale_start": 0.45,
+    "curriculum_spawn_scale_end": 0.3,
+    "curriculum_separation_start": 0.95,
+    "curriculum_separation_end": 1.2,
+    "eval_spawn_scale": 0.34,
+    "eval_separation_scale": 0.95,
+    "collision_probe_spawn_scale": 0.29,
+    "collision_probe_separation_scale": 0.82,
+    "hard_train_interval": 6,
+    "hard_train_spawn_scale": 0.31,
+    "hard_train_separation_scale": 0.86,
+    "safety_reward_coef": 1.0,
+    "intent_reward_profiles_enabled": true,
+    "wind_std": 0.0,
+    "observation_noise_std": 0.0,
+    "action_delay_steps": 0,
+    "communication_dropout_prob": 0.0,
+    "actor_hidden_dims": [
+      256,
+      256,
+      128
+    ],
+    "critic_hidden_dims": [
+      256,
+      256,
+      128
+    ],
+    "feature_hidden_dim": 128,
+    "attention_dim": 128,
+    "action_low": -1.0,
+    "action_high": 1.0,
+    "log_std_min": -5.0,
+    "log_std_max": 0.5,
+    "device": "cpu",
+    "seed": 23,
+    "task_reward_coef": 1.2,
+    "environment_name": "uav-scheduling-v2"
+  },
+  "intent_representation": {
+    "representation_type": "structured_rule_context",
+    "semantic_geometry": false,
+    "learning": false,
+    "controller": "target_tracking_plus_neighbor_potential_field"
+  },
+  "tier_metrics": {
+    "easy": {
+      "easy_episode_return": 8.459297495583693,
+      "easy_episode_collisions": 1.6666666666666667,
+      "easy_collision_rate": 0.08333333333333333,
+      "easy_task_completion": 0.629381129393975,
+      "easy_energy_remaining": 0.7492435606817405,
+      "easy_action_magnitude": 1.1919287120302517,
+      "easy_speed": 0.9742858943529428,
+      "easy_distance_to_target": 3.056588279599479,
+      "easy_min_neighbor_distance": 2.148706892132759,
+      "easy_threat_zone_violation": 0.09166666666666666,
+      "easy_distance_to_threat": 3.3834790380399986
+    },
+    "hard": {
+      "hard_episode_return": -6.990955173969269,
+      "hard_episode_collisions": 0.0,
+      "hard_collision_rate": 0.0,
+      "hard_task_completion": 0.5449348516762257,
+      "hard_energy_remaining": 0.8664610981941223,
+      "hard_action_magnitude": 0.5915622417504589,
+      "hard_speed": 0.5120458248692255,
+      "hard_distance_to_target": 4.716431064407031,
+      "hard_min_neighbor_distance": 2.1383511106173194,
+      "hard_threat_zone_violation": 0.0,
+      "hard_distance_to_threat": 4.8968195984760925
+    },
+    "critical": {
+      "critical_episode_return": -14.783536533514658,
+      "critical_episode_collisions": 1.0,
+      "critical_collision_rate": 0.05000000000000001,
+      "critical_task_completion": 0.5820676609873772,
+      "critical_energy_remaining": 0.8458540682991346,
+      "critical_action_magnitude": 0.6494117278605699,
+      "critical_speed": 0.5325329086277634,
+      "critical_distance_to_target": 3.8228603739621274,
+      "critical_min_neighbor_distance": 1.9887514263391495,
+      "critical_threat_zone_violation": 0.14583333333333331,
+      "critical_distance_to_threat": 2.4368326846840014
+    }
+  },
+  "logs": [],
+  "intent_generalization": {
+    "suite_id": "uav_intent_generalization_v2_counterfactual",
+    "train_labels": [
+      "safety_first",
+      "efficiency_first",
+      "balanced",
+      "aggressive_pursuit",
+      "cautious_exploration",
+      "load_balancing",
+      "formation_keeping",
+      "threat_avoidance",
+      "threat_engagement",
+      "perimeter_patrol",
+      "center_convergence",
+      "decentralized_sweep",
+      "minimal_communication",
+      "full_coordination",
+      "altitude_separation",
+      "speed_modulation",
+      "reactive_avoidance",
+      "target_priority",
+      "stealth_approach"
+    ],
+    "representation_diagnostics": {},
+    "behavior": {
+      "seen_balanced": {
+        "split": "seen",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.91648963590463,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6095875531435013,
+            "energy_remaining": 0.8121136742333571,
+            "action_magnitude": 0.8697748708228271,
+            "speed": 0.7647286687046289,
+            "distance_to_target": 3.9456342678517102,
+            "min_neighbor_distance": 2.3393443216880163,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.4610111709684133
+          },
+          "hard": {
+            "episode_return": -7.670489924649398,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.537909464041392,
+            "energy_remaining": 0.8187469432751339,
+            "action_magnitude": 0.8483447859684626,
+            "speed": 0.7037273219165702,
+            "distance_to_target": 3.585245854989625,
+            "min_neighbor_distance": 2.027563551068306,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.5606571092270314
+          },
+          "critical": {
+            "episode_return": -7.730448355277379,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6042070480684439,
+            "energy_remaining": 0.8034987342854341,
+            "action_magnitude": 0.8911956377327442,
+            "speed": 0.7678383911959829,
+            "distance_to_target": 3.5121419326091807,
+            "min_neighbor_distance": 2.1360234412054218,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.172311053921779
+          }
+        }
+      },
+      "seen_safety_first": {
+        "split": "seen",
+        "canonical_label": "safety_first",
+        "posture": "stealth",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -6.629929323991139,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5970442471404871,
+            "energy_remaining": 0.8762966824074585,
+            "action_magnitude": 0.5312941799561183,
+            "speed": 0.45895916173855467,
+            "distance_to_target": 4.5961992487311365,
+            "min_neighbor_distance": 2.2471029326319694,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.5567216679453852
+          },
+          "hard": {
+            "episode_return": -6.32203209400177,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5185768495003383,
+            "energy_remaining": 0.8816497633854549,
+            "action_magnitude": 0.5044043232997258,
+            "speed": 0.4079970189370215,
+            "distance_to_target": 4.266067690801962,
+            "min_neighbor_distance": 2.0719519605239234,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.807793970902761
+          },
+          "critical": {
+            "episode_return": -7.079030493895213,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5919529174764951,
+            "energy_remaining": 0.8472250451644262,
+            "action_magnitude": 0.6134394113284846,
+            "speed": 0.5049743528167406,
+            "distance_to_target": 4.16014321744442,
+            "min_neighbor_distance": 2.0123934477567675,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.284916857878367
+          }
+        }
+      },
+      "paraphrase_safety_first": {
+        "split": "paraphrase",
+        "canonical_label": "safety_first",
+        "posture": "stealth",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -6.629929323991139,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5970442471404871,
+            "energy_remaining": 0.8762966824074585,
+            "action_magnitude": 0.5312941799561183,
+            "speed": 0.45895916173855467,
+            "distance_to_target": 4.5961992487311365,
+            "min_neighbor_distance": 2.2471029326319694,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.5567216679453852
+          },
+          "hard": {
+            "episode_return": -6.32203209400177,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5185768495003383,
+            "energy_remaining": 0.8816497633854549,
+            "action_magnitude": 0.5044043232997258,
+            "speed": 0.4079970189370215,
+            "distance_to_target": 4.266067690801962,
+            "min_neighbor_distance": 2.0719519605239234,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.807793970902761
+          },
+          "critical": {
+            "episode_return": -7.079030493895213,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5919529174764951,
+            "energy_remaining": 0.8472250451644262,
+            "action_magnitude": 0.6134394113284846,
+            "speed": 0.5049743528167406,
+            "distance_to_target": 4.16014321744442,
+            "min_neighbor_distance": 2.0123934477567675,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.284916857878367
+          }
+        }
+      },
+      "paraphrase_aggressive_pursuit": {
+        "split": "paraphrase",
+        "canonical_label": "aggressive_pursuit",
+        "posture": "attack",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": 3.4856785982847214,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6208321861922741,
+            "energy_remaining": 0.7270713917911052,
+            "action_magnitude": 1.2731546685099602,
+            "speed": 1.0875826777890325,
+            "distance_to_target": 3.267268528273174,
+            "min_neighbor_distance": 2.755889953672886,
+            "threat_zone_violation": 0.07916666666666666,
+            "distance_to_threat": 3.4058482117136015
+          },
+          "hard": {
+            "episode_return": 2.5803686628739038,
+            "episode_collisions": 2.0,
+            "collision_rate": 0.10000000000000002,
+            "task_completion": 0.5505279821654161,
+            "energy_remaining": 0.7366357084363698,
+            "action_magnitude": 1.2564724564552308,
+            "speed": 1.0215360826812685,
+            "distance_to_target": 2.913867803919129,
+            "min_neighbor_distance": 2.2330172047019006,
+            "threat_zone_violation": 0.07083333333333335,
+            "distance_to_threat": 3.334957937384024
+          },
+          "critical": {
+            "episode_return": -2.7042261635263762,
+            "episode_collisions": 2.0,
+            "collision_rate": 0.10000000000000002,
+            "task_completion": 0.6156876499454181,
+            "energy_remaining": 0.7386136854688327,
+            "action_magnitude": 1.2368189754585424,
+            "speed": 1.044170019744585,
+            "distance_to_target": 2.864492265631755,
+            "min_neighbor_distance": 2.409357164303462,
+            "threat_zone_violation": 0.0375,
+            "distance_to_threat": 3.923119107075036
+          }
+        }
+      },
+      "paraphrase_balanced": {
+        "split": "paraphrase",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.91648963590463,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6095875531435013,
+            "energy_remaining": 0.8121136742333571,
+            "action_magnitude": 0.8697748708228271,
+            "speed": 0.7647286687046289,
+            "distance_to_target": 3.9456342678517102,
+            "min_neighbor_distance": 2.3393443216880163,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.4610111709684133
+          },
+          "hard": {
+            "episode_return": -7.670489924649398,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.537909464041392,
+            "energy_remaining": 0.8187469432751339,
+            "action_magnitude": 0.8483447859684626,
+            "speed": 0.7037273219165702,
+            "distance_to_target": 3.585245854989625,
+            "min_neighbor_distance": 2.027563551068306,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.5606571092270314
+          },
+          "critical": {
+            "episode_return": -7.730448355277379,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6042070480684439,
+            "energy_remaining": 0.8034987342854341,
+            "action_magnitude": 0.8911956377327442,
+            "speed": 0.7678383911959829,
+            "distance_to_target": 3.5121419326091807,
+            "min_neighbor_distance": 2.1360234412054218,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.172311053921779
+          }
+        }
+      },
+      "paraphrase_stealth_approach": {
+        "split": "paraphrase",
+        "canonical_label": "stealth_approach",
+        "posture": "stealth",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -6.819798280795415,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5961063727736473,
+            "energy_remaining": 0.8911249004304409,
+            "action_magnitude": 0.45454325916556026,
+            "speed": 0.3996689032452802,
+            "distance_to_target": 4.6926732008655865,
+            "min_neighbor_distance": 2.205887702604135,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.5920545905828476
+          },
+          "hard": {
+            "episode_return": -6.531447887420654,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5176789852480094,
+            "energy_remaining": 0.9021938843031725,
+            "action_magnitude": 0.41044672379891073,
+            "speed": 0.34359604741136235,
+            "distance_to_target": 4.341276604845189,
+            "min_neighbor_distance": 2.015597376227379,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.9005277981360753
+          },
+          "critical": {
+            "episode_return": -7.217599814136823,
+            "episode_collisions": 1.0,
+            "collision_rate": 0.05000000000000001,
+            "task_completion": 0.5908235907554626,
+            "energy_remaining": 0.8716945166389148,
+            "action_magnitude": 0.5110562708539268,
+            "speed": 0.4275717022207876,
+            "distance_to_target": 4.250177211562793,
+            "min_neighbor_distance": 1.9336855272452036,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.262712226311366
+          }
+        }
+      },
+      "unseen_energy_saving": {
+        "split": "unseen",
+        "canonical_label": "energy_saving",
+        "posture": "stealth",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -5.226276660958926,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5969206035137177,
+            "energy_remaining": 0.9213042880098025,
+            "action_magnitude": 0.3410719414241612,
+            "speed": 0.3000637792050838,
+            "distance_to_target": 4.841744625568389,
+            "min_neighbor_distance": 2.1262564490238827,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.45192145506541
+          },
+          "hard": {
+            "episode_return": -4.945584535598755,
+            "episode_collisions": 0.3333333333333333,
+            "collision_rate": 0.016666666666666666,
+            "task_completion": 0.521913692355156,
+            "energy_remaining": 0.9218897134065628,
+            "action_magnitude": 0.33768602826943,
+            "speed": 0.2914674376603216,
+            "distance_to_target": 4.388544036106517,
+            "min_neighbor_distance": 1.894030250608921,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.819088078538577
+          },
+          "critical": {
+            "episode_return": -5.806642423073451,
+            "episode_collisions": 1.3333333333333333,
+            "collision_rate": 0.06666666666666667,
+            "task_completion": 0.5889457364877065,
+            "energy_remaining": 0.9020560552676518,
+            "action_magnitude": 0.3957451641559601,
+            "speed": 0.33650687312086425,
+            "distance_to_target": 4.36192566951116,
+            "min_neighbor_distance": 1.7962399929761885,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.234807472427685
+          }
+        }
+      },
+      "unseen_relay_coordination": {
+        "split": "unseen",
+        "canonical_label": "relay_coordination",
+        "posture": "neutral",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -6.878864273428917,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6055754135052364,
+            "energy_remaining": 0.8406518327693145,
+            "action_magnitude": 0.7295008664329847,
+            "speed": 0.6388034202158451,
+            "distance_to_target": 4.200729661434889,
+            "min_neighbor_distance": 2.251128860314687,
+            "threat_zone_violation": 0.008333333333333333,
+            "distance_to_threat": 3.461285439878702
+          },
+          "hard": {
+            "episode_return": -6.569376508394877,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5327080811063448,
+            "energy_remaining": 0.8453554143508276,
+            "action_magnitude": 0.7112845718860626,
+            "speed": 0.5896506786035994,
+            "distance_to_target": 3.833080794801935,
+            "min_neighbor_distance": 2.0167552843689918,
+            "threat_zone_violation": 0.012499999999999999,
+            "distance_to_threat": 3.617889726658662
+          },
+          "critical": {
+            "episode_return": -6.966346447666486,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5993817334373792,
+            "energy_remaining": 0.8243390294412771,
+            "action_magnitude": 0.7719910404644906,
+            "speed": 0.6568387463688851,
+            "distance_to_target": 3.768160803740223,
+            "min_neighbor_distance": 2.0459118507802487,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.2246181880434355
+          }
+        }
+      },
+      "unseen_predictive_planning": {
+        "split": "unseen",
+        "canonical_label": "predictive_planning",
+        "posture": "stealth",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -8.34261867403984,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6053675475219885,
+            "energy_remaining": 0.8310046096642812,
+            "action_magnitude": 0.7729792839537065,
+            "speed": 0.6735901283721129,
+            "distance_to_target": 4.153523803129793,
+            "min_neighbor_distance": 2.301674027740955,
+            "threat_zone_violation": 0.012499999999999999,
+            "distance_to_threat": 3.4771666505684458
+          },
+          "hard": {
+            "episode_return": -8.177250489592552,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5314327287177245,
+            "energy_remaining": 0.8354792940119902,
+            "action_magnitude": 0.7527039719124634,
+            "speed": 0.6185851417171458,
+            "distance_to_target": 3.819102614799825,
+            "min_neighbor_distance": 2.074777314066887,
+            "threat_zone_violation": 0.016666666666666666,
+            "distance_to_threat": 3.5968839779496196
+          },
+          "critical": {
+            "episode_return": -7.720833698908488,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.598996622612079,
+            "energy_remaining": 0.8102421939373018,
+            "action_magnitude": 0.8280607221027215,
+            "speed": 0.6974191479850561,
+            "distance_to_target": 3.7458473332226276,
+            "min_neighbor_distance": 2.106553744276365,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.2371600444118185
+          }
+        }
+      },
+      "unseen_coverage_maximization": {
+        "split": "unseen",
+        "canonical_label": "coverage_maximization",
+        "posture": "neutral",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.47369076559941,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6117462155719599,
+            "energy_remaining": 0.7914621345698833,
+            "action_magnitude": 0.9694636183480423,
+            "speed": 0.8480614915490151,
+            "distance_to_target": 3.7822176340346534,
+            "min_neighbor_distance": 2.4461166386802993,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.4673182288184763
+          },
+          "hard": {
+            "episode_return": -7.323477278153102,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5402704348166784,
+            "energy_remaining": 0.7996184120575588,
+            "action_magnitude": 0.946566006913781,
+            "speed": 0.7760390363012751,
+            "distance_to_target": 3.450489047115358,
+            "min_neighbor_distance": 2.0841019590695695,
+            "threat_zone_violation": 0.03333333333333333,
+            "distance_to_threat": 3.5293976911188416
+          },
+          "critical": {
+            "episode_return": -7.353025423983733,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6063351320723692,
+            "energy_remaining": 0.7859471882383029,
+            "action_magnitude": 0.9816305574340126,
+            "speed": 0.842904766773184,
+            "distance_to_target": 3.3767290435420967,
+            "min_neighbor_distance": 2.2202670231461528,
+            "threat_zone_violation": 0.004166666666666667,
+            "distance_to_threat": 4.151814810186624
+          }
+        }
+      },
+      "unseen_rapid_response": {
+        "split": "unseen",
+        "canonical_label": "rapid_response",
+        "posture": "attack",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": 3.2919440964857736,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6217503314216932,
+            "energy_remaining": 0.7151357459525268,
+            "action_magnitude": 1.3237259020407994,
+            "speed": 1.1286549370115002,
+            "distance_to_target": 3.204089390253648,
+            "min_neighbor_distance": 2.8106514990329745,
+            "threat_zone_violation": 0.08333333333333333,
+            "distance_to_threat": 3.397012183784197
+          },
+          "hard": {
+            "episode_return": 2.3807131002346673,
+            "episode_collisions": 1.6666666666666667,
+            "collision_rate": 0.08333333333333333,
+            "task_completion": 0.5491128794848918,
+            "energy_remaining": 0.7266032145669064,
+            "action_magnitude": 1.3044388987123965,
+            "speed": 1.054288312389205,
+            "distance_to_target": 2.8776445753406734,
+            "min_neighbor_distance": 2.2935654188195866,
+            "threat_zone_violation": 0.075,
+            "distance_to_threat": 3.3091778661745295
+          },
+          "critical": {
+            "episode_return": -3.742711012562116,
+            "episode_collisions": 1.6666666666666667,
+            "collision_rate": 0.08333333333333333,
+            "task_completion": 0.6142588123679161,
+            "energy_remaining": 0.7291176817069451,
+            "action_magnitude": 1.2774101768930752,
+            "speed": 1.0743415371204417,
+            "distance_to_target": 2.8698712368495762,
+            "min_neighbor_distance": 2.4659020222723487,
+            "threat_zone_violation": 0.0375,
+            "distance_to_threat": 3.942624402232468
+          }
+        }
+      },
+      "unseen_hover_and_observe": {
+        "split": "unseen",
+        "canonical_label": "hover_and_observe",
+        "posture": "stealth",
+        "contrast_group": null,
+        "objective_profile": null,
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -4.339880123734474,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5922451195617516,
+            "energy_remaining": 0.9312942745784918,
+            "action_magnitude": 0.2883016475941986,
+            "speed": 0.2500963546025256,
+            "distance_to_target": 4.967036688327789,
+            "min_neighbor_distance": 2.189106916884581,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.4694601421554885
+          },
+          "hard": {
+            "episode_return": -4.199529632925987,
+            "episode_collisions": 0.3333333333333333,
+            "collision_rate": 0.016666666666666666,
+            "task_completion": 0.5134190738201142,
+            "energy_remaining": 0.9271710939705372,
+            "action_magnitude": 0.30630220533348623,
+            "speed": 0.25128648141399024,
+            "distance_to_target": 4.518348934936027,
+            "min_neighbor_distance": 1.9310342361529669,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.8552907263239224
+          },
+          "critical": {
+            "episode_return": -5.153776531418164,
+            "episode_collisions": 1.3333333333333333,
+            "collision_rate": 0.06666666666666667,
+            "task_completion": 0.5848990706106026,
+            "energy_remaining": 0.9047627982993921,
+            "action_magnitude": 0.36938136800502736,
+            "speed": 0.30702158017084,
+            "distance_to_target": 4.473213137189547,
+            "min_neighbor_distance": 1.8283042803406715,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.244563706715901
+          }
+        }
+      },
+      "cf_distance_low": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "distance",
+        "objective_profile": {
+          "distance": 0.5
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -8.55347529053688,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6059545261164506,
+            "energy_remaining": 0.8431009687483311,
+            "action_magnitude": 0.7214708325763542,
+            "speed": 0.6332933284342289,
+            "distance_to_target": 4.2061357373992605,
+            "min_neighbor_distance": 2.2307574217518167,
+            "threat_zone_violation": 0.008333333333333333,
+            "distance_to_threat": 3.453622944156329
+          },
+          "hard": {
+            "episode_return": -8.069373299678167,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5341202648977439,
+            "energy_remaining": 0.8486347859104475,
+            "action_magnitude": 0.700266802807649,
+            "speed": 0.5851532833650709,
+            "distance_to_target": 3.821982807953221,
+            "min_neighbor_distance": 1.9769207964340847,
+            "threat_zone_violation": 0.012499999999999999,
+            "distance_to_threat": 3.6213311705738307
+          },
+          "critical": {
+            "episode_return": -8.397278308868408,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5999308111766974,
+            "energy_remaining": 0.8289329258104164,
+            "action_magnitude": 0.7574083999420206,
+            "speed": 0.6500102268764748,
+            "distance_to_target": 3.7521996553987265,
+            "min_neighbor_distance": 2.0368615098297593,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.2119326665997505
+          }
+        }
+      },
+      "cf_distance_mid": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "distance",
+        "objective_profile": {
+          "distance": 1.0
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.91648963590463,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6095875531435013,
+            "energy_remaining": 0.8121136742333571,
+            "action_magnitude": 0.8697748708228271,
+            "speed": 0.7647286687046289,
+            "distance_to_target": 3.9456342678517102,
+            "min_neighbor_distance": 2.3393443216880163,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.4610111709684133
+          },
+          "hard": {
+            "episode_return": -7.670489924649398,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.537909464041392,
+            "energy_remaining": 0.8187469432751339,
+            "action_magnitude": 0.8483447859684626,
+            "speed": 0.7037273219165702,
+            "distance_to_target": 3.585245854989625,
+            "min_neighbor_distance": 2.027563551068306,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.5606571092270314
+          },
+          "critical": {
+            "episode_return": -7.730448355277379,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6042070480684439,
+            "energy_remaining": 0.8034987342854341,
+            "action_magnitude": 0.8911956377327442,
+            "speed": 0.7678383911959829,
+            "distance_to_target": 3.5121419326091807,
+            "min_neighbor_distance": 2.1360234412054218,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.172311053921779
+          }
+        }
+      },
+      "cf_distance_high": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "distance",
+        "objective_profile": {
+          "distance": 1.7
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.017476287980874,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6145716927945614,
+            "energy_remaining": 0.7697887944678466,
+            "action_magnitude": 1.0769568199912707,
+            "speed": 0.9295784686692059,
+            "distance_to_target": 3.6052289788766454,
+            "min_neighbor_distance": 2.5566818858186404,
+            "threat_zone_violation": 0.0375,
+            "distance_to_threat": 3.4608599522461496
+          },
+          "hard": {
+            "episode_return": -6.987231254577637,
+            "episode_collisions": 1.0,
+            "collision_rate": 0.049999999999999996,
+            "task_completion": 0.5435374004145462,
+            "energy_remaining": 0.7807664516071479,
+            "action_magnitude": 1.0421661019325257,
+            "speed": 0.8539179872721435,
+            "distance_to_target": 3.290333376820975,
+            "min_neighbor_distance": 2.133622090518475,
+            "threat_zone_violation": 0.04583333333333334,
+            "distance_to_threat": 3.484766405106832
+          },
+          "critical": {
+            "episode_return": -6.900314066559076,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6090430592497189,
+            "energy_remaining": 0.7687195484836896,
+            "action_magnitude": 1.0756026598314445,
+            "speed": 0.9191591530417402,
+            "distance_to_target": 3.212481164823597,
+            "min_neighbor_distance": 2.299568171054125,
+            "threat_zone_violation": 0.016666666666666666,
+            "distance_to_threat": 4.103203907298545
+          }
+        }
+      },
+      "cf_energy_low": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "energy",
+        "objective_profile": {
+          "energy": 0.5
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.082453727722168,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6132437403003375,
+            "energy_remaining": 0.7743487325807413,
+            "action_magnitude": 1.0640749449531237,
+            "speed": 0.9202842185894649,
+            "distance_to_target": 3.6574499032848204,
+            "min_neighbor_distance": 2.540610078473886,
+            "threat_zone_violation": 0.0375,
+            "distance_to_threat": 3.4691522585072865
+          },
+          "hard": {
+            "episode_return": -6.970789598921935,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5418129369616508,
+            "energy_remaining": 0.7859052481750647,
+            "action_magnitude": 1.025707594056924,
+            "speed": 0.8438533402048051,
+            "distance_to_target": 3.350939458360275,
+            "min_neighbor_distance": 2.141630072891712,
+            "threat_zone_violation": 0.041666666666666664,
+            "distance_to_threat": 3.5016810151903583
+          },
+          "critical": {
+            "episode_return": -6.965861562639475,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6074943763514359,
+            "energy_remaining": 0.7714771859347821,
+            "action_magnitude": 1.0681244224309923,
+            "speed": 0.9129626587809373,
+            "distance_to_target": 3.2739585679645344,
+            "min_neighbor_distance": 2.3066806328793366,
+            "threat_zone_violation": 0.016666666666666666,
+            "distance_to_threat": 4.128790930037698
+          }
+        }
+      },
+      "cf_energy_mid": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "energy",
+        "objective_profile": {
+          "energy": 1.0
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.91648963590463,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6095875531435013,
+            "energy_remaining": 0.8121136742333571,
+            "action_magnitude": 0.8697748708228271,
+            "speed": 0.7647286687046289,
+            "distance_to_target": 3.9456342678517102,
+            "min_neighbor_distance": 2.3393443216880163,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.4610111709684133
+          },
+          "hard": {
+            "episode_return": -7.670489924649398,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.537909464041392,
+            "energy_remaining": 0.8187469432751339,
+            "action_magnitude": 0.8483447859684626,
+            "speed": 0.7037273219165702,
+            "distance_to_target": 3.585245854989625,
+            "min_neighbor_distance": 2.027563551068306,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.5606571092270314
+          },
+          "critical": {
+            "episode_return": -7.730448355277379,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6042070480684439,
+            "energy_remaining": 0.8034987342854341,
+            "action_magnitude": 0.8911956377327442,
+            "speed": 0.7678383911959829,
+            "distance_to_target": 3.5121419326091807,
+            "min_neighbor_distance": 2.1360234412054218,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.172311053921779
+          }
+        }
+      },
+      "cf_energy_high": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "energy",
+        "objective_profile": {
+          "energy": 1.7
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -8.947527974843979,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6049759114782015,
+            "energy_remaining": 0.8600905068218708,
+            "action_magnitude": 0.637023390457034,
+            "speed": 0.5608984711269537,
+            "distance_to_target": 4.324220753709475,
+            "min_neighbor_distance": 2.1624384398261705,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.4450020064910256
+          },
+          "hard": {
+            "episode_return": -8.434233849247297,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5335299799839656,
+            "energy_remaining": 0.8641718347867329,
+            "action_magnitude": 0.624779294927915,
+            "speed": 0.5197800585068763,
+            "distance_to_target": 3.913211656656737,
+            "min_neighbor_distance": 1.9118694692850113,
+            "threat_zone_violation": 0.004166666666666667,
+            "distance_to_threat": 3.6577913229664163
+          },
+          "critical": {
+            "episode_return": -9.021876990795135,
+            "episode_collisions": 1.0,
+            "collision_rate": 0.05000000000000001,
+            "task_completion": 0.5982655679186185,
+            "energy_remaining": 0.8505504521230858,
+            "action_magnitude": 0.6617675975120316,
+            "speed": 0.5682373606211817,
+            "distance_to_target": 3.8837233265240987,
+            "min_neighbor_distance": 1.912032998353243,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.222374172012011
+          }
+        }
+      },
+      "cf_collision_low": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "collision",
+        "objective_profile": {
+          "collision": 0.5
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.903783256808917,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6105168248216312,
+            "energy_remaining": 0.8131051962574323,
+            "action_magnitude": 0.8670859267314275,
+            "speed": 0.764556336402893,
+            "distance_to_target": 3.9285682398825887,
+            "min_neighbor_distance": 2.312857727209727,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.44604583842059
+          },
+          "hard": {
+            "episode_return": -7.680072387059529,
+            "episode_collisions": 1.3333333333333333,
+            "collision_rate": 0.06666666666666667,
+            "task_completion": 0.5409356425205867,
+            "energy_remaining": 0.8178624945382277,
+            "action_magnitude": 0.8558453295379876,
+            "speed": 0.7118865036095182,
+            "distance_to_target": 3.5323890010127794,
+            "min_neighbor_distance": 1.9831259886423747,
+            "threat_zone_violation": 0.029166666666666664,
+            "distance_to_threat": 3.5561925789341333
+          },
+          "critical": {
+            "episode_return": -7.65504901856184,
+            "episode_collisions": 1.0,
+            "collision_rate": 0.05000000000000001,
+            "task_completion": 0.6062946744263172,
+            "energy_remaining": 0.8072005418439705,
+            "action_magnitude": 0.8816364035010338,
+            "speed": 0.7660716416003802,
+            "distance_to_target": 3.45672928650553,
+            "min_neighbor_distance": 2.0888400845229627,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.1421776818732425
+          }
+        }
+      },
+      "cf_collision_mid": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "collision",
+        "objective_profile": {
+          "collision": 1.0
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.91648963590463,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6095875531435013,
+            "energy_remaining": 0.8121136742333571,
+            "action_magnitude": 0.8697748708228271,
+            "speed": 0.7647286687046289,
+            "distance_to_target": 3.9456342678517102,
+            "min_neighbor_distance": 2.3393443216880163,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.4610111709684133
+          },
+          "hard": {
+            "episode_return": -7.670489924649398,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.537909464041392,
+            "energy_remaining": 0.8187469432751339,
+            "action_magnitude": 0.8483447859684626,
+            "speed": 0.7037273219165702,
+            "distance_to_target": 3.585245854989625,
+            "min_neighbor_distance": 2.027563551068306,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.5606571092270314
+          },
+          "critical": {
+            "episode_return": -7.730448355277379,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6042070480684439,
+            "energy_remaining": 0.8034987342854341,
+            "action_magnitude": 0.8911956377327442,
+            "speed": 0.7678383911959829,
+            "distance_to_target": 3.5121419326091807,
+            "min_neighbor_distance": 2.1360234412054218,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.172311053921779
+          }
+        }
+      },
+      "cf_collision_high": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "collision",
+        "objective_profile": {
+          "collision": 1.7
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.949814677238464,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6082867006460826,
+            "energy_remaining": 0.8112641140818596,
+            "action_magnitude": 0.8720206670463085,
+            "speed": 0.7629423968493937,
+            "distance_to_target": 3.9739390018085636,
+            "min_neighbor_distance": 2.3695331275463105,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.4787331537654
+          },
+          "hard": {
+            "episode_return": -7.54424124956131,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5353208079934121,
+            "energy_remaining": 0.8186863392591478,
+            "action_magnitude": 0.8432371897002061,
+            "speed": 0.6958609017543494,
+            "distance_to_target": 3.6547466123088577,
+            "min_neighbor_distance": 2.079407535990079,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.5672480393201114
+          },
+          "critical": {
+            "episode_return": -7.912365297476451,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6018784465889137,
+            "energy_remaining": 0.7970521685977777,
+            "action_magnitude": 0.9083601162458459,
+            "speed": 0.7728581599580745,
+            "distance_to_target": 3.5761748289999864,
+            "min_neighbor_distance": 2.174654544144869,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.206107899049917
+          }
+        }
+      },
+      "cf_safety_low": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "safety",
+        "objective_profile": {
+          "safety": 0.5
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.299012643595536,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6132001101970673,
+            "energy_remaining": 0.7886884671946367,
+            "action_magnitude": 0.9884988958636919,
+            "speed": 0.8663443303356567,
+            "distance_to_target": 3.726736527712395,
+            "min_neighbor_distance": 2.433446749051412,
+            "threat_zone_violation": 0.029166666666666664,
+            "distance_to_threat": 3.4451566690268614
+          },
+          "hard": {
+            "episode_return": -7.06974945217371,
+            "episode_collisions": 1.3333333333333333,
+            "collision_rate": 0.06666666666666667,
+            "task_completion": 0.5434830615917842,
+            "energy_remaining": 0.7947849529484907,
+            "action_magnitude": 0.9731547243893147,
+            "speed": 0.8031659089028835,
+            "distance_to_target": 3.346716512662048,
+            "min_neighbor_distance": 2.036444436510404,
+            "threat_zone_violation": 0.041666666666666664,
+            "distance_to_threat": 3.5050739941497646
+          },
+          "critical": {
+            "episode_return": -6.995766030003627,
+            "episode_collisions": 1.3333333333333333,
+            "collision_rate": 0.06666666666666667,
+            "task_completion": 0.6094282500445843,
+            "energy_remaining": 0.7873296171426775,
+            "action_magnitude": 0.9911791453758876,
+            "speed": 0.8570559684187175,
+            "distance_to_target": 3.255291940411553,
+            "min_neighbor_distance": 2.181257982303699,
+            "threat_zone_violation": 0.016666666666666666,
+            "distance_to_threat": 4.090740509952108
+          }
+        }
+      },
+      "cf_safety_mid": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "safety",
+        "objective_profile": {
+          "safety": 1.0
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.91648963590463,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6095875531435013,
+            "energy_remaining": 0.8121136742333571,
+            "action_magnitude": 0.8697748708228271,
+            "speed": 0.7647286687046289,
+            "distance_to_target": 3.9456342678517102,
+            "min_neighbor_distance": 2.3393443216880163,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.4610111709684133
+          },
+          "hard": {
+            "episode_return": -7.670489924649398,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.537909464041392,
+            "energy_remaining": 0.8187469432751339,
+            "action_magnitude": 0.8483447859684626,
+            "speed": 0.7037273219165702,
+            "distance_to_target": 3.585245854989625,
+            "min_neighbor_distance": 2.027563551068306,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.5606571092270314
+          },
+          "critical": {
+            "episode_return": -7.730448355277379,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6042070480684439,
+            "energy_remaining": 0.8034987342854341,
+            "action_magnitude": 0.8911956377327442,
+            "speed": 0.7678383911959829,
+            "distance_to_target": 3.5121419326091807,
+            "min_neighbor_distance": 2.1360234412054218,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.172311053921779
+          }
+        }
+      },
+      "cf_safety_high": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "safety",
+        "objective_profile": {
+          "safety": 1.7
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -8.658614377180735,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6042807303369045,
+            "energy_remaining": 0.8414406764010588,
+            "action_magnitude": 0.7212955453743537,
+            "speed": 0.6283519747356574,
+            "distance_to_target": 4.23767722522219,
+            "min_neighbor_distance": 2.2705214445789657,
+            "threat_zone_violation": 0.008333333333333333,
+            "distance_to_threat": 3.4712291513880094
+          },
+          "hard": {
+            "episode_return": -8.197859207789103,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5300729061166445,
+            "energy_remaining": 0.8452254891395569,
+            "action_magnitude": 0.704677964001894,
+            "speed": 0.5786726829595864,
+            "distance_to_target": 3.8889780210563907,
+            "min_neighbor_distance": 2.058576514820258,
+            "threat_zone_violation": 0.008333333333333333,
+            "distance_to_threat": 3.617154583831628
+          },
+          "critical": {
+            "episode_return": -8.725355381766954,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5981278715034326,
+            "energy_remaining": 0.8185242459177969,
+            "action_magnitude": 0.7821946246549487,
+            "speed": 0.6582026879613597,
+            "distance_to_target": 3.8140776932239535,
+            "min_neighbor_distance": 2.0749124566713966,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.242094119389852
+          }
+        }
+      },
+      "cf_task_low": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "task",
+        "objective_profile": {
+          "task": 0.5
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -8.42962217827638,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6069733167688051,
+            "energy_remaining": 0.8343536876142025,
+            "action_magnitude": 0.7638340488076211,
+            "speed": 0.6708317797631026,
+            "distance_to_target": 4.132215933501721,
+            "min_neighbor_distance": 2.253450506925583,
+            "threat_zone_violation": 0.012499999999999999,
+            "distance_to_threat": 3.4552021339535712
+          },
+          "hard": {
+            "episode_return": -7.992933814724286,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5351777464151383,
+            "energy_remaining": 0.8399093742171924,
+            "action_magnitude": 0.7436788037419318,
+            "speed": 0.6198761181595426,
+            "distance_to_target": 3.752553944250879,
+            "min_neighbor_distance": 1.9885577946901318,
+            "threat_zone_violation": 0.016666666666666666,
+            "distance_to_threat": 3.603761813417077
+          },
+          "critical": {
+            "episode_return": -8.242995719114939,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6011987830201785,
+            "energy_remaining": 0.8218160279095174,
+            "action_magnitude": 0.7952180038206279,
+            "speed": 0.6835042238545915,
+            "distance_to_target": 3.6836577478796246,
+            "min_neighbor_distance": 2.0656641843418284,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.203082682689031
+          }
+        }
+      },
+      "cf_task_mid": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "task",
+        "objective_profile": {
+          "task": 1.0
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.91648963590463,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6095875531435013,
+            "energy_remaining": 0.8121136742333571,
+            "action_magnitude": 0.8697748708228271,
+            "speed": 0.7647286687046289,
+            "distance_to_target": 3.9456342678517102,
+            "min_neighbor_distance": 2.3393443216880163,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.4610111709684133
+          },
+          "hard": {
+            "episode_return": -7.670489924649398,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.537909464041392,
+            "energy_remaining": 0.8187469432751339,
+            "action_magnitude": 0.8483447859684626,
+            "speed": 0.7037273219165702,
+            "distance_to_target": 3.585245854989625,
+            "min_neighbor_distance": 2.027563551068306,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.5606571092270314
+          },
+          "critical": {
+            "episode_return": -7.730448355277379,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6042070480684439,
+            "energy_remaining": 0.8034987342854341,
+            "action_magnitude": 0.8911956377327442,
+            "speed": 0.7678383911959829,
+            "distance_to_target": 3.5121419326091807,
+            "min_neighbor_distance": 2.1360234412054218,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.172311053921779
+          }
+        }
+      },
+      "cf_task_high": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "task",
+        "objective_profile": {
+          "task": 1.7
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.207670405507088,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6131431726117929,
+            "energy_remaining": 0.7814006291329861,
+            "action_magnitude": 1.0205631646017235,
+            "speed": 0.8862460650503635,
+            "distance_to_target": 3.696710683467488,
+            "min_neighbor_distance": 2.492198803524176,
+            "threat_zone_violation": 0.03333333333333333,
+            "distance_to_threat": 3.4637348388632136
+          },
+          "hard": {
+            "episode_return": -7.122472862402598,
+            "episode_collisions": 1.0,
+            "collision_rate": 0.049999999999999996,
+            "task_completion": 0.5411054618656636,
+            "energy_remaining": 0.7908242752154667,
+            "action_magnitude": 0.9929602455347778,
+            "speed": 0.8124547924225528,
+            "distance_to_target": 3.3699672624779247,
+            "min_neighbor_distance": 2.101305069029331,
+            "threat_zone_violation": 0.0375,
+            "distance_to_threat": 3.510203788041448
+          },
+          "critical": {
+            "episode_return": -7.0724644387761755,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6079144383470217,
+            "energy_remaining": 0.7782472143570581,
+            "action_magnitude": 1.0244275676707428,
+            "speed": 0.8782811980694533,
+            "distance_to_target": 3.2919341863133007,
+            "min_neighbor_distance": 2.252471779783567,
+            "threat_zone_violation": 0.012500000000000002,
+            "distance_to_threat": 4.126678663988908
+          }
+        }
+      },
+      "cf_time_low": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "time",
+        "objective_profile": {
+          "time": 0.5
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -4.399964779615402,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6058773793280124,
+            "energy_remaining": 0.8464075446128846,
+            "action_magnitude": 0.7042496447761853,
+            "speed": 0.618724956177175,
+            "distance_to_target": 4.225538681944212,
+            "min_neighbor_distance": 2.212629626194636,
+            "threat_zone_violation": 0.008333333333333333,
+            "distance_to_threat": 3.4509788354237876
+          },
+          "hard": {
+            "episode_return": -4.28536082059145,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5338026608030001,
+            "energy_remaining": 0.8515014293293158,
+            "action_magnitude": 0.6868807867169381,
+            "speed": 0.5717135913670063,
+            "distance_to_target": 3.8340415261220193,
+            "min_neighbor_distance": 1.9589169472455978,
+            "threat_zone_violation": 0.012499999999999999,
+            "distance_to_threat": 3.6294555537402626
+          },
+          "critical": {
+            "episode_return": -4.596119063595931,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5995473429560662,
+            "energy_remaining": 0.8342767710487048,
+            "action_magnitude": 0.7353728845094641,
+            "speed": 0.6316540271509439,
+            "distance_to_target": 3.7778878785669803,
+            "min_neighbor_distance": 1.999243637174368,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.212977534035842
+          }
+        }
+      },
+      "cf_time_mid": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "time",
+        "objective_profile": {
+          "time": 1.0
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.91648963590463,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6095875531435013,
+            "energy_remaining": 0.8121136742333571,
+            "action_magnitude": 0.8697748708228271,
+            "speed": 0.7647286687046289,
+            "distance_to_target": 3.9456342678517102,
+            "min_neighbor_distance": 2.3393443216880163,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.4610111709684133
+          },
+          "hard": {
+            "episode_return": -7.670489924649398,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.537909464041392,
+            "energy_remaining": 0.8187469432751339,
+            "action_magnitude": 0.8483447859684626,
+            "speed": 0.7037273219165702,
+            "distance_to_target": 3.585245854989625,
+            "min_neighbor_distance": 2.027563551068306,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.5606571092270314
+          },
+          "critical": {
+            "episode_return": -7.730448355277379,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6042070480684439,
+            "energy_remaining": 0.8034987342854341,
+            "action_magnitude": 0.8911956377327442,
+            "speed": 0.7678383911959829,
+            "distance_to_target": 3.5121419326091807,
+            "min_neighbor_distance": 2.1360234412054218,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.172311053921779
+          }
+        }
+      },
+      "cf_time_high": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "time",
+        "objective_profile": {
+          "time": 1.7
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -11.749157808721066,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.614974624166886,
+            "energy_remaining": 0.761646118760109,
+            "action_magnitude": 1.1203532494604589,
+            "speed": 0.9654482718246679,
+            "distance_to_target": 3.554670265130698,
+            "min_neighbor_distance": 2.6062436814109486,
+            "threat_zone_violation": 0.049999999999999996,
+            "distance_to_threat": 3.4632054406994333
+          },
+          "hard": {
+            "episode_return": -11.390371876458326,
+            "episode_collisions": 1.0,
+            "collision_rate": 0.049999999999999996,
+            "task_completion": 0.5434555672109127,
+            "energy_remaining": 0.7746590609351793,
+            "action_magnitude": 1.0807413633912801,
+            "speed": 0.8864011740311981,
+            "distance_to_target": 3.2542628264248683,
+            "min_neighbor_distance": 2.1687528257568673,
+            "threat_zone_violation": 0.049999999999999996,
+            "distance_to_threat": 3.4709371875040236
+          },
+          "critical": {
+            "episode_return": -11.238839333256086,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6091139783461889,
+            "energy_remaining": 0.762094101558129,
+            "action_magnitude": 1.1158116188521185,
+            "speed": 0.9510372697686155,
+            "distance_to_target": 3.180344871385023,
+            "min_neighbor_distance": 2.341685114552577,
+            "threat_zone_violation": 0.025000000000000005,
+            "distance_to_threat": 4.0937310543221725
+          }
+        }
+      },
+      "cf_threat_low": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "threat",
+        "objective_profile": {
+          "threat": 0.5
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.662379135688146,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.611719133456548,
+            "energy_remaining": 0.7861470505595207,
+            "action_magnitude": 1.0215262912213803,
+            "speed": 0.8635385208452742,
+            "distance_to_target": 3.7776588859191786,
+            "min_neighbor_distance": 2.4222532927989957,
+            "threat_zone_violation": 0.0375,
+            "distance_to_threat": 3.3700800569262355
+          },
+          "hard": {
+            "episode_return": -7.260160967707634,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5416206791996956,
+            "energy_remaining": 0.7856518601377805,
+            "action_magnitude": 1.0210697798679271,
+            "speed": 0.825490159044663,
+            "distance_to_target": 3.3645033108303326,
+            "min_neighbor_distance": 2.080239581565062,
+            "threat_zone_violation": 0.05416666666666667,
+            "distance_to_threat": 3.4355351170292123
+          },
+          "critical": {
+            "episode_return": -7.186768172929685,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6080449623366196,
+            "energy_remaining": 0.7758936690787474,
+            "action_magnitude": 1.0488846083482108,
+            "speed": 0.8959614608436822,
+            "distance_to_target": 3.2772913271250825,
+            "min_neighbor_distance": 2.2750655114650726,
+            "threat_zone_violation": 0.025000000000000005,
+            "distance_to_threat": 4.112169314237932
+          }
+        }
+      },
+      "cf_threat_mid": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "threat",
+        "objective_profile": {
+          "threat": 1.0
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.91648963590463,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6095875531435013,
+            "energy_remaining": 0.8121136742333571,
+            "action_magnitude": 0.8697748708228271,
+            "speed": 0.7647286687046289,
+            "distance_to_target": 3.9456342678517102,
+            "min_neighbor_distance": 2.3393443216880163,
+            "threat_zone_violation": 0.020833333333333332,
+            "distance_to_threat": 3.4610111709684133
+          },
+          "hard": {
+            "episode_return": -7.670489924649398,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.537909464041392,
+            "energy_remaining": 0.8187469432751339,
+            "action_magnitude": 0.8483447859684626,
+            "speed": 0.7037273219165702,
+            "distance_to_target": 3.585245854989625,
+            "min_neighbor_distance": 2.027563551068306,
+            "threat_zone_violation": 0.024999999999999998,
+            "distance_to_threat": 3.5606571092270314
+          },
+          "critical": {
+            "episode_return": -7.730448355277379,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.6042070480684439,
+            "energy_remaining": 0.8034987342854341,
+            "action_magnitude": 0.8911956377327442,
+            "speed": 0.7678383911959829,
+            "distance_to_target": 3.5121419326091807,
+            "min_neighbor_distance": 2.1360234412054218,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.172311053921779
+          }
+        }
+      },
+      "cf_threat_high": {
+        "split": "counterfactual",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "contrast_group": "threat",
+        "objective_profile": {
+          "threat": 1.7
+        },
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -8.618566463390986,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6039666188259919,
+            "energy_remaining": 0.8472442537546158,
+            "action_magnitude": 0.6661456403632959,
+            "speed": 0.5920076418668031,
+            "distance_to_target": 4.275355854630471,
+            "min_neighbor_distance": 2.235220935444037,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.578727104514837
+          },
+          "hard": {
+            "episode_return": -8.494472935795784,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5288386054337025,
+            "energy_remaining": 0.8647167990605036,
+            "action_magnitude": 0.6118386584644516,
+            "speed": 0.5129537013048927,
+            "distance_to_target": 3.963585201678022,
+            "min_neighbor_distance": 1.9911080881953238,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 3.7778979380925493
+          },
+          "critical": {
+            "episode_return": -8.604406466086706,
+            "episode_collisions": 0.6666666666666666,
+            "collision_rate": 0.03333333333333333,
+            "task_completion": 0.5983933493494987,
+            "energy_remaining": 0.8391770442326864,
+            "action_magnitude": 0.6920527417833605,
+            "speed": 0.5958338045825561,
+            "distance_to_target": 3.850526777654886,
+            "min_neighbor_distance": 1.9967147851983704,
+            "threat_zone_violation": 0.0,
+            "distance_to_threat": 4.22992852628231
+          }
+        }
+      }
+    },
+    "controllability": {
+      "easy": {
+        "all": {
+          "n_queries": 33,
+          "safety_tradeoff_spearman": 0.861507684173459,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": 0.597538228262046,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.029505211859941594,
+          "energy_preference_spearman": 0.6408357622389663,
+          "distance_preference_spearman": 0.6314930389575215,
+          "time_preference_spearman": 0.7864770169520784,
+          "safety_distance_spearman": -0.5182940681236119,
+          "collision_distance_spearman": -0.18349038080559513,
+          "threat_preference_spearman": 0.6301320086187183
+        },
+        "counterfactual": {
+          "n_queries": 21,
+          "safety_tradeoff_spearman": 0.679402676364633,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": 0.2855457724081407,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.011008005340894078,
+          "energy_preference_spearman": 0.46725671848604844,
+          "distance_preference_spearman": 0.3893805987383738,
+          "time_preference_spearman": 0.46725671848604844,
+          "safety_distance_spearman": -0.2855457724081407,
+          "collision_distance_spearman": 0.207669652660466,
+          "threat_preference_spearman": 0.519174131651165
+        },
+        "paraphrase": {
+          "n_queries": 4,
+          "safety_tradeoff_spearman": 0.7999999999999999,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": 0.7999999999999999,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.024725813418626785,
+          "energy_preference_spearman": 0.7745966692414834,
+          "distance_preference_spearman": 0.7745966692414834,
+          "time_preference_spearman": 0.9486832980505139,
+          "safety_distance_spearman": -0.7999999999999999,
+          "collision_distance_spearman": -0.632455532033676,
+          "threat_preference_spearman": 0.9486832980505139
+        },
+        "unseen": {
+          "n_queries": 6,
+          "safety_tradeoff_spearman": 0.942857142857143,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": 0.9710083124552245,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.029505211859941594,
+          "energy_preference_spearman": 0.9258200997725515,
+          "distance_preference_spearman": 1.0,
+          "time_preference_spearman": 1.0,
+          "safety_distance_spearman": -0.23190841426097938,
+          "collision_distance_spearman": 0.13093073414159545,
+          "threat_preference_spearman": null
+        },
+        "contrast:collision": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.0022301241755485757,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": 1.0,
+          "threat_preference_spearman": null
+        },
+        "contrast:distance": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": null,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.008617166678110744,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": 1.0,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:energy": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": null,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.008267828822135947,
+          "energy_preference_spearman": 1.0,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:safety": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.00891937986016278,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": -1.0,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:task": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": 1.0,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.0061698558429877925,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:threat": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": null,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.007752514630556151,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": 1.0
+        },
+        "contrast:time": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.00909724483887353,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": 1.0,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        }
+      },
+      "hard": {
+        "all": {
+          "n_queries": 33,
+          "safety_tradeoff_spearman": 0.9111827565722581,
+          "collision_preference_spearman": 0.5801844625995065,
+          "task_preference_spearman": 0.5712598814989629,
+          "collision_rate_range": 0.10000000000000002,
+          "task_completion_range": 0.037108908345301894,
+          "energy_preference_spearman": 0.6257749922686029,
+          "distance_preference_spearman": 0.6303701850475686,
+          "time_preference_spearman": 0.7911080900165683,
+          "safety_distance_spearman": -0.13042895384236913,
+          "collision_distance_spearman": 0.18047822681152242,
+          "threat_preference_spearman": 0.5613804922144424
+        },
+        "counterfactual": {
+          "n_queries": 21,
+          "safety_tradeoff_spearman": 0.7643280109102123,
+          "collision_preference_spearman": 0.4652734687783773,
+          "task_preference_spearman": 0.2595870658255825,
+          "collision_rate_range": 0.06666666666666667,
+          "task_completion_range": 0.014698794980843699,
+          "energy_preference_spearman": 0.415339305320932,
+          "distance_preference_spearman": 0.3893805987383738,
+          "time_preference_spearman": 0.46725671848604844,
+          "safety_distance_spearman": 0.02595870658255825,
+          "collision_distance_spearman": 0.311504478990699,
+          "threat_preference_spearman": 0.519174131651165
+        },
+        "paraphrase": {
+          "n_queries": 4,
+          "safety_tradeoff_spearman": 0.7999999999999999,
+          "collision_preference_spearman": 0.8333333333333335,
+          "task_preference_spearman": 0.7999999999999999,
+          "collision_rate_range": 0.10000000000000002,
+          "task_completion_range": 0.032848996917406725,
+          "energy_preference_spearman": 0.7745966692414834,
+          "distance_preference_spearman": 0.7745966692414834,
+          "time_preference_spearman": 0.9486832980505139,
+          "safety_distance_spearman": -0.39999999999999997,
+          "collision_distance_spearman": -0.316227766016838,
+          "threat_preference_spearman": 0.9486832980505139
+        },
+        "unseen": {
+          "n_queries": 6,
+          "safety_tradeoff_spearman": 0.942857142857143,
+          "collision_preference_spearman": 0.5393598899705937,
+          "task_preference_spearman": 0.9710083124552245,
+          "collision_rate_range": 0.08333333333333333,
+          "task_completion_range": 0.035693805664777645,
+          "energy_preference_spearman": 0.9258200997725515,
+          "distance_preference_spearman": 1.0,
+          "time_preference_spearman": 1.0,
+          "safety_distance_spearman": -0.23190841426097938,
+          "collision_distance_spearman": 0.13093073414159545,
+          "threat_preference_spearman": null
+        },
+        "contrast:collision": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": 1.0,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.06666666666666667,
+          "task_completion_range": 0.005614834527174595,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": 1.0,
+          "threat_preference_spearman": null
+        },
+        "contrast:distance": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": null,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.049999999999999996,
+          "task_completion_range": 0.009417135516802344,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": 1.0,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:energy": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": null,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.03333333333333333,
+          "task_completion_range": 0.008282956977685219,
+          "energy_preference_spearman": 1.0,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:safety": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.06666666666666667,
+          "task_completion_range": 0.013410155475139685,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": 0.5,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:task": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": 1.0,
+          "collision_rate_range": 0.049999999999999996,
+          "task_completion_range": 0.005927715450525284,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:threat": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": null,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.012782073765993052,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": 1.0
+        },
+        "contrast:time": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.049999999999999996,
+          "task_completion_range": 0.00965290640791261,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": 1.0,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        }
+      },
+      "critical": {
+        "all": {
+          "n_queries": 33,
+          "safety_tradeoff_spearman": 0.8911353166398857,
+          "collision_preference_spearman": 0.41150492136329286,
+          "task_preference_spearman": 0.5928316586925385,
+          "collision_rate_range": 0.06666666666666668,
+          "task_completion_range": 0.03078857933481549,
+          "energy_preference_spearman": 0.6558965322093299,
+          "distance_preference_spearman": 0.6303701850475686,
+          "time_preference_spearman": 0.7915107920221761,
+          "safety_distance_spearman": -0.5303708231090165,
+          "collision_distance_spearman": -0.1844944321369527,
+          "threat_preference_spearman": 0.5497414559727736
+        },
+        "counterfactual": {
+          "n_queries": 21,
+          "safety_tradeoff_spearman": 0.7787349873063373,
+          "collision_preference_spearman": 0.41885390829169544,
+          "task_preference_spearman": 0.2855457724081407,
+          "collision_rate_range": 0.03333333333333333,
+          "task_completion_range": 0.011300378541151734,
+          "energy_preference_spearman": 0.46725671848604844,
+          "distance_preference_spearman": 0.3893805987383738,
+          "time_preference_spearman": 0.46725671848604844,
+          "safety_distance_spearman": -0.2595870658255825,
+          "collision_distance_spearman": 0.207669652660466,
+          "threat_preference_spearman": 0.415339305320932
+        },
+        "paraphrase": {
+          "n_queries": 4,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": 0.8333333333333335,
+          "task_preference_spearman": 0.7999999999999999,
+          "collision_rate_range": 0.06666666666666668,
+          "task_completion_range": 0.02486405918995549,
+          "energy_preference_spearman": 0.7745966692414834,
+          "distance_preference_spearman": 0.7745966692414834,
+          "time_preference_spearman": 0.9486832980505139,
+          "safety_distance_spearman": -0.7999999999999999,
+          "collision_distance_spearman": -0.632455532033676,
+          "threat_preference_spearman": 0.7378647873726218
+        },
+        "unseen": {
+          "n_queries": 6,
+          "safety_tradeoff_spearman": 0.7142857142857143,
+          "collision_preference_spearman": 0.4242640687119286,
+          "task_preference_spearman": 0.9710083124552245,
+          "collision_rate_range": 0.049999999999999996,
+          "task_completion_range": 0.029359741757313484,
+          "energy_preference_spearman": 0.9258200997725515,
+          "distance_preference_spearman": 1.0,
+          "time_preference_spearman": 1.0,
+          "safety_distance_spearman": -0.23190841426097938,
+          "collision_distance_spearman": 0.13093073414159545,
+          "threat_preference_spearman": null
+        },
+        "contrast:collision": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": 0.8660254037844387,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.016666666666666677,
+          "task_completion_range": 0.004416227837403586,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": 1.0,
+          "threat_preference_spearman": null
+        },
+        "contrast:distance": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": null,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.009112248073021467,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": 1.0,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:energy": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": null,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.016666666666666677,
+          "task_completion_range": 0.00922880843281737,
+          "energy_preference_spearman": 1.0,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:safety": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.03333333333333333,
+          "task_completion_range": 0.011300378541151734,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": -1.0,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:task": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": 1.0,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.006715655326843262,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        },
+        "contrast:threat": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": null,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.009651612987120917,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": null,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": 1.0
+        },
+        "contrast:time": {
+          "n_queries": 3,
+          "safety_tradeoff_spearman": 1.0,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": null,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.009566635390122702,
+          "energy_preference_spearman": null,
+          "distance_preference_spearman": null,
+          "time_preference_spearman": 1.0,
+          "safety_distance_spearman": null,
+          "collision_distance_spearman": null,
+          "threat_preference_spearman": null
+        }
+      }
+    }
+  }
+}

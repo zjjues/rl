@@ -1,0 +1,227 @@
+{
+  "variants": {
+    "legacy_hash": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "easy": {
+          "collision_rate": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260801
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260802
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "task_completion": {
+            "n": 1,
+            "mean": 0.6017273887991905,
+            "std": 0.0,
+            "median": 0.6017273887991905,
+            "iqm": 0.6017273887991905,
+            "min": 0.6017273887991905,
+            "max": 0.6017273887991905,
+            "mean_ci": {
+              "low": 0.6017273887991905,
+              "high": 0.6017273887991905,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260803
+            },
+            "iqm_ci": {
+              "low": 0.6017273887991905,
+              "high": 0.6017273887991905,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260804
+            },
+            "raw": [
+              0.6017273887991905
+            ]
+          },
+          "episode_return": {
+            "n": 1,
+            "mean": -2.093045800924301,
+            "std": 0.0,
+            "median": -2.093045800924301,
+            "iqm": -2.093045800924301,
+            "min": -2.093045800924301,
+            "max": -2.093045800924301,
+            "mean_ci": {
+              "low": -2.093045800924301,
+              "high": -2.093045800924301,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260805
+            },
+            "iqm_ci": {
+              "low": -2.093045800924301,
+              "high": -2.093045800924301,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260806
+            },
+            "raw": [
+              -2.093045800924301
+            ]
+          },
+          "episode_collisions": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260807
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260808
+            },
+            "raw": [
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "onehot": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "easy": {
+          "collision_rate": {
+            "n": 1,
+            "mean": 0.625,
+            "std": 0.0,
+            "median": 0.625,
+            "iqm": 0.625,
+            "min": 0.625,
+            "max": 0.625,
+            "mean_ci": {
+              "low": 0.625,
+              "high": 0.625,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260801
+            },
+            "iqm_ci": {
+              "low": 0.625,
+              "high": 0.625,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260802
+            },
+            "raw": [
+              0.625
+            ]
+          },
+          "task_completion": {
+            "n": 1,
+            "mean": 0.6388400625437498,
+            "std": 0.0,
+            "median": 0.6388400625437498,
+            "iqm": 0.6388400625437498,
+            "min": 0.6388400625437498,
+            "max": 0.6388400625437498,
+            "mean_ci": {
+              "low": 0.6388400625437498,
+              "high": 0.6388400625437498,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260803
+            },
+            "iqm_ci": {
+              "low": 0.6388400625437498,
+              "high": 0.6388400625437498,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260804
+            },
+            "raw": [
+              0.6388400625437498
+            ]
+          },
+          "episode_return": {
+            "n": 1,
+            "mean": -5.322825253009796,
+            "std": 0.0,
+            "median": -5.322825253009796,
+            "iqm": -5.322825253009796,
+            "min": -5.322825253009796,
+            "max": -5.322825253009796,
+            "mean_ci": {
+              "low": -5.322825253009796,
+              "high": -5.322825253009796,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260805
+            },
+            "iqm_ci": {
+              "low": -5.322825253009796,
+              "high": -5.322825253009796,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260806
+            },
+            "raw": [
+              -5.322825253009796
+            ]
+          },
+          "episode_collisions": {
+            "n": 1,
+            "mean": 5.0,
+            "std": 0.0,
+            "median": 5.0,
+            "iqm": 5.0,
+            "min": 5.0,
+            "max": 5.0,
+            "mean_ci": {
+              "low": 5.0,
+              "high": 5.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260807
+            },
+            "iqm_ci": {
+              "low": 5.0,
+              "high": 5.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260808
+            },
+            "raw": [
+              5.0
+            ]
+          }
+        }
+      }
+    }
+  },
+  "paired_comparisons": {}
+}

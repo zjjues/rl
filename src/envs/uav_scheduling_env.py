@@ -5,6 +5,8 @@ import numpy as np
 from gymnasium import spaces
 from typing import Optional
 
+from intent_objectives import resolve_intent_reward_profile
+
 
 def infer_neighbor_slots(n_agents: int, neighbor_slots: Optional[int] = None) -> int:
     if neighbor_slots is not None:
@@ -16,6 +18,11 @@ def infer_obs_dim(n_agents: int, neighbor_slots: Optional[int] = None) -> int:
     # self position(3) + self velocity(3) + assigned target delta(3) + energy(1)
     # + pending task(2) + K nearest neighbours * (relative position(3) + velocity(3))
     return 12 + 6 * infer_neighbor_slots(n_agents, neighbor_slots)
+
+
+def infer_obs_dim_v2(n_agents: int, neighbor_slots: Optional[int] = None) -> int:
+    # v1 features + nearest threat-zone delta(3).
+    return 15 + 6 * infer_neighbor_slots(n_agents, neighbor_slots)
 
 
 def infer_state_dim(
@@ -62,11 +69,25 @@ class UAVSchedulingEnv(gym.Env):
         target_tracking_radius=1.25,
         intent_threshold=0.5,
         threat_penalty_respects_clip=True,
+        intent_reward_profiles_enabled=False,
+        wind_std=0.0,
+        observation_noise_std=0.0,
+        action_delay_steps=0,
+        communication_dropout_prob=0.0,
+        benchmark_version="v1",
     ):
         super().__init__()
         self.n_agents = n_agents
         self.neighbor_slots = infer_neighbor_slots(n_agents, neighbor_slots)
-        self.obs_dim = int(obs_dim if obs_dim is not None else infer_obs_dim(n_agents, self.neighbor_slots))
+        self.benchmark_version = str(benchmark_version)
+        if self.benchmark_version not in {"v1", "v2"}:
+            raise ValueError("benchmark_version must be 'v1' or 'v2'")
+        inferred_obs_dim = (
+            infer_obs_dim_v2(n_agents, self.neighbor_slots)
+            if self.benchmark_version == "v2"
+            else infer_obs_dim(n_agents, self.neighbor_slots)
+        )
+        self.obs_dim = int(obs_dim if obs_dim is not None else inferred_obs_dim)
         self.action_dim = action_dim
         self.state_dim = infer_state_dim(n_agents, self.obs_dim, self.neighbor_slots)
         self.max_episode_steps = max_episode_steps
@@ -82,6 +103,17 @@ class UAVSchedulingEnv(gym.Env):
         self.stealth_threat_penalty = float(stealth_threat_penalty)
         self.intent_threshold = float(intent_threshold)
         self.threat_penalty_respects_clip = bool(threat_penalty_respects_clip)
+        self.intent_reward_profiles_enabled = bool(intent_reward_profiles_enabled)
+        self.wind_std = float(wind_std)
+        self.observation_noise_std = float(observation_noise_std)
+        self.action_delay_steps = int(action_delay_steps)
+        self.communication_dropout_prob = float(communication_dropout_prob)
+        if self.wind_std < 0.0 or self.observation_noise_std < 0.0:
+            raise ValueError("wind and observation noise standard deviations must be non-negative")
+        if self.action_delay_steps < 0:
+            raise ValueError("action_delay_steps must be non-negative")
+        if not 0.0 <= self.communication_dropout_prob <= 1.0:
+            raise ValueError("communication_dropout_prob must lie in [0, 1]")
 
         self.agent_names = [f"uav_{i}" for i in range(self.n_agents)]
         self.action_space = spaces.Tuple(
@@ -130,22 +162,40 @@ class UAVSchedulingEnv(gym.Env):
         self.current_intent = np.zeros((1,), dtype=np.float32)
         self.current_tactical_posture = 1.0
         self.current_intent_label = ""
+        self.current_intent_reward_profile = resolve_intent_reward_profile("")
         self.threat_zone_centers = np.zeros((0, 3), dtype=np.float32)
         self.attack_threat_bonus = float(attack_threat_bonus)
         self.active_time_penalty = float(active_time_penalty)
         self.target_tracking_radius = float(target_tracking_radius)
+        self._action_queue = []
 
     def set_intent(self, intent, label: str = "") -> None:
         intent_array = np.asarray(intent, dtype=np.float32).reshape(-1)
         self.current_intent = intent_array
         self.current_intent_label = str(label) if label else ""
+        self.current_intent_reward_profile = resolve_intent_reward_profile(
+            self.current_intent_label
+        )
 
     def set_tactical_posture(self, posture) -> None:
         if isinstance(posture, str):
-            posture_value = 1.0 if posture.lower() == "attack" else 0.0
+            posture_value = {
+                "attack": 1.0,
+                "neutral": 0.5,
+                "stealth": 0.0,
+            }.get(posture.lower(), 0.5)
         else:
             posture_value = float(posture)
         self.current_tactical_posture = posture_value
+
+    def set_objective_profile(self, profile) -> None:
+        if profile is None:
+            return
+        resolved = resolve_intent_reward_profile("")
+        for key, value in dict(profile).items():
+            if key in resolved:
+                resolved[key] = float(value)
+        self.current_intent_reward_profile = resolved
 
     def reset(self, seed=None, options=None):
         if seed is not None:
@@ -189,16 +239,30 @@ class UAVSchedulingEnv(gym.Env):
         self.current_intent = np.zeros((1,), dtype=np.float32)
         self.current_tactical_posture = 1.0
         self.current_intent_label = ""
+        self.current_intent_reward_profile = resolve_intent_reward_profile("")
+        self._action_queue = [
+            np.zeros((self.n_agents, self.action_dim), dtype=np.float32)
+            for _ in range(self.action_delay_steps)
+        ]
         obs = self._get_obs()
         info = {agent: {} for agent in self.agent_names}
         return obs, info
 
     def step(self, actions):
         self.step_count += 1
-        actions = np.asarray(actions, dtype=np.float32)
-        actions = np.clip(actions, -1.0, 1.0)
+        commanded_actions = np.clip(np.asarray(actions, dtype=np.float32), -1.0, 1.0)
+        if self.action_delay_steps > 0:
+            actions = self._action_queue.pop(0)
+            self._action_queue.append(commanded_actions.copy())
+        else:
+            actions = commanded_actions
 
         self.velocities = 0.7 * self.velocities + 0.3 * actions
+        if self.wind_std > 0.0:
+            wind = self.np_random.normal(
+                0.0, self.wind_std, size=self.velocities.shape
+            ).astype(np.float32)
+            self.velocities = self.velocities + self.dt * wind
         self.positions = self.positions + self.dt * self.velocities
         self.positions = np.clip(self.positions, -self.world_size, self.world_size)
         self.target_positions = self.target_positions + self.dt * self.target_velocities
@@ -222,13 +286,33 @@ class UAVSchedulingEnv(gym.Env):
             0.0,
             1.0,
         )
-        self.pending_tasks = np.clip(
-            self.pending_tasks - self.task_progress_rate * np.abs(actions[:, :2]),
-            0.0,
-            1.0,
-        )
-
         dist_to_target = np.linalg.norm(self.targets - self.positions, axis=1)
+        if self.benchmark_version == "v2":
+            target_delta = self.targets - self.positions
+            target_direction = target_delta / np.maximum(
+                np.linalg.norm(target_delta, axis=1, keepdims=True), 1e-6
+            )
+            action_direction = actions / np.maximum(
+                np.linalg.norm(actions, axis=1, keepdims=True), 1e-6
+            )
+            approach_alignment = np.clip(
+                np.sum(target_direction * action_direction, axis=1), 0.0, 1.0
+            )
+            proximity = 1.0 / (
+                1.0 + dist_to_target / max(self.target_tracking_radius, 1e-6)
+            )
+            progress = self.task_progress_rate * proximity * (
+                0.20 + 0.80 * approach_alignment
+            )
+            self.pending_tasks = np.clip(
+                self.pending_tasks - progress[:, None], 0.0, 1.0
+            )
+        else:
+            self.pending_tasks = np.clip(
+                self.pending_tasks - self.task_progress_rate * np.abs(actions[:, :2]),
+                0.0,
+                1.0,
+            )
         task_cost = self._compute_task_cost()
         pairwise_dist = self._pairwise_distances(self.positions)
         normalised_pairwise_dist = pairwise_dist / max(2.0 * self.world_size, 1e-6)
@@ -248,6 +332,9 @@ class UAVSchedulingEnv(gym.Env):
             self.collision_count += 1
 
         task_completion = 1.0 - self.pending_tasks.mean(axis=1)
+        pairwise_for_min = pairwise_dist.copy()
+        np.fill_diagonal(pairwise_for_min, np.inf)
+        min_neighbor_distance = np.min(pairwise_for_min, axis=1)
         rewards = self._compute_rewards(
             dist_to_target=dist_to_target,
             action_norm=np.linalg.norm(actions, axis=1),
@@ -279,8 +366,18 @@ class UAVSchedulingEnv(gym.Env):
                 "reward_time": float(self.last_reward_terms["time"][i]),
                 "reward_threat": float(self.last_reward_terms["threat"][i]),
                 "threat_zone_violation": bool(self.last_reward_terms["threat_violation"][i] > 0.0),
+                "distance_to_threat": float(self.last_reward_terms["threat_distance"][i]),
                 "tactical_posture_flag": float(self.current_tactical_posture),
                 "intent_label": self.current_intent_label,
+                "energy_remaining": float(self.energy[i, 0]),
+                "action_magnitude": float(np.linalg.norm(actions[i])),
+                "speed": float(np.linalg.norm(self.velocities[i])),
+                "distance_to_target": float(dist_to_target[i]),
+                "min_neighbor_distance": float(min_neighbor_distance[i]),
+                "wind_std": self.wind_std,
+                "observation_noise_std": self.observation_noise_std,
+                "action_delay_steps": self.action_delay_steps,
+                "communication_dropout_prob": self.communication_dropout_prob,
             }
             for i, agent in enumerate(self.agent_names)
         }
@@ -325,6 +422,9 @@ class UAVSchedulingEnv(gym.Env):
         time_term = (-self.active_time_penalty * distance_over_radius).astype(np.float32)
         posture_flag = float(self.current_tactical_posture)
         threat_violation = np.zeros((self.n_agents,), dtype=np.float32)
+        threat_distance = np.full(
+            (self.n_agents,), 2.0 * self.world_size, dtype=np.float32
+        )
         threat_term = np.zeros((self.n_agents,), dtype=np.float32)
         if self.threat_zone_centers.size > 0:
             threat_distances = np.linalg.norm(
@@ -332,10 +432,24 @@ class UAVSchedulingEnv(gym.Env):
                 axis=-1,
             )
             threat_violation = (threat_distances <= self.threat_zone_radius).any(axis=1).astype(np.float32)
-            if posture_flag >= self.intent_threshold:
-                task_term = task_term + self.attack_threat_bonus * threat_violation
-            else:
+            threat_distance = np.min(threat_distances, axis=1).astype(np.float32)
+            if posture_flag > self.intent_threshold:
+                threat_term = self.attack_threat_bonus * threat_violation
+            elif posture_flag < self.intent_threshold:
                 threat_term = -self.stealth_threat_penalty * threat_violation
+
+        profile = (
+            self.current_intent_reward_profile
+            if self.intent_reward_profiles_enabled
+            else resolve_intent_reward_profile("")
+        )
+        dist_term = dist_term * profile["distance"]
+        energy_term = energy_term * profile["energy"]
+        collision_term = collision_term * profile["collision"]
+        safety_term = safety_term * profile["safety"]
+        task_term = task_term * profile["task"]
+        time_term = time_term * profile["time"]
+        threat_term = threat_term * profile["threat"]
 
         base_rewards = (
             dist_term
@@ -367,7 +481,9 @@ class UAVSchedulingEnv(gym.Env):
             "time": time_term.astype(np.float32),
             "threat": threat_term.astype(np.float32),
             "threat_violation": threat_violation.astype(np.float32),
+            "threat_distance": threat_distance.astype(np.float32),
             "raw_total": total_rewards.astype(np.float32),
+            "intent_reward_profile": dict(profile),
         }
         return clipped_rewards
 
@@ -411,8 +527,14 @@ class UAVSchedulingEnv(gym.Env):
             nearest_indices = [j for j in np.argsort(pairwise_dist[i]) if j != i][: self.neighbor_slots]
             nearest_feats = []
             for j in nearest_indices:
-                nearest_feats.extend((self.positions[j] - self.positions[i]).tolist())
-                nearest_feats.extend(self.velocities[j].tolist())
+                if (
+                    self.communication_dropout_prob > 0.0
+                    and self.np_random.random() < self.communication_dropout_prob
+                ):
+                    nearest_feats.extend([0.0] * 6)
+                else:
+                    nearest_feats.extend((self.positions[j] - self.positions[i]).tolist())
+                    nearest_feats.extend(self.velocities[j].tolist())
             while len(nearest_feats) < 6 * self.neighbor_slots:
                 nearest_feats.append(0.0)
 
@@ -423,9 +545,31 @@ class UAVSchedulingEnv(gym.Env):
                     rel_target,
                     self.energy[i],
                     self.pending_tasks[i],
+                    *(
+                        [
+                            self.threat_zone_centers[
+                                int(np.argmin(np.linalg.norm(
+                                    self.threat_zone_centers - self.positions[i], axis=1
+                                )))
+                            ] - self.positions[i]
+                        ]
+                        if self.benchmark_version == "v2"
+                        and self.threat_zone_centers.size > 0
+                        else ([np.zeros(3, dtype=np.float32)] if self.benchmark_version == "v2" else [])
+                    ),
                     np.asarray(nearest_feats, dtype=np.float32),
                 ]
             ).astype(np.float32)
+            if self.observation_noise_std > 0.0:
+                spatial_indices = np.r_[
+                    0:9,
+                    (12 if self.benchmark_version == "v1" else 12):len(obs_i),
+                ]
+                obs_i[spatial_indices] += self.np_random.normal(
+                    0.0,
+                    self.observation_noise_std,
+                    size=spatial_indices.size,
+                ).astype(np.float32)
             obs.append(obs_i[: self.obs_dim])
         return tuple(obs)
 
@@ -439,4 +583,10 @@ class UAVSchedulingEnv(gym.Env):
 gym.register(
     id="uav-scheduling-v0",
     entry_point="envs.uav_scheduling_env:UAVSchedulingEnv",
+)
+
+gym.register(
+    id="uav-scheduling-v2",
+    entry_point="envs.uav_scheduling_env:UAVSchedulingEnv",
+    kwargs={"benchmark_version": "v2"},
 )

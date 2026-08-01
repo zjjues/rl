@@ -1,0 +1,222 @@
+{
+  "variants": {
+    "matd3": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "easy": {
+          "collision_rate": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260801
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260802
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "task_completion": {
+            "n": 1,
+            "mean": 0.7764563519507647,
+            "std": 0.0,
+            "median": 0.7764563519507647,
+            "iqm": 0.7764563519507647,
+            "min": 0.7764563519507647,
+            "max": 0.7764563519507647,
+            "mean_ci": {
+              "low": 0.7764563519507647,
+              "high": 0.7764563519507647,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260803
+            },
+            "iqm_ci": {
+              "low": 0.7764563519507647,
+              "high": 0.7764563519507647,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260804
+            },
+            "raw": [
+              0.7764563519507647
+            ]
+          },
+          "episode_return": {
+            "n": 1,
+            "mean": -11.408223450183868,
+            "std": 0.0,
+            "median": -11.408223450183868,
+            "iqm": -11.408223450183868,
+            "min": -11.408223450183868,
+            "max": -11.408223450183868,
+            "mean_ci": {
+              "low": -11.408223450183868,
+              "high": -11.408223450183868,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260805
+            },
+            "iqm_ci": {
+              "low": -11.408223450183868,
+              "high": -11.408223450183868,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260806
+            },
+            "raw": [
+              -11.408223450183868
+            ]
+          },
+          "episode_collisions": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260807
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260808
+            },
+            "raw": [
+              0.0
+            ]
+          }
+        },
+        "hard": {
+          "collision_rate": {
+            "n": 1,
+            "mean": 0.5,
+            "std": 0.0,
+            "median": 0.5,
+            "iqm": 0.5,
+            "min": 0.5,
+            "max": 0.5,
+            "mean_ci": {
+              "low": 0.5,
+              "high": 0.5,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260809
+            },
+            "iqm_ci": {
+              "low": 0.5,
+              "high": 0.5,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260810
+            },
+            "raw": [
+              0.5
+            ]
+          },
+          "task_completion": {
+            "n": 1,
+            "mean": 0.6367450550198555,
+            "std": 0.0,
+            "median": 0.6367450550198555,
+            "iqm": 0.6367450550198555,
+            "min": 0.6367450550198555,
+            "max": 0.6367450550198555,
+            "mean_ci": {
+              "low": 0.6367450550198555,
+              "high": 0.6367450550198555,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260811
+            },
+            "iqm_ci": {
+              "low": 0.6367450550198555,
+              "high": 0.6367450550198555,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260812
+            },
+            "raw": [
+              0.6367450550198555
+            ]
+          },
+          "episode_return": {
+            "n": 1,
+            "mean": -12.661292344331741,
+            "std": 0.0,
+            "median": -12.661292344331741,
+            "iqm": -12.661292344331741,
+            "min": -12.661292344331741,
+            "max": -12.661292344331741,
+            "mean_ci": {
+              "low": -12.661292344331741,
+              "high": -12.661292344331741,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260813
+            },
+            "iqm_ci": {
+              "low": -12.661292344331741,
+              "high": -12.661292344331741,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260814
+            },
+            "raw": [
+              -12.661292344331741
+            ]
+          },
+          "episode_collisions": {
+            "n": 1,
+            "mean": 10.0,
+            "std": 0.0,
+            "median": 10.0,
+            "iqm": 10.0,
+            "min": 10.0,
+            "max": 10.0,
+            "mean_ci": {
+              "low": 10.0,
+              "high": 10.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260815
+            },
+            "iqm_ci": {
+              "low": 10.0,
+              "high": 10.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260816
+            },
+            "raw": [
+              10.0
+            ]
+          }
+        }
+      }
+    }
+  },
+  "paired_comparisons": {}
+}

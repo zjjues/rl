@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "study_id": "pybullet_transfer_smoke_v1",
+  "level": "smoke",
+  "objective": "Audit structured controller and CBF transfer from point-mass assumptions to Crazyflie rigid-body dynamics.",
+  "seeds": [7, 11, 23],
+  "bootstrap_seed": 20260801,
+  "treatment_key": "qp_cbf",
+  "scenarios": ["crossing", "corridor"],
+  "profiles": {
+    "neutral": {},
+    "safety_high": {"safety": 1.8},
+    "energy_high": {"energy": 1.8}
+  },
+  "episode": {
+    "steps": 150,
+    "ctrl_freq": 30,
+    "pyb_freq": 240,
+    "base_min_distance": 0.22,
+    "collision_distance": 0.10,
+    "goal_tolerance": 0.16,
+    "constraint_horizon": 0.35
+  },
+  "variants": [
+    {"key": "qp_cbf", "filter_mode": "qp"},
+    {"key": "cyclic_projection", "filter_mode": "cyclic"},
+    {"key": "no_filter", "filter_mode": "none"}
+  ]
+}

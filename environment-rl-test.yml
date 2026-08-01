@@ -1,0 +1,21 @@
+name: rl-test
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cpu
+      - numpy==1.26.4
+      - scipy==1.15.3
+      - matplotlib==3.8.4
+      - seaborn==0.13.2
+      - gymnasium==1.1.1
+      - torch==2.4.1+cpu
+      - torchvision==0.19.1+cpu
+      - sentence-transformers==3.2.1
+      - transformers==4.57.6
+      - sentencepiece==0.2.2
+      - huggingface-hub==0.36.2
+      - scikit-learn==1.7.2
+      - vmas[gymnasium]==1.5.2

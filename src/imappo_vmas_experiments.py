@@ -9,7 +9,7 @@ Usage:
 
     # Full comparison
     python src/imappo_vmas_experiments.py --algorithm both --scenario dispersion \\
-        --episodes 3000 --seeds 7 11 23 --intent-source semantic_library
+        --episodes 3000 --seeds 7 11 23 --intent-source pretrained_semantic
 """
 
 from __future__ import annotations
@@ -17,8 +17,14 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
+import tempfile
 from pathlib import Path
 from typing import Callable, Dict, List, Tuple
+
+MATPLOTLIB_CACHE = Path(tempfile.gettempdir()) / "rl-matplotlib-cache"
+MATPLOTLIB_CACHE.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("MPLCONFIGDIR", str(MATPLOTLIB_CACHE))
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -52,9 +58,23 @@ def parse_args():
     parser.add_argument("--seeds", type=int, nargs="+", default=[7, 11, 23])
     parser.add_argument("--save-every", type=int, default=100)
     parser.add_argument("--n-agents", type=int, default=3)
-    parser.add_argument("--intent-source", choices=["onehot", "semantic_library"], default="semantic_library")
+    parser.add_argument(
+        "--intent-source",
+        choices=["onehot", "legacy_hash", "random_dense", "pretrained_semantic"],
+        default="pretrained_semantic",
+    )
     parser.add_argument("--intent-dim", type=int, default=64)
     parser.add_argument("--intent-library-path", type=str, default="")
+    parser.add_argument(
+        "--intent-encoder-model",
+        default="sentence-transformers/all-MiniLM-L6-v2",
+    )
+    parser.add_argument(
+        "--intent-encoder-revision",
+        default="1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    )
+    parser.add_argument("--intent-projection-seed", type=int, default=0)
+    parser.add_argument("--intent-code-seed", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=Path("experiments/vmas_stage1"))
     return parser.parse_args()
 
@@ -215,6 +235,10 @@ def run_single_seed(seed: int, args, output_dir: Path, intent_library: IntentLib
         use_action_mask=not is_mappo,
         intent_source=args.intent_source,
         intent_library_path=args.intent_library_path,
+        intent_encoder_model=args.intent_encoder_model,
+        intent_encoder_revision=args.intent_encoder_revision,
+        intent_projection_seed=args.intent_projection_seed,
+        intent_code_seed=args.intent_code_seed,
         intent_dim=args.intent_dim,
         seed=seed,
         n_agents=args.n_agents,
@@ -297,13 +321,25 @@ def main():
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Build intent library for logging/metadata (semantic_library mode only)
+    # Persist the exact representation library used by non-one-hot studies.
     intent_library = None
-    if args.intent_source == "semantic_library":
-        intent_library = IntentLibrary.create_static(
-            intent_dim=args.intent_dim,
+    if args.intent_source == "legacy_hash":
+        intent_library = IntentLibrary.create_legacy_hash(args.intent_dim, domain="vmas")
+    elif args.intent_source == "random_dense":
+        intent_library = IntentLibrary.create_random_dense(
+            args.intent_dim,
             domain="vmas",
+            seed=args.intent_code_seed,
         )
+    elif args.intent_source == "pretrained_semantic":
+        intent_library = IntentLibrary.create_pretrained(
+            args.intent_dim,
+            domain="vmas",
+            model_name=args.intent_encoder_model,
+            model_revision=args.intent_encoder_revision,
+            projection_seed=args.intent_projection_seed,
+        )
+    if intent_library is not None:
         lib_path = output_dir / "intent_library"
         intent_library.save(str(lib_path))
 

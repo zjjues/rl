@@ -1,0 +1,577 @@
+{
+  "seed": 7,
+  "variant": {
+    "key": "matd3",
+    "intent_source": "onehot",
+    "algorithm": "matd3",
+    "critic_mode": "twin_q",
+    "use_action_mask": false
+  },
+  "config": {
+    "algorithm": "matd3",
+    "critic_mode": "twin_q",
+    "use_action_mask": false,
+    "intent_source": "onehot",
+    "policy_mode": "direct",
+    "residual_action_scale": 0.25,
+    "residual_initial_log_std": -2.0,
+    "rule_prior_context": "neutral",
+    "replay_capacity": 10000,
+    "matd3_warmup_steps": 20,
+    "matd3_exploration_noise": 0.1,
+    "matd3_policy_noise": 0.2,
+    "matd3_noise_clip": 0.5,
+    "matd3_policy_delay": 2,
+    "matd3_tau": 0.005,
+    "n_agents": 4,
+    "n_targets": 4,
+    "obs_dim": 30,
+    "state_dim": 120,
+    "action_dim": 3,
+    "intent_dim": 25,
+    "intent_library_path": "",
+    "intent_encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "intent_encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "intent_encoder_batch_size": 32,
+    "intent_projection_seed": 17,
+    "intent_code_seed": 29,
+    "intent_encoder_device": "",
+    "intent_train_labels": [
+      "safety_first",
+      "efficiency_first",
+      "balanced",
+      "aggressive_pursuit",
+      "cautious_exploration",
+      "load_balancing",
+      "formation_keeping",
+      "threat_avoidance",
+      "threat_engagement",
+      "perimeter_patrol",
+      "center_convergence",
+      "decentralized_sweep",
+      "minimal_communication",
+      "full_coordination",
+      "altitude_separation",
+      "speed_modulation",
+      "reactive_avoidance",
+      "target_priority",
+      "stealth_approach"
+    ],
+    "intent_adapter_ridge": 0.01,
+    "intent_semantic_weight": 1.0,
+    "intent_objective_weight": 1.0,
+    "align_intent_posture": true,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "eps_clip": 0.1,
+    "eta": 0.0,
+    "eta_end": 0.0,
+    "entropy_coef": 0.001,
+    "entropy_coef_end": 0.0001,
+    "value_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "value_clip": 0.2,
+    "actor_lr": 0.0003,
+    "critic_lr": 0.0003,
+    "potential_lr": 0.0003,
+    "potential_update_mode": "frozen",
+    "potential_update_interval": 4,
+    "ppo_epochs": 4,
+    "minibatch_size": 64,
+    "rollout_length": 64,
+    "max_episodes": 10,
+    "max_steps": 20,
+    "eval_interval": 10,
+    "eval_episodes": 2,
+    "curriculum_spawn_scale_start": 0.45,
+    "curriculum_spawn_scale_end": 0.3,
+    "curriculum_separation_start": 0.95,
+    "curriculum_separation_end": 1.2,
+    "eval_spawn_scale": 0.34,
+    "eval_separation_scale": 0.95,
+    "collision_probe_spawn_scale": 0.29,
+    "collision_probe_separation_scale": 0.82,
+    "hard_train_interval": 6,
+    "hard_train_spawn_scale": 0.31,
+    "hard_train_separation_scale": 0.86,
+    "safety_reward_coef": 1.0,
+    "intent_reward_profiles_enabled": true,
+    "actor_hidden_dims": [
+      256,
+      256,
+      128
+    ],
+    "critic_hidden_dims": [
+      256,
+      256,
+      128
+    ],
+    "feature_hidden_dim": 128,
+    "attention_dim": 128,
+    "action_low": -1.0,
+    "action_high": 1.0,
+    "log_std_min": -5.0,
+    "log_std_max": 0.5,
+    "device": "cpu",
+    "seed": 7,
+    "task_reward_coef": 1.2,
+    "_env_progress": 1.0,
+    "_use_hard_train_env": false
+  },
+  "intent_representation": {
+    "representation_type": "none",
+    "semantic_geometry": false,
+    "intent_conditioning": false,
+    "task_labels_hidden_from_policy": true,
+    "algorithm": "matd3",
+    "centralized_twin_critics": true,
+    "target_policy_smoothing": true,
+    "delayed_policy_updates": 2
+  },
+  "tier_metrics": {
+    "easy": {
+      "easy_episode_return": -11.53183265030384,
+      "easy_episode_collisions": 0.0,
+      "easy_collision_rate": 0.0,
+      "easy_task_completion": 0.7481625381857157
+    },
+    "hard": {
+      "hard_episode_return": -9.989366792142391,
+      "hard_episode_collisions": 4.5,
+      "hard_collision_rate": 0.22499999999999998,
+      "hard_task_completion": 0.6369586233049631
+    }
+  },
+  "logs": [
+    {
+      "episode": 0.0,
+      "episode_return": -12.963231205940247,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_task_completion": 0.7315392598509789,
+      "algorithm": "matd3",
+      "intent_label": "target_priority",
+      "tactical_posture": "attack"
+    },
+    {
+      "episode": 1.0,
+      "episode_return": -11.388990581035614,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_task_completion": 0.5249248228967189,
+      "algorithm": "matd3",
+      "intent_label": "minimal_communication",
+      "tactical_posture": "stealth"
+    },
+    {
+      "episode": 2.0,
+      "episode_return": -15.976712822914124,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_task_completion": 0.6509230189025402,
+      "algorithm": "matd3",
+      "intent_label": "aggressive_pursuit",
+      "tactical_posture": "attack"
+    },
+    {
+      "episode": 3.0,
+      "episode_return": -12.36916571855545,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_task_completion": 0.7929736778140068,
+      "algorithm": "matd3",
+      "intent_label": "load_balancing",
+      "tactical_posture": "stealth",
+      "critic_loss": 0.008324150927364826,
+      "actor_loss": 0.0,
+      "replay_size": 80.0
+    },
+    {
+      "episode": 4.0,
+      "episode_return": -9.707051217556,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_task_completion": 0.5346596591174603,
+      "algorithm": "matd3",
+      "intent_label": "threat_engagement",
+      "tactical_posture": "attack",
+      "critic_loss": 0.0011327534448355436,
+      "actor_loss": 0.0,
+      "replay_size": 100.0
+    },
+    {
+      "episode": 5.0,
+      "episode_return": -13.346312284469604,
+      "episode_collisions": 7.0,
+      "episode_collision_rate": 0.35,
+      "episode_task_completion": 0.6100049294531346,
+      "algorithm": "matd3",
+      "intent_label": "balanced",
+      "tactical_posture": "stealth",
+      "critic_loss": 0.0020395279861986637,
+      "actor_loss": 0.0,
+      "replay_size": 120.0
+    },
+    {
+      "episode": 6.0,
+      "episode_return": -9.83539605140686,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_task_completion": 0.6848916493356227,
+      "algorithm": "matd3",
+      "intent_label": "full_coordination",
+      "tactical_posture": "attack",
+      "critic_loss": 0.0005687602679245174,
+      "actor_loss": 0.0,
+      "replay_size": 140.0
+    },
+    {
+      "episode": 7.0,
+      "episode_return": -6.998009115457535,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_task_completion": 0.72214927226305,
+      "algorithm": "matd3",
+      "intent_label": "cautious_exploration",
+      "tactical_posture": "stealth",
+      "critic_loss": 0.0008973223739303648,
+      "actor_loss": 0.0,
+      "replay_size": 160.0
+    },
+    {
+      "episode": 8.0,
+      "episode_return": -12.635939121246338,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_task_completion": 0.8283356472849845,
+      "algorithm": "matd3",
+      "intent_label": "reactive_avoidance",
+      "tactical_posture": "attack",
+      "critic_loss": 0.0023022214882075787,
+      "actor_loss": 0.0,
+      "replay_size": 180.0
+    },
+    {
+      "episode": 9.0,
+      "episode_return": -10.276178687810898,
+      "episode_collisions": 0.0,
+      "episode_collision_rate": 0.0,
+      "episode_task_completion": 0.728983896970749,
+      "algorithm": "matd3",
+      "intent_label": "minimal_communication",
+      "tactical_posture": "stealth",
+      "critic_loss": 0.0015310103772208095,
+      "actor_loss": 0.0,
+      "replay_size": 200.0
+    }
+  ],
+  "intent_generalization": {
+    "suite_id": "uav_intent_generalization_v1",
+    "train_labels": [
+      "safety_first",
+      "efficiency_first",
+      "balanced",
+      "aggressive_pursuit",
+      "cautious_exploration",
+      "load_balancing",
+      "formation_keeping",
+      "threat_avoidance",
+      "threat_engagement",
+      "perimeter_patrol",
+      "center_convergence",
+      "decentralized_sweep",
+      "minimal_communication",
+      "full_coordination",
+      "altitude_separation",
+      "speed_modulation",
+      "reactive_avoidance",
+      "target_priority",
+      "stealth_approach"
+    ],
+    "representation_diagnostics": {},
+    "behavior": {
+      "seen_balanced": {
+        "split": "seen",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -10.685794308781624,
+            "episode_collisions": 6.0,
+            "collision_rate": 0.3,
+            "task_completion": 0.6319837801158428
+          },
+          "hard": {
+            "episode_return": -12.031750872731209,
+            "episode_collisions": 9.0,
+            "collision_rate": 0.45,
+            "task_completion": 0.6509914729744195
+          }
+        }
+      },
+      "seen_safety_first": {
+        "split": "seen",
+        "canonical_label": "safety_first",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -9.727033704519272,
+            "episode_collisions": 4.0,
+            "collision_rate": 0.2,
+            "task_completion": 0.7063101902604103
+          },
+          "hard": {
+            "episode_return": -7.345788210630417,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6786008883267641
+          }
+        }
+      },
+      "paraphrase_safety_first": {
+        "split": "paraphrase",
+        "canonical_label": "safety_first",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -8.126574873924255,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.7312463443726301
+          },
+          "hard": {
+            "episode_return": -8.94943530857563,
+            "episode_collisions": 3.5,
+            "collision_rate": 0.175,
+            "task_completion": 0.6724149752408266
+          }
+        }
+      },
+      "paraphrase_aggressive_pursuit": {
+        "split": "paraphrase",
+        "canonical_label": "aggressive_pursuit",
+        "posture": "attack",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -14.109823942184448,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6815954502671957
+          },
+          "hard": {
+            "episode_return": -15.067385286092758,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.718385460227728
+          }
+        }
+      },
+      "paraphrase_balanced": {
+        "split": "paraphrase",
+        "canonical_label": "balanced",
+        "posture": "neutral",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -9.49963615834713,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6362964570522308
+          },
+          "hard": {
+            "episode_return": -10.934738546609879,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6660267289727926
+          }
+        }
+      },
+      "paraphrase_stealth_approach": {
+        "split": "paraphrase",
+        "canonical_label": "stealth_approach",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -7.4627940356731415,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.7336754087358713
+          },
+          "hard": {
+            "episode_return": -6.517716228961945,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6848550062626599
+          }
+        }
+      },
+      "unseen_energy_saving": {
+        "split": "unseen",
+        "canonical_label": "energy_saving",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -6.280231490731239,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6812168508768082
+          },
+          "hard": {
+            "episode_return": -7.686269372701645,
+            "episode_collisions": 4.0,
+            "collision_rate": 0.2,
+            "task_completion": 0.7185920696705579
+          }
+        }
+      },
+      "unseen_relay_coordination": {
+        "split": "unseen",
+        "canonical_label": "relay_coordination",
+        "posture": "neutral",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -8.278364300727844,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.5768218081444503
+          },
+          "hard": {
+            "episode_return": -9.274324044585228,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6312242399901151
+          }
+        }
+      },
+      "unseen_predictive_planning": {
+        "split": "unseen",
+        "canonical_label": "predictive_planning",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -10.971232667565346,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6468507505953311
+          },
+          "hard": {
+            "episode_return": -10.11100149154663,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.7112925194203854
+          }
+        }
+      },
+      "unseen_coverage_maximization": {
+        "split": "unseen",
+        "canonical_label": "coverage_maximization",
+        "posture": "neutral",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -10.8582161962986,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.6943234074860811
+          },
+          "hard": {
+            "episode_return": -12.555643290281296,
+            "episode_collisions": 6.5,
+            "collision_rate": 0.325,
+            "task_completion": 0.7785845071077346
+          }
+        }
+      },
+      "unseen_rapid_response": {
+        "split": "unseen",
+        "canonical_label": "rapid_response",
+        "posture": "attack",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -17.768706768751144,
+            "episode_collisions": 0.0,
+            "collision_rate": 0.0,
+            "task_completion": 0.7588225968182087
+          },
+          "hard": {
+            "episode_return": -14.794838011264801,
+            "episode_collisions": 2.5,
+            "collision_rate": 0.125,
+            "task_completion": 0.7017109107226134
+          }
+        }
+      },
+      "unseen_hover_and_observe": {
+        "split": "unseen",
+        "canonical_label": "hover_and_observe",
+        "posture": "stealth",
+        "risk_tiers": {
+          "easy": {
+            "episode_return": -5.4247005879879,
+            "episode_collisions": 2.0,
+            "collision_rate": 0.1,
+            "task_completion": 0.6388108536601067
+          },
+          "hard": {
+            "episode_return": -7.739163234829903,
+            "episode_collisions": 10.0,
+            "collision_rate": 0.5,
+            "task_completion": 0.7436977129429578
+          }
+        }
+      }
+    },
+    "controllability": {
+      "easy": {
+        "all": {
+          "n_queries": 12,
+          "safety_tradeoff_spearman": -0.14386053469361332,
+          "collision_preference_spearman": -0.19708357339919094,
+          "task_preference_spearman": 0.053389235423501914,
+          "collision_rate_range": 0.3,
+          "task_completion_range": 0.18200078867375846
+        },
+        "paraphrase": {
+          "n_queries": 4,
+          "safety_tradeoff_spearman": -0.6000000000000001,
+          "collision_preference_spearman": null,
+          "task_preference_spearman": -0.6000000000000001,
+          "collision_rate_range": 0.0,
+          "task_completion_range": 0.09737895168364052
+        },
+        "unseen": {
+          "n_queries": 6,
+          "safety_tradeoff_spearman": -0.028571428571428574,
+          "collision_preference_spearman": 0.20000000000000007,
+          "task_preference_spearman": 0.6473388749701496,
+          "collision_rate_range": 0.1,
+          "task_completion_range": 0.18200078867375846
+        }
+      },
+      "hard": {
+        "all": {
+          "n_queries": 12,
+          "safety_tradeoff_spearman": 0.19298364410118854,
+          "collision_preference_spearman": 0.08013783689631367,
+          "task_preference_spearman": 0.05694851778506871,
+          "collision_rate_range": 0.5,
+          "task_completion_range": 0.14736026711761951
+        },
+        "paraphrase": {
+          "n_queries": 4,
+          "safety_tradeoff_spearman": -0.39999999999999997,
+          "collision_preference_spearman": -0.8164965809277261,
+          "task_preference_spearman": 0.39999999999999997,
+          "collision_rate_range": 0.175,
+          "task_completion_range": 0.0523587312549354
+        },
+        "unseen": {
+          "n_queries": 6,
+          "safety_tradeoff_spearman": -0.2571428571428572,
+          "collision_preference_spearman": 0.5313689313240573,
+          "task_preference_spearman": -0.1471224715841249,
+          "collision_rate_range": 0.5,
+          "task_completion_range": 0.14736026711761951
+        }
+      }
+    }
+  }
+}

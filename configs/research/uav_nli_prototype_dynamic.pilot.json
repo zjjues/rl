@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_nli_prototype_dynamic_pilot_v1",
+  "level": "pilot",
+  "objective": "Confirm frozen v7 prototype-gated NLI controllability and within-episode response across five seeds.",
+  "seeds": [7, 11, 23, 42, 100],
+  "bootstrap_seed": 20260801,
+  "environment": {"name": "uav-scheduling-v2", "n_agents": 4, "n_targets": 4, "safety_reward_coef": 1.0, "task_reward_coef": 1.2, "intent_reward_profiles_enabled": true},
+  "training": {"episodes": 2, "steps": 30, "rollout_length": 32, "minibatch_size": 32, "eval_interval": 2, "eta": 0.0, "eta_end": 0.0, "potential_update_mode": "frozen", "device": "cpu"},
+  "intent": {"dim": 64, "encoder_model": "sentence-transformers/all-MiniLM-L6-v2", "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41", "nli_model": "cross-encoder/nli-deberta-v3-small", "nli_model_revision": "e9890682d9e4279b7ae6d0fcfb435a43206280ec", "nli_batch_size": 32, "projection_seed": 17, "code_seed": 29, "adapter_ridge": 0.01, "semantic_weight": 0.0, "objective_weight": 1.0},
+  "treatment_key": "nli_prototype_gated_cbf",
+  "variants": [
+    {"key": "nli_prototype_gated_cbf", "intent_source": "objective_grounded_semantic", "intent_profile_decoder": "nli_prototype_gated", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "residual_rule", "rule_prior_context": "objective_profile", "residual_action_scale": 0.0, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false, "disable_intent_reward": true},
+    {"key": "nli_similarity_gated_cbf", "intent_source": "objective_grounded_semantic", "intent_profile_decoder": "nli_similarity_gated", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "residual_rule", "rule_prior_context": "objective_profile", "residual_action_scale": 0.0, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false, "disable_intent_reward": true},
+    {"key": "objective_profile_oracle_cbf", "intent_source": "onehot", "algorithm": "rule_planner", "critic_mode": "rule", "rule_prior_context": "oracle_profile", "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false}
+  ],
+  "generalization": {"suite": "configs/research/uav_intent_generalization_suite.v7.json"},
+  "dynamic_intent": {"switch_step": 10, "total_steps": 30, "response_threshold": 0.05, "risk_tiers": ["hard", "critical"], "transitions": [
+    {"key": "energy_low_to_high", "from_query": "cf_energy_low", "to_query": "cf_energy_high", "expected_objective": "energy"},
+    {"key": "collision_low_to_high", "from_query": "cf_collision_low", "to_query": "cf_collision_high", "expected_objective": "collision"},
+    {"key": "safety_low_to_high", "from_query": "cf_safety_low", "to_query": "cf_safety_high", "expected_objective": "safety"},
+    {"key": "threat_low_to_high", "from_query": "cf_threat_low", "to_query": "cf_threat_high", "expected_objective": "threat"}
+  ]},
+  "evaluation": {"episodes": 3, "risk_tiers": {"hard": {"spawn_region_scale": 0.33, "spawn_separation_scale": 0.80, "intent_mode": "dense"}, "critical": {"spawn_region_scale": 0.24, "spawn_separation_scale": 0.55, "intent_mode": "dense"}}}
+}

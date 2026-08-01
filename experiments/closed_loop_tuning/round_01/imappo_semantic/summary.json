@@ -1,0 +1,38 @@
+{
+  "variant": {
+    "key": "imappo_semantic",
+    "display_name": "I-MAPPO (Semantic Library)",
+    "family": "baseline",
+    "intent_source": "semantic_library",
+    "algorithm": "imappo",
+    "critic_mode": "attention",
+    "use_action_mask": true,
+    "eta_override": null,
+    "eta_end_override": null,
+    "runnable_note": ""
+  },
+  "seed_count": 5,
+  "early_exploration_collision_rate_mean": 0.320056,
+  "replanning_latency_mean": 3.0,
+  "replanning_latency_std": 0.0,
+  "risk_tiers": {
+    "easy": {
+      "collision_rate_mean": 0.1472,
+      "collision_rate_std": 0.1322155815325864,
+      "task_completion_mean": 0.7114899349689484,
+      "task_completion_std": 0.045294198232611445
+    },
+    "medium": {
+      "collision_rate_mean": 0.24560000000000004,
+      "collision_rate_std": 0.09585322112480103,
+      "task_completion_mean": 0.7312715617477894,
+      "task_completion_std": 0.03951403847296399
+    },
+    "hard": {
+      "collision_rate_mean": 0.2864,
+      "collision_rate_std": 0.10193645079165747,
+      "task_completion_mean": 0.7207233963131905,
+      "task_completion_std": 0.052015432480492355
+    }
+  }
+}

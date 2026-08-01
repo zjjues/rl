@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "study_id": "pybullet_robust_qp_pilot_v1",
+  "created_at_utc": "2026-08-01T14:55:15.628166+00:00",
+  "project_git_revision": "f0b0d8186e648d8971e785874c1681407d17b6ae",
+  "dirty_worktree_allowed": true,
+  "upstream_simulator_revision": "e712698a05a80728b06572819dcf044596707754",
+  "python": "3.10.20 | packaged by conda-forge | (main, Jun 11 2026, 03:28:51) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "packages": {
+    "numpy": "2.2.6",
+    "scipy": "1.15.2",
+    "pybullet": "3.2.5",
+    "gymnasium": "1.2.3",
+    "gym-pybullet-drones": "2.1.0",
+    "setuptools": "80.9.0"
+  },
+  "claim_scope": "rigid-body simulator transfer; not SITL/HIL/real flight"
+}

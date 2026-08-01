@@ -1,0 +1,38 @@
+{
+  "variant": {
+    "key": "mappo",
+    "display_name": "MAPPO",
+    "family": "baseline",
+    "intent_source": "semantic_library",
+    "algorithm": "mappo",
+    "critic_mode": "uniform",
+    "use_action_mask": false,
+    "eta_override": 0.0,
+    "eta_end_override": 0.0,
+    "runnable_note": ""
+  },
+  "seed_count": 5,
+  "early_exploration_collision_rate_mean": 0.34813599999999995,
+  "replanning_latency_mean": 4.4,
+  "replanning_latency_std": 2.8000000000000003,
+  "risk_tiers": {
+    "easy": {
+      "collision_rate_mean": 0.1832,
+      "collision_rate_std": 0.11774956475503423,
+      "task_completion_mean": 0.702547987627983,
+      "task_completion_std": 0.03382156096094064
+    },
+    "medium": {
+      "collision_rate_mean": 0.292,
+      "collision_rate_std": 0.1732512626216617,
+      "task_completion_mean": 0.697951717364788,
+      "task_completion_std": 0.01695913421640728
+    },
+    "hard": {
+      "collision_rate_mean": 0.3272,
+      "collision_rate_std": 0.14520385669809185,
+      "task_completion_mean": 0.7095307546734809,
+      "task_completion_std": 0.027290602563807893
+    }
+  }
+}

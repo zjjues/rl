@@ -1,0 +1,18 @@
+name: rl-pybullet
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10.20
+  - pybullet=3.25
+  - scipy=1.15.2
+  - gymnasium=1.2.3
+  - matplotlib=3.10.9
+  - control=0.10.2
+  - transforms3d=0.4.2
+  - pip=26.2
+  - pip:
+      # PyPI wheel uses OpenBLAS; the conda-forge MKL build hangs in linalg.inv
+      # on the audited Windows host.
+      - numpy==2.2.6
+      - setuptools==80.9.0
+      - gym-pybullet-drones @ git+https://github.com/utiasDSL/gym-pybullet-drones.git@e712698a05a80728b06572819dcf044596707754

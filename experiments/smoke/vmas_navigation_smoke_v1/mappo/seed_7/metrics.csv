@@ -1,0 +1,6 @@
+actor_loss,algorithm,critic_loss,entropy,entropy_coef,episode,episode_collision_rate,episode_collisions,episode_return,episode_reward_collision,episode_reward_dist,episode_reward_energy,episode_reward_env,episode_reward_intent,episode_reward_safety,episode_reward_task,episode_reward_threat,episode_reward_time,episode_task_completion,eta,eval_collision_rate,eval_episode_collisions,eval_episode_return,eval_task_completion,intent_label,intent_source,potential_loss,return_mean,tactical_posture
+,mappo,,,,0.0,0.0,0.0,0.08617326617240906,0.0,0.0,0.0,0.08617326617240906,0.0,0.0,0.0,0.0,0.0,0.0,,,,,,efficiency_first,onehot,,,attack
+-0.00812410656362772,mappo,0.0003592472639866173,0.832512617111206,0.00010000000000000005,1.0,,,,,,,,,,,,,,0.0,,,,,,,0.006125405430793762,0.00042854901403188705,
+-0.013838403858244419,mappo,0.00013978980132378638,0.8306277394294739,0.00010000000000000005,1.0,,,,,,,,,,,,,,0.0,,,,,,,0.006613492500036955,-0.008562162518501282,
+,mappo,,,,1.0,0.0,0.0,-0.14095699787139893,0.0,0.0,0.0,-0.14095699787139893,0.0,0.0,0.0,0.0,0.0,0.0,,,,,,formation_keeping,onehot,,,stealth
+,mappo,,,,1.0,,,,,,,,,,,,,,,0.0,0.0,0.02879515290260315,0.0,,,,,

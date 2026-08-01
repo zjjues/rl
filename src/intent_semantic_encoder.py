@@ -1,10 +1,14 @@
-"""Offline semantic intent intent generation and vector library for I-MAPPO.
+"""Intent description generation and representation library for I-MAPPO.
 
 Provides:
-- IntentLibrary: manage, persist, and sample semantic intent vectors
+- IntentLibrary: manage, persist, and sample intent representations
 - Offline semantic intent description generation (Anthropic / OpenAI)
-- Embedding via OpenAI API or deterministic hash (offline mode)
+- Explicit representation families: legacy hash, random dense, and pretrained text
 - Pre-built intent descriptions for UAV scheduling domain
+
+Important: deterministic whole-text hashes do not preserve semantic geometry. They are
+kept only for reproducing legacy experiments and must not be reported as semantic
+embeddings.
 """
 
 from __future__ import annotations
@@ -12,8 +16,9 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import warnings
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -47,6 +52,38 @@ DEFAULT_INTENT_DESCRIPTIONS = [
     ("rapid_response", "Rapid response: maximum acceleration to reach targets, accept energy cost"),
     ("hover_and_observe", "Hover and observe: station-keep at safe altitude, only move when target is clearly identified"),
 ]
+
+
+# The posture taxonomy is research metadata, not an outcome inferred from a trained
+# policy. It ensures the description presented to the policy agrees with the reward
+# semantics configured in the UAV environment.
+UAV_INTENT_POSTURES: Dict[str, str] = {
+    "safety_first": "stealth",
+    "efficiency_first": "attack",
+    "balanced": "neutral",
+    "energy_saving": "stealth",
+    "aggressive_pursuit": "attack",
+    "cautious_exploration": "stealth",
+    "load_balancing": "neutral",
+    "formation_keeping": "neutral",
+    "threat_avoidance": "stealth",
+    "threat_engagement": "attack",
+    "perimeter_patrol": "neutral",
+    "center_convergence": "attack",
+    "decentralized_sweep": "neutral",
+    "relay_coordination": "neutral",
+    "minimal_communication": "neutral",
+    "full_coordination": "neutral",
+    "altitude_separation": "stealth",
+    "speed_modulation": "neutral",
+    "reactive_avoidance": "attack",
+    "predictive_planning": "stealth",
+    "target_priority": "attack",
+    "coverage_maximization": "neutral",
+    "stealth_approach": "stealth",
+    "rapid_response": "attack",
+    "hover_and_observe": "stealth",
+}
 
 # ── VMAS / Multi-Agent Particle intent descriptions ────────────────────────────
 
@@ -167,10 +204,10 @@ def _parse_intent_response(text: str) -> Tuple[List[str], List[str]]:
 # ── IntentLibrary ──────────────────────────────────────────────────────────
 
 class IntentLibrary:
-    """Manages a library of semantic intent vectors for I-MAPPO training.
+    """Manages a library of intent vectors for I-MAPPO training.
 
-    Intents are embedded from natural language descriptions and serve as
-    conditioning signals for the actor, critic, and potential-based reward shaping.
+    Only libraries with ``metadata["semantic_geometry"] == True`` should be
+    described as semantic embeddings in a paper. Other representations are controls.
     """
 
     def __init__(
@@ -180,9 +217,16 @@ class IntentLibrary:
         labels: Optional[List[str]] = None,
         metadata: Optional[dict] = None,
     ):
-        self.vectors = vectors  # (N, intent_dim) float32
-        self.descriptions = descriptions or []
-        self.labels = labels or []
+        vectors = np.asarray(vectors, dtype=np.float32)
+        if vectors.ndim != 2 or vectors.shape[0] == 0 or vectors.shape[1] == 0:
+            raise ValueError("intent vectors must have shape (n_intents, intent_dim)")
+        if descriptions is not None and len(descriptions) not in {0, vectors.shape[0]}:
+            raise ValueError("descriptions and vectors must contain the same number of intents")
+        if labels is not None and len(labels) not in {0, vectors.shape[0]}:
+            raise ValueError("labels and vectors must contain the same number of intents")
+        self.vectors = vectors
+        self.descriptions = list(descriptions or [])
+        self.labels = list(labels or [])
         self.metadata = metadata or {}
 
     def __len__(self) -> int:
@@ -208,14 +252,51 @@ class IntentLibrary:
         return self.sample(1, rng=rng)[0]
 
     def sample_with_info(
-        self, n: int = 1, rng: Optional[np.random.Generator] = None
+        self,
+        n: int = 1,
+        rng: Optional[np.random.Generator] = None,
+        posture: Optional[str] = None,
     ) -> Tuple[np.ndarray, List[str], np.ndarray]:
         """Sample intents returning (vectors, labels, indices)."""
         rng = rng or np.random.default_rng()
-        indices = rng.integers(0, len(self.vectors), size=n)
+        candidates = self.indices_for_posture(posture) if posture else np.arange(len(self.vectors))
+        if len(candidates) == 0:
+            raise ValueError(f"intent library has no candidates for posture={posture!r}")
+        indices = rng.choice(candidates, size=n, replace=True)
         vectors = self.vectors[indices].copy()
         labels = [self.labels[i] for i in indices] if self.labels else []
         return vectors, labels, indices
+
+    def posture_for_index(self, idx: int) -> str:
+        """Return the structured tactical posture associated with an intent."""
+        postures = self.metadata.get("postures", [])
+        if idx < len(postures):
+            return str(postures[idx])
+        if self.labels and idx < len(self.labels):
+            return infer_intent_posture(self.labels[idx], self.descriptions[idx] if self.descriptions else "")
+        return "neutral"
+
+    def posture_for_label(self, label: str) -> str:
+        for idx, current in enumerate(self.labels):
+            if current == label:
+                return self.posture_for_index(idx)
+        return "neutral"
+
+    def indices_for_posture(self, posture: Optional[str]) -> np.ndarray:
+        """Return indices compatible with a posture, including neutral intents.
+
+        Neutral intents are admitted for either attack or stealth because they do not
+        contradict the environment objective. Exact ``neutral`` sampling remains
+        neutral-only.
+        """
+        if posture is None:
+            return np.arange(len(self.vectors), dtype=np.int64)
+        posture = str(posture).lower()
+        accepted = {posture} if posture == "neutral" else {posture, "neutral"}
+        return np.asarray(
+            [idx for idx in range(len(self.vectors)) if self.posture_for_index(idx) in accepted],
+            dtype=np.int64,
+        )
 
     def get_by_label(self, label: str) -> Optional[np.ndarray]:
         """Get intent vector by label name."""
@@ -227,6 +308,43 @@ class IntentLibrary:
     def get_by_index(self, idx: int) -> np.ndarray:
         """Get intent vector by index."""
         return self.vectors[idx].copy()
+
+    def subset_by_labels(
+        self,
+        labels: Sequence[str],
+        *,
+        strict: bool = True,
+    ) -> "IntentLibrary":
+        """Return an ordered label subset without changing the vector space.
+
+        Keeping the original vector dimensionality is important for identity-code
+        controls: a held-out one-hot coordinate remains representable at evaluation
+        time but is never activated during training.
+        """
+        if not self.labels:
+            raise ValueError("cannot select labels from an unlabeled intent library")
+        requested = list(labels)
+        if len(requested) != len(set(requested)):
+            raise ValueError("intent subset labels must be unique")
+        index_by_label = {label: idx for idx, label in enumerate(self.labels)}
+        missing = [label for label in requested if label not in index_by_label]
+        if missing and strict:
+            raise ValueError(f"unknown intent labels in subset: {missing}")
+        indices = [index_by_label[label] for label in requested if label in index_by_label]
+        if not indices:
+            raise ValueError("intent label subset is empty")
+        subset_metadata = {**self.metadata}
+        if "postures" in subset_metadata:
+            postures = list(subset_metadata["postures"])
+            subset_metadata["postures"] = [postures[idx] for idx in indices]
+        subset_metadata["parent_library_size"] = len(self)
+        subset_metadata["train_labels"] = [self.labels[idx] for idx in indices]
+        return IntentLibrary(
+            vectors=self.vectors[indices].copy(),
+            descriptions=[self.descriptions[idx] for idx in indices] if self.descriptions else [],
+            labels=[self.labels[idx] for idx in indices],
+            metadata=subset_metadata,
+        )
 
     # ── train/test split ────────────────────────────────────────────────
 
@@ -242,11 +360,15 @@ class IntentLibrary:
         test_idx = indices[n_train:]
 
         def subset(idx):
+            subset_metadata = {**self.metadata}
+            if "postures" in subset_metadata:
+                postures = list(subset_metadata["postures"])
+                subset_metadata["postures"] = [postures[i] for i in idx]
             return IntentLibrary(
                 vectors=self.vectors[idx].copy(),
                 descriptions=[self.descriptions[i] for i in idx] if self.descriptions else [],
                 labels=[self.labels[i] for i in idx] if self.labels else [],
-                metadata={**self.metadata},
+                metadata=subset_metadata,
             )
 
         return subset(train_idx), subset(test_idx)
@@ -290,29 +412,18 @@ class IntentLibrary:
     # ── factory methods ─────────────────────────────────────────────────
 
     @classmethod
-    def create_static(
+    def create_legacy_hash(
         cls,
         intent_dim: int = 64,
         descriptions: Optional[List[Tuple[str, str]]] = None,
         domain: str = "uav",
     ) -> "IntentLibrary":
-        """Create library from pre-built descriptions using deterministic hash embedding.
+        """Reproduce the historical whole-text hash representation.
 
-        This requires NO API calls and is the fastest way to get started.
-        Each description is hashed to a deterministic unit vector via SHA256→PRNG.
-
-        Args:
-            intent_dim: Dimensionality of intent vectors.
-            descriptions: Optional custom list of (label, description) pairs.
-            domain: "uav" (default) uses UAV intent descriptions,
-                    "vmas" uses VMAS/Multi-Agent Particle descriptions.
+        This representation is deterministic but has no semantic geometry. It exists
+        only to reproduce Stage7 legacy experiments.
         """
-        if descriptions is not None:
-            entries = descriptions
-        elif domain == "vmas":
-            entries = VMAS_INTENT_DESCRIPTIONS
-        else:
-            entries = DEFAULT_INTENT_DESCRIPTIONS
+        entries = _resolve_entries(descriptions, domain)
         labels = [e[0] for e in entries]
         texts = [e[1] for e in entries]
 
@@ -331,7 +442,154 @@ class IntentLibrary:
             vectors=vectors,
             descriptions=texts,
             labels=labels,
-            metadata={"embed_model": "static_hash", "source": "prebuilt"},
+            metadata={
+                "representation_type": "legacy_hash",
+                "embed_model": "sha256_prng",
+                "semantic_geometry": False,
+                "source": "prebuilt",
+                "domain": domain,
+                "postures": [infer_intent_posture(label, text) for label, text in entries],
+            },
+        )
+
+    @classmethod
+    def create_static(
+        cls,
+        intent_dim: int = 64,
+        descriptions: Optional[List[Tuple[str, str]]] = None,
+        domain: str = "uav",
+    ) -> "IntentLibrary":
+        """Deprecated compatibility alias for :meth:`create_legacy_hash`."""
+        warnings.warn(
+            "IntentLibrary.create_static() creates a legacy hash control, not a semantic embedding; "
+            "use create_legacy_hash(), create_random_dense(), or create_pretrained().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.create_legacy_hash(intent_dim, descriptions, domain)
+
+    @classmethod
+    def create_random_dense(
+        cls,
+        intent_dim: int = 64,
+        descriptions: Optional[List[Tuple[str, str]]] = None,
+        domain: str = "uav",
+        seed: int = 0,
+    ) -> "IntentLibrary":
+        """Create the random dense-code control independent of description text."""
+        entries = _resolve_entries(descriptions, domain)
+        rng = np.random.default_rng(seed)
+        vectors = rng.normal(size=(len(entries), intent_dim)).astype(np.float32)
+        vectors = _normalise_rows(vectors)
+        return cls(
+            vectors=vectors,
+            descriptions=[text for _, text in entries],
+            labels=[label for label, _ in entries],
+            metadata={
+                "representation_type": "random_dense",
+                "embed_model": "gaussian_prng",
+                "semantic_geometry": False,
+                "source": "prebuilt",
+                "domain": domain,
+                "seed": int(seed),
+                "postures": [infer_intent_posture(label, text) for label, text in entries],
+            },
+        )
+
+    @classmethod
+    def create_onehot(
+        cls,
+        intent_dim: Optional[int] = None,
+        descriptions: Optional[List[Tuple[str, str]]] = None,
+        domain: str = "uav",
+    ) -> "IntentLibrary":
+        """Create a true intent-identity one-hot control.
+
+        ``intent_dim`` may pad the identity vectors but cannot be smaller than the
+        catalog. This prevents the historical three-mode posture code from being
+        mislabeled as a one-hot baseline over natural-language intents.
+        """
+        entries = _resolve_entries(descriptions, domain)
+        required_dim = len(entries)
+        resolved_dim = required_dim if intent_dim is None else int(intent_dim)
+        if resolved_dim < required_dim:
+            raise ValueError(
+                f"onehot intent_dim must be at least the catalog size "
+                f"({required_dim}), got {resolved_dim}"
+            )
+        vectors = np.zeros((required_dim, resolved_dim), dtype=np.float32)
+        vectors[np.arange(required_dim), np.arange(required_dim)] = 1.0
+        return cls(
+            vectors=vectors,
+            descriptions=[text for _, text in entries],
+            labels=[label for label, _ in entries],
+            metadata={
+                "representation_type": "onehot",
+                "embed_model": "identity",
+                "semantic_geometry": False,
+                "source": "prebuilt",
+                "domain": domain,
+                "catalog_size": required_dim,
+                "postures": [infer_intent_posture(label, text) for label, text in entries],
+            },
+        )
+
+    @classmethod
+    def create_pretrained(
+        cls,
+        intent_dim: int = 64,
+        descriptions: Optional[List[Tuple[str, str]]] = None,
+        domain: str = "uav",
+        model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
+        model_revision: Optional[str] = None,
+        batch_size: int = 32,
+        projection_seed: int = 0,
+        device: Optional[str] = None,
+    ) -> "IntentLibrary":
+        """Encode descriptions using a frozen sentence-transformers model.
+
+        The method never falls back to a random/hash representation. A missing model
+        dependency or unavailable checkpoint is an explicit experiment setup error.
+        """
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as exc:
+            raise RuntimeError(
+                "pretrained_semantic requires sentence-transformers; install requirements-research.txt"
+            ) from exc
+
+        entries = _resolve_entries(descriptions, domain)
+        labels = [label for label, _ in entries]
+        texts = [text for _, text in entries]
+        model_kwargs = {"device": device}
+        if model_revision:
+            model_kwargs["revision"] = model_revision
+        model = SentenceTransformer(model_name, **model_kwargs)
+        vectors = model.encode(
+            texts,
+            batch_size=batch_size,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        ).astype(np.float32)
+        original_dim = int(vectors.shape[1])
+        vectors = _project_embeddings(vectors, intent_dim, projection_seed)
+        return cls(
+            vectors=vectors,
+            descriptions=texts,
+            labels=labels,
+            metadata={
+                "representation_type": "pretrained_semantic",
+                "embed_model": model_name,
+                "model_revision": model_revision or "unversioned",
+                "semantic_geometry": True,
+                "source": "prebuilt",
+                "domain": domain,
+                "original_dim": original_dim,
+                "projection_dim": int(intent_dim),
+                "projection_seed": int(projection_seed),
+                "postures": [infer_intent_posture(label, text) for label, text in entries],
+            },
         )
 
     @classmethod
@@ -343,6 +601,7 @@ class IntentLibrary:
         embed_client: Optional[object] = None,
         intent_dim: Optional[int] = None,
         api_key: Optional[str] = None,
+        projection_seed: int = 0,
     ) -> "IntentLibrary":
         """Embed text descriptions into vectors via an embedding model.
 
@@ -356,10 +615,10 @@ class IntentLibrary:
             intent_dim: Target dimension (only used with "static" mode).
             api_key: OpenAI API key.
         """
-        if embed_model == "static":
+        if embed_model in {"static", "legacy_hash"}:
             entries = [(lab or f"intent_{i}", desc) for i, (desc, lab) in
                        enumerate(zip(descriptions, labels or [None] * len(descriptions)))]
-            return cls.create_static(
+            return cls.create_legacy_hash(
                 intent_dim=intent_dim or 64,
                 descriptions=entries,
             )
@@ -377,13 +636,23 @@ class IntentLibrary:
         embeddings = np.array(all_embeddings, dtype=np.float32)
 
         if intent_dim is not None and embeddings.shape[1] != intent_dim:
-            embeddings = _resize_embeddings(embeddings, intent_dim)
+            embeddings = _project_embeddings(embeddings, intent_dim, projection_seed)
 
         return cls(
             vectors=embeddings,
             descriptions=descriptions,
             labels=labels or [],
-            metadata={"embed_model": embed_model, "source": "semantic_library_embedding"},
+            metadata={
+                "representation_type": "pretrained_semantic",
+                "embed_model": embed_model,
+                "semantic_geometry": True,
+                "source": "generated_descriptions",
+                "projection_seed": int(projection_seed),
+                "postures": [
+                    infer_intent_posture(label, description)
+                    for label, description in zip(labels or [f"intent_{i}" for i in range(len(descriptions))], descriptions)
+                ],
+            },
         )
 
     @classmethod
@@ -501,3 +770,68 @@ def _resize_embeddings(embeddings: np.ndarray, target_dim: int) -> np.ndarray:
         padded = np.zeros((embeddings.shape[0], target_dim), dtype=np.float32)
         padded[:, :current_dim] = embeddings
         return padded
+
+
+def _resolve_entries(
+    descriptions: Optional[Sequence[Tuple[str, str]]],
+    domain: str,
+) -> List[Tuple[str, str]]:
+    if descriptions is not None:
+        return [(str(label), str(text)) for label, text in descriptions]
+    if domain == "vmas":
+        return list(VMAS_INTENT_DESCRIPTIONS)
+    return list(DEFAULT_INTENT_DESCRIPTIONS)
+
+
+def _normalise_rows(vectors: np.ndarray) -> np.ndarray:
+    vectors = np.asarray(vectors, dtype=np.float32)
+    norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+    return vectors / np.maximum(norms, 1e-8)
+
+
+def _project_embeddings(
+    embeddings: np.ndarray,
+    target_dim: int,
+    seed: int,
+) -> np.ndarray:
+    """Project text embeddings while approximately preserving pairwise geometry."""
+    embeddings = np.asarray(embeddings, dtype=np.float32)
+    current_dim = int(embeddings.shape[1])
+    if target_dim <= 0:
+        raise ValueError("target_dim must be positive")
+    if current_dim == target_dim:
+        return _normalise_rows(embeddings)
+    if target_dim < current_dim:
+        rng = np.random.default_rng(seed)
+        projection = rng.normal(
+            0.0,
+            1.0 / np.sqrt(target_dim),
+            size=(current_dim, target_dim),
+        ).astype(np.float32)
+        return _normalise_rows(embeddings @ projection)
+    padded = np.zeros((embeddings.shape[0], target_dim), dtype=np.float32)
+    padded[:, :current_dim] = embeddings
+    return _normalise_rows(padded)
+
+
+def infer_intent_posture(label: str, description: str = "") -> str:
+    """Map intent metadata to the environment's attack/stealth/neutral taxonomy."""
+    label = str(label).lower()
+    if label in UAV_INTENT_POSTURES:
+        return UAV_INTENT_POSTURES[label]
+    text = f"{label} {description}".lower()
+    stealth_terms = (
+        "safe", "safety", "cautious", "avoid", "stealth", "conserve",
+        "slow", "predictive", "observe", "separation",
+    )
+    attack_terms = (
+        "attack", "aggressive", "engage", "rapid", "rush", "speed",
+        "pursuit", "intercept", "priority",
+    )
+    stealth_score = sum(term in text for term in stealth_terms)
+    attack_score = sum(term in text for term in attack_terms)
+    if stealth_score > attack_score:
+        return "stealth"
+    if attack_score > stealth_score:
+        return "attack"
+    return "neutral"

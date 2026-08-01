@@ -17,9 +17,15 @@ THRESHOLD_FOR_ALG_NAME_LENGTH_UNTIL_LEGEND_BELOW_PLOT = 20
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--stage7-json",
+        type=str,
+        default=None,
+        help="Path to experiments/stage7_results.json for Stage 7 PNG report plots.",
+    )
+    parser.add_argument(
         "--path",
         type=str,
-        required=True,
+        required=False,
         help="Path to directory containing (multiple) results",
     )
     parser.add_argument(
@@ -75,6 +81,128 @@ def parse_args():
         help="Plot only best performing config per alg",
     )
     return parser.parse_args()
+
+
+def _stage7_final_round(payload):
+    rounds = payload.get("rounds", [])
+    if not rounds:
+        raise ValueError("Stage 7 JSON does not contain any rounds")
+    return rounds[-1]
+
+
+def _stage7_variant_label(summary):
+    return summary["variant"]["display_name"]
+
+
+def _stage7_collect_curve(seed_results, metric):
+    curves = []
+    for result in seed_results:
+        points = [
+            (int(float(item["episode"])), float(item[metric]))
+            for item in result.get("logs", [])
+            if metric in item and "episode" in item
+        ]
+        if points:
+            episodes, values = zip(*points)
+            curves.append((np.asarray(episodes), np.asarray(values)))
+    if not curves:
+        return np.asarray([]), np.asarray([]), np.asarray([])
+    common = sorted(set.intersection(*(set(ep.tolist()) for ep, _ in curves)))
+    x = np.asarray(common, dtype=np.int32)
+    rows = []
+    for episodes, values in curves:
+        lookup = {int(ep): float(value) for ep, value in zip(episodes, values)}
+        rows.append([lookup[int(ep)] for ep in x])
+    data = np.asarray(rows, dtype=np.float32)
+    return x, data.mean(axis=0), data.std(axis=0)
+
+
+def plot_stage7_results(stage7_json: Path, save_dir: Path) -> None:
+    with open(stage7_json, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+    save_dir.mkdir(parents=True, exist_ok=True)
+    round_payload = _stage7_final_round(payload)
+    summaries = round_payload["summaries"]
+    is_legacy_stage7 = payload.get("stage") == 7
+    study_label = "Stage 7" if is_legacy_stage7 else str(payload.get("study_level", "Study")).title()
+    file_prefix = "stage7" if is_legacy_stage7 else "study"
+
+    plt.style.use("seaborn-v0_8-whitegrid")
+    plt.rcParams.update({"figure.dpi": 180, "savefig.dpi": 240})
+
+    fig, ax = plt.subplots(figsize=(9.0, 5.2))
+    for key, summary in summaries.items():
+        if summary["variant"]["family"] not in {"baseline", "representation_control"}:
+            continue
+        seed_results = []
+        round_dir = Path(payload.get("work_dir", "experiments/closed_loop_tuning")) / f"round_{round_payload['round']:02d}" / key
+        for seed in payload.get("seeds", []):
+            result_path = round_dir / f"seed_{seed}" / "result.json"
+            if result_path.exists():
+                with open(result_path, "r", encoding="utf-8") as f:
+                    seed_results.append(json.load(f))
+        x, mean, std = _stage7_collect_curve(seed_results, "episode_return")
+        if x.size:
+            ax.plot(x, mean, linewidth=2.0, label=_stage7_variant_label(summary))
+            ax.fill_between(x, mean - std, mean + std, alpha=0.16)
+    ax.set_title(f"{study_label} Training Reward Convergence")
+    ax.set_xlabel("Episode")
+    ax.set_ylabel("Episode Return")
+    ax.legend(frameon=True, fontsize=8)
+    fig.tight_layout()
+    fig.savefig(save_dir / f"{file_prefix}_training_reward_convergence.png")
+    plt.close(fig)
+
+    baseline_keys = [
+        key
+        for key, value in summaries.items()
+        if value["variant"]["family"] in {"baseline", "representation_control"}
+    ]
+    tiers = ["easy", "medium", "hard"]
+    x = np.arange(len(tiers), dtype=np.float32)
+    width = 0.8 / max(len(baseline_keys), 1)
+    fig, ax = plt.subplots(figsize=(9.2, 5.2))
+    for idx, key in enumerate(baseline_keys):
+        summary = summaries[key]
+        means = [summary["risk_tiers"][tier]["collision_rate_mean"] for tier in tiers]
+        stds = [summary["risk_tiers"][tier]["collision_rate_std"] for tier in tiers]
+        offset = (idx - (len(baseline_keys) - 1) / 2.0) * width
+        ax.bar(x + offset, means, yerr=stds, width=width, capsize=3, label=_stage7_variant_label(summary))
+    ax.axhline(0.30, color="#8c2d04", linestyle="--", linewidth=1.2)
+    ax.set_title(f"{study_label} Evaluation Collision Rate by Risk Tier")
+    ax.set_xlabel("Risk Tier")
+    ax.set_ylabel("Collision Rate")
+    ax.set_xticks(x)
+    ax.set_xticklabels(["Easy", "Medium", "Hard"])
+    ax.legend(frameon=True, fontsize=8)
+    fig.tight_layout()
+    fig.savefig(save_dir / f"{file_prefix}_risk_tier_collision_rates.png")
+    plt.close(fig)
+
+    ablation_keys = [key for key, value in summaries.items() if value["variant"]["family"] == "ablation"]
+    labels = [_stage7_variant_label(summaries[key]) for key in ablation_keys]
+    hard_collision = [summaries[key]["risk_tiers"]["hard"]["collision_rate_mean"] for key in ablation_keys]
+    hard_task = [summaries[key]["risk_tiers"]["hard"]["task_completion_mean"] for key in ablation_keys]
+    latency = [summaries[key]["replanning_latency_mean"] for key in ablation_keys]
+    x = np.arange(len(ablation_keys), dtype=np.float32)
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.6))
+    axes[0].bar(x, hard_collision, color="#4c78a8")
+    axes[0].axhline(0.30, color="#8c2d04", linestyle="--", linewidth=1.0)
+    axes[0].set_title("Hard Collision")
+    axes[0].set_ylabel("Rate")
+    axes[1].bar(x, hard_task, color="#59a14f")
+    axes[1].axhline(0.75, color="#8c2d04", linestyle="--", linewidth=1.0)
+    axes[1].set_title("Hard Task Completion")
+    axes[2].bar(x, latency, color="#f28e2b")
+    axes[2].axhline(3.5, color="#8c2d04", linestyle="--", linewidth=1.0)
+    axes[2].set_title("Re-planning Latency")
+    for ax in axes:
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation=25, ha="right", fontsize=8)
+    fig.suptitle(f"{study_label} Ablation Performance Comparison")
+    fig.tight_layout()
+    fig.savefig(save_dir / f"{file_prefix}_ablation_comparison.png")
+    plt.close(fig)
 
 
 def extract_alg_name_from_config(config):
@@ -357,6 +485,9 @@ def plot_results(data, metric, save_dir, y_min, y_max, log_scale):
 
 def main():
     args = parse_args()
+    if args.stage7_json is not None:
+        plot_stage7_results(Path(args.stage7_json), Path(args.save_dir))
+        return
     data = load_results(args.path, args.metric)
     data = filter_results(data, args.filter_by_algs, args.filter_by_envs)
     data = {

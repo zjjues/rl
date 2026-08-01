@@ -1,0 +1,5 @@
+# Additional dependencies for paper-grade semantic-intent experiments.
+# Formal frozen studies must record the resolved versions in manifest.json.
+sentence-transformers>=3.0
+sentencepiece==0.2.2
+vmas[gymnasium]==1.5.2

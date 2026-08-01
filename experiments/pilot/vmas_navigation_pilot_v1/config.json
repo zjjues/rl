@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "study_id": "vmas_navigation_pilot_v1",
+  "level": "pilot",
+  "objective": "Estimate five-seed optimizer stability on the public VMAS navigation continuous-control scenario; no language-generalization claim.",
+  "seeds": [
+    7,
+    11,
+    23,
+    42,
+    100
+  ],
+  "bootstrap_seed": 20260801,
+  "environment": {
+    "name": "vmas:navigation",
+    "n_agents": 3,
+    "intent_reward_profiles_enabled": false
+  },
+  "training": {
+    "episodes": 50,
+    "steps": 20,
+    "rollout_length": 64,
+    "minibatch_size": 64,
+    "eval_interval": 25,
+    "actor_lr": 0.0003,
+    "critic_lr": 0.0003,
+    "eta": 0.0,
+    "eta_end": 0.0,
+    "potential_update_mode": "frozen",
+    "replay_capacity": 100000,
+    "matd3_warmup_steps": 200,
+    "device": "cpu"
+  },
+  "intent": {
+    "dim": 25,
+    "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "projection_seed": 17,
+    "code_seed": 29
+  },
+  "treatment_key": "imappo_onehot",
+  "variants": [
+    {
+      "key": "imappo_onehot",
+      "intent_source": "onehot",
+      "algorithm": "imappo",
+      "critic_mode": "attention",
+      "policy_mode": "direct",
+      "use_action_mask": false
+    },
+    {
+      "key": "mappo",
+      "intent_source": "onehot",
+      "algorithm": "mappo",
+      "critic_mode": "uniform",
+      "policy_mode": "direct",
+      "use_action_mask": false
+    },
+    {
+      "key": "ippo",
+      "intent_source": "onehot",
+      "algorithm": "ippo",
+      "critic_mode": "local",
+      "policy_mode": "direct",
+      "use_action_mask": false
+    },
+    {
+      "key": "matd3",
+      "intent_source": "onehot",
+      "algorithm": "matd3",
+      "critic_mode": "twin_q",
+      "policy_mode": "direct",
+      "use_action_mask": false
+    }
+  ],
+  "evaluation": {
+    "episodes": 10,
+    "risk_tiers": {
+      "navigation": {
+        "intent_mode": "standard"
+      }
+    }
+  }
+}

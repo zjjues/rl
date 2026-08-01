@@ -29,9 +29,23 @@ def parse_args():
     parser.add_argument("--n-agents", type=int, default=8)
     parser.add_argument("--n-targets", type=int, default=6)
     parser.add_argument("--safety-reward-coef", type=float, default=1.0)
-    parser.add_argument("--intent-source", choices=["onehot", "semantic_library"], default="onehot")
+    parser.add_argument(
+        "--intent-source",
+        choices=["onehot", "legacy_hash", "random_dense", "pretrained_semantic"],
+        default="onehot",
+    )
     parser.add_argument("--intent-dim", type=int, default=64)
     parser.add_argument("--intent-library-path", type=str, default="")
+    parser.add_argument(
+        "--intent-encoder-model",
+        default="sentence-transformers/all-MiniLM-L6-v2",
+    )
+    parser.add_argument(
+        "--intent-encoder-revision",
+        default="1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    )
+    parser.add_argument("--intent-projection-seed", type=int, default=0)
+    parser.add_argument("--intent-code-seed", type=int, default=0)
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -335,6 +349,10 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
         use_action_mask=not is_mappo,
         intent_source=args.intent_source,
         intent_library_path=args.intent_library_path,
+        intent_encoder_model=args.intent_encoder_model,
+        intent_encoder_revision=args.intent_encoder_revision,
+        intent_projection_seed=args.intent_projection_seed,
+        intent_code_seed=args.intent_code_seed,
         intent_dim=args.intent_dim,
         seed=seed,
         n_agents=args.n_agents,
@@ -393,6 +411,7 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
     result = {
         "seed": seed,
         "algorithm": args.algorithm,
+        "intent_representation": algo.intent_representation_metadata(),
         "config": {
             "algorithm": args.algorithm,
             "episodes": args.episodes,
@@ -407,6 +426,11 @@ def run_single_seed(seed: int, args, output_dir: Path) -> Dict[str, object]:
             "obs_dim": obs_dim,
             "state_dim": state_dim,
             "safety_reward_coef": args.safety_reward_coef,
+            "intent_source": args.intent_source,
+            "intent_encoder_model": args.intent_encoder_model,
+            "intent_encoder_revision": args.intent_encoder_revision,
+            "intent_projection_seed": args.intent_projection_seed,
+            "intent_code_seed": args.intent_code_seed,
         },
         "logs": logs,
         "tier_metrics": tier_metrics,

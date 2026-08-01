@@ -28,6 +28,14 @@ rollout_length: 512
 max_episodes: 100
 
 intent_dim: 8
+intent_source: "onehot"
+intent_library_path: ""
+intent_encoder_model: "sentence-transformers/all-MiniLM-L6-v2"
+intent_encoder_revision: "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+intent_encoder_batch_size: 32
+intent_projection_seed: 0
+intent_code_seed: 0
+intent_encoder_device: ""
 imappo_n_agents: 8
 imappo_n_targets: 6
 imappo_obs_dim: 30

@@ -1,0 +1,131 @@
+{
+  "seed": 11,
+  "variant": {
+    "key": "no_filter",
+    "filter_mode": "none"
+  },
+  "conditions": [
+    {
+      "scenario": "crossing",
+      "profile": "neutral",
+      "metrics": {
+        "minimum_pairwise_distance": 0.12101391379087915,
+        "collision_step_fraction": 0.0,
+        "safety_violation_step_fraction": 0.14666666666666667,
+        "goal_success_fraction": 1.0,
+        "final_goal_rmse": 0.04266072217675699,
+        "normalized_command_energy": 0.3141090901281234,
+        "mean_filter_correction": 0.0,
+        "solver_success_fraction": 0.8433333333333334,
+        "constraint_max_violation": 0.12189674173922795,
+        "mean_solver_time_ms": 0.0,
+        "safety_distance": 0.22,
+        "speed_limit_mps": 0.25
+      }
+    },
+    {
+      "scenario": "crossing",
+      "profile": "safety_high",
+      "metrics": {
+        "minimum_pairwise_distance": 0.12101391379087915,
+        "collision_step_fraction": 0.0,
+        "safety_violation_step_fraction": 0.17666666666666667,
+        "goal_success_fraction": 1.0,
+        "final_goal_rmse": 0.04266072217675699,
+        "normalized_command_energy": 0.3141090901281234,
+        "mean_filter_correction": 0.0,
+        "solver_success_fraction": 0.8166666666666667,
+        "constraint_max_violation": 0.16589674173922797,
+        "mean_solver_time_ms": 0.0,
+        "safety_distance": 0.264,
+        "speed_limit_mps": 0.25
+      }
+    },
+    {
+      "scenario": "crossing",
+      "profile": "energy_high",
+      "metrics": {
+        "minimum_pairwise_distance": 0.14757881914183338,
+        "collision_step_fraction": 0.0,
+        "safety_violation_step_fraction": 0.15333333333333332,
+        "goal_success_fraction": 1.0,
+        "final_goal_rmse": 0.03504637216323236,
+        "normalized_command_energy": 0.16072290317961663,
+        "mean_filter_correction": 0.0,
+        "solver_success_fraction": 0.8166666666666667,
+        "constraint_max_violation": 0.11177496720892974,
+        "mean_solver_time_ms": 0.0,
+        "safety_distance": 0.22,
+        "speed_limit_mps": 0.25
+      }
+    },
+    {
+      "scenario": "corridor",
+      "profile": "neutral",
+      "metrics": {
+        "minimum_pairwise_distance": 0.11578515751556986,
+        "collision_step_fraction": 0.0,
+        "safety_violation_step_fraction": 1.0,
+        "goal_success_fraction": 1.0,
+        "final_goal_rmse": 0.048825446234354225,
+        "normalized_command_energy": 0.25636817113324434,
+        "mean_filter_correction": 0.0,
+        "solver_success_fraction": 0.006666666666666667,
+        "constraint_max_violation": 0.13776510866215494,
+        "mean_solver_time_ms": 0.0,
+        "safety_distance": 0.22,
+        "speed_limit_mps": 0.25
+      }
+    },
+    {
+      "scenario": "corridor",
+      "profile": "safety_high",
+      "metrics": {
+        "minimum_pairwise_distance": 0.11578515751556986,
+        "collision_step_fraction": 0.0,
+        "safety_violation_step_fraction": 1.0,
+        "goal_success_fraction": 1.0,
+        "final_goal_rmse": 0.048825446234354225,
+        "normalized_command_energy": 0.25636817113324434,
+        "mean_filter_correction": 0.0,
+        "solver_success_fraction": 0.0,
+        "constraint_max_violation": 0.18176510866215495,
+        "mean_solver_time_ms": 0.0,
+        "safety_distance": 0.264,
+        "speed_limit_mps": 0.25
+      }
+    },
+    {
+      "scenario": "corridor",
+      "profile": "energy_high",
+      "metrics": {
+        "minimum_pairwise_distance": 0.13520238718058694,
+        "collision_step_fraction": 0.0,
+        "safety_violation_step_fraction": 0.7266666666666667,
+        "goal_success_fraction": 0.75,
+        "final_goal_rmse": 0.13401095042155697,
+        "normalized_command_energy": 0.13157247908369502,
+        "mean_filter_correction": 0.0,
+        "solver_success_fraction": 0.23666666666666666,
+        "constraint_max_violation": 0.09832660578981352,
+        "mean_solver_time_ms": 0.0,
+        "safety_distance": 0.22,
+        "speed_limit_mps": 0.25
+      }
+    }
+  ],
+  "aggregate": {
+    "minimum_pairwise_distance": 0.12606322482255305,
+    "collision_step_fraction": 0.0,
+    "safety_violation_step_fraction": 0.5338888888888889,
+    "goal_success_fraction": 0.9583333333333334,
+    "final_goal_rmse": 0.058671609901168625,
+    "normalized_command_energy": 0.23887498413100786,
+    "mean_filter_correction": 0.0,
+    "solver_success_fraction": 0.45333333333333337,
+    "constraint_max_violation": 0.13623754563358484,
+    "mean_solver_time_ms": 0.0,
+    "safety_distance": 0.23466666666666666,
+    "speed_limit_mps": 0.25
+  }
+}

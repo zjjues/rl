@@ -1,64 +1,150 @@
 {
   "stage": 7,
-  "description": "semantic intent library integration — I-MAPPO(semantic_library) vs MAPPO vs I-MAPPO(onehot)",
-  "date": "2026-05-04",
-  "config": {
-    "episodes": 3000,
-    "steps": 50,
-    "seeds": [7, 11, 23],
-    "n_agents": 8,
-    "n_targets": 6,
-    "intent_dim": 64,
-    "intent_source_semantic_library": "semantic_library (static hash, 25 pre-built descriptions)",
-    "intent_source_onehot": "onehot (original)"
+  "description": "Closed-loop semantic_library I-MAPPO validation matrix",
+  "seeds": [
+    7
+  ],
+  "episodes": 3,
+  "work_dir": "experiments\\closed_loop_tuning",
+  "output_dir": "experiments\\stage7_semantic_library",
+  "thresholds": {
+    "collision_rate_medium_hard": 0.3,
+    "task_completion": 0.75,
+    "replanning_latency": 3.5
   },
-  "results": {
-    "semantic_library": {
-      "imappo": {
-        "collision_rate_eval": 0.2893,
-        "collision_rate_easy": 0.2893,
-        "collision_rate_mid": 0.3040,
-        "collision_rate_hard": 0.5173,
-        "task_completion_easy": 0.7837,
-        "task_completion_mid": 0.7482,
-        "task_completion_hard": 0.7556
-      },
-      "mappo": {
-        "collision_rate_eval": 0.4813,
-        "collision_rate_easy": 0.4813,
-        "collision_rate_mid": 0.3947,
-        "collision_rate_hard": 0.5173,
-        "task_completion_easy": 0.7679,
-        "task_completion_mid": 0.7566,
-        "task_completion_hard": 0.7426
-      }
+  "final": {
+    "status": "not_met",
+    "round": 1,
+    "hyperparameters": {
+      "lambda_3": 1.0,
+      "lambda_1": 1.2,
+      "eta": 0.5,
+      "eta_end": 0.1,
+      "eps_clip": 0.1,
+      "critic_lr": 0.0003,
+      "attention_dim": 128,
+      "hard_train_interval": 6,
+      "hard_train_spawn_scale": 0.31,
+      "hard_train_separation_scale": 0.86,
+      "collision_probe_spawn_scale": 0.29,
+      "collision_probe_separation_scale": 0.82
     },
-    "onehot_baseline": {
-      "imappo": {
-        "collision_rate_eval": 0.4240,
-        "collision_rate_easy": 0.4240,
-        "collision_rate_mid": 0.6200,
-        "collision_rate_hard": 0.5347,
-        "task_completion_easy": 0.7912,
-        "task_completion_mid": 0.7844,
-        "task_completion_hard": 0.7585
+    "summary": {
+      "variant": {
+        "key": "imappo_semantic",
+        "display_name": "I-MAPPO (Semantic Library)",
+        "family": "baseline",
+        "intent_source": "semantic_library",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "use_action_mask": true,
+        "eta_override": null,
+        "eta_end_override": null,
+        "runnable_note": ""
       },
-      "mappo": {
-        "collision_rate_eval": 0.3533,
-        "collision_rate_easy": 0.3533,
-        "collision_rate_mid": 0.4933,
-        "collision_rate_hard": 0.7987,
-        "task_completion_easy": 0.7928,
-        "task_completion_mid": 0.7856,
-        "task_completion_hard": 0.7891
+      "seed_count": 1,
+      "early_exploration_collision_rate_mean": 0.0,
+      "replanning_latency_mean": 5.0,
+      "replanning_latency_std": 0.0,
+      "risk_tiers": {
+        "easy": {
+          "collision_rate_mean": 0.0,
+          "collision_rate_std": 0.0,
+          "task_completion_mean": 0.5002589643001556,
+          "task_completion_std": 0.0
+        },
+        "medium": {
+          "collision_rate_mean": 0.0,
+          "collision_rate_std": 0.0,
+          "task_completion_mean": 0.5814295321702957,
+          "task_completion_std": 0.0
+        },
+        "hard": {
+          "collision_rate_mean": 1.0,
+          "collision_rate_std": 0.0,
+          "task_completion_mean": 0.3903171822428703,
+          "task_completion_std": 0.0
+        }
       }
     }
   },
-  "analysis": {
-    "semantic_library_vs_onehot_imappo_collision_drop": "0.4240 -> 0.2893 (-31.8%)",
-    "semantic_library_imappo_vs_mappo_collision_advantage": "0.2893 vs 0.4813 (-40.0%)",
-    "onehot_imappo_vs_mappo_collision_disadvantage": "0.4240 vs 0.3533 (+20.0%)",
-    "task_completion_preserved": true,
-    "conclusion": "semantic intent vectors significantly improve I-MAPPO safety performance while maintaining task completion. The onehot baseline shows I-MAPPO underperforms MAPPO, but semantic intent reverses this trend convincingly."
-  }
+  "rounds": [
+    {
+      "round": 1,
+      "hyperparameters": {
+        "lambda_3": 1.0,
+        "lambda_1": 1.2,
+        "eta": 0.5,
+        "eta_end": 0.1,
+        "eps_clip": 0.1,
+        "critic_lr": 0.0003,
+        "attention_dim": 128,
+        "hard_train_interval": 6,
+        "hard_train_spawn_scale": 0.31,
+        "hard_train_separation_scale": 0.86,
+        "collision_probe_spawn_scale": 0.29,
+        "collision_probe_separation_scale": 0.82
+      },
+      "summaries": {
+        "imappo_semantic": {
+          "variant": {
+            "key": "imappo_semantic",
+            "display_name": "I-MAPPO (Semantic Library)",
+            "family": "baseline",
+            "intent_source": "semantic_library",
+            "algorithm": "imappo",
+            "critic_mode": "attention",
+            "use_action_mask": true,
+            "eta_override": null,
+            "eta_end_override": null,
+            "runnable_note": ""
+          },
+          "seed_count": 1,
+          "early_exploration_collision_rate_mean": 0.0,
+          "replanning_latency_mean": 5.0,
+          "replanning_latency_std": 0.0,
+          "risk_tiers": {
+            "easy": {
+              "collision_rate_mean": 0.0,
+              "collision_rate_std": 0.0,
+              "task_completion_mean": 0.5002589643001556,
+              "task_completion_std": 0.0
+            },
+            "medium": {
+              "collision_rate_mean": 0.0,
+              "collision_rate_std": 0.0,
+              "task_completion_mean": 0.5814295321702957,
+              "task_completion_std": 0.0
+            },
+            "hard": {
+              "collision_rate_mean": 1.0,
+              "collision_rate_std": 0.0,
+              "task_completion_mean": 0.3903171822428703,
+              "task_completion_std": 0.0
+            }
+          }
+        }
+      },
+      "success": false,
+      "tuning_actions": [
+        "collision high: lambda_3 *= 1.5, eps_clip *= 0.8, hard_train_interval reduced",
+        "task completion low: eta *= 1.2, lambda_1 *= 1.1",
+        "latency high: critic_lr *= 1.25, attention_dim increased"
+      ],
+      "next_hyperparameters": {
+        "lambda_3": 1.5,
+        "lambda_1": 1.32,
+        "eta": 0.6,
+        "eta_end": 0.12,
+        "eps_clip": 0.08000000000000002,
+        "critic_lr": 0.00037499999999999995,
+        "attention_dim": 256,
+        "hard_train_interval": 5,
+        "hard_train_spawn_scale": 0.31,
+        "hard_train_separation_scale": 0.86,
+        "collision_probe_spawn_scale": 0.29,
+        "collision_probe_separation_scale": 0.82
+      }
+    }
+  ]
 }
