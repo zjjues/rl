@@ -7,9 +7,9 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "src"))
 
-from run_intent_geometry_study import geometry_distortion  # noqa: E402
+from intent_geometry import geometry_distortion  # noqa: E402
 
 
 class IntentGeometryStudyTests(unittest.TestCase):
@@ -20,6 +20,16 @@ class IntentGeometryStudyTests(unittest.TestCase):
         self.assertAlmostEqual(metrics["pairwise_cosine_correlation"], 1.0)
         self.assertAlmostEqual(metrics["mean_absolute_cosine_error"], 0.0)
         self.assertAlmostEqual(metrics["max_absolute_cosine_error"], 0.0)
+
+    def test_rejects_non_normalized_rows(self):
+        reference = np.ones((3, 2), dtype=np.float32)
+        projected = np.eye(3, dtype=np.float32)
+        with self.assertRaisesRegex(ValueError, "unit normalized"):
+            geometry_distortion(reference, projected)
+
+    def test_rejects_mismatched_row_counts(self):
+        with self.assertRaisesRegex(ValueError, "same row count"):
+            geometry_distortion(np.eye(3), np.eye(4))
 
 
 if __name__ == "__main__":

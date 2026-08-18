@@ -1,0 +1,14 @@
+{
+  "status": "valid",
+  "study_id": "uav_imappo_ablation_smoke_v1",
+  "level": "smoke",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\smoke\\uav_imappo_ablation_smoke_v1",
+  "variant_count": 5,
+  "seed_count": 1,
+  "expected_result_count": 5,
+  "checksum_entry_count": 9,
+  "errors": [],
+  "warnings": [
+    "study invocation used a dirty Git worktree"
+  ]
+}

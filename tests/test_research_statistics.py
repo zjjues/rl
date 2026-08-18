@@ -11,8 +11,10 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from research_statistics import (  # noqa: E402
     bootstrap_interval,
+    holm_adjust,
     interquartile_mean,
     paired_difference_summary,
+    paired_randomization_test,
     performance_profile,
     summarize_sample,
 )
@@ -58,6 +60,30 @@ class ResearchStatisticsTests(unittest.TestCase):
         )
         self.assertAlmostEqual(result["win_rate"], 1.0)
         self.assertLess(result["mean_difference"], 0.0)
+
+    def test_exact_paired_randomization_detects_consistent_shift(self):
+        result = paired_randomization_test(
+            treatment=[0.0] * 8,
+            baseline=[1.0] * 8,
+        )
+        self.assertEqual(result["method"], "exact_paired_sign_flip")
+        self.assertAlmostEqual(result["p_value"], 2.0 / 256.0)
+
+    def test_holm_adjustment_is_monotone_in_rank_order(self):
+        result = holm_adjust({"a": 0.01, "b": 0.03, "c": 0.20})
+        adjusted = result["adjusted_p_values"]
+        self.assertAlmostEqual(adjusted["a"], 0.03)
+        self.assertAlmostEqual(adjusted["b"], 0.06)
+        self.assertAlmostEqual(adjusted["c"], 0.20)
+
+    def test_paired_summary_drops_nonfinite_values_pairwise(self):
+        result = paired_difference_summary(
+            treatment=[1.0, np.nan, 3.0],
+            baseline=[0.0, 2.0, np.nan],
+            lower_is_better=False,
+            n_resamples=500,
+        )
+        self.assertEqual(result["raw_differences"], [1.0])
 
     def test_performance_profile_validates_equal_lengths(self):
         with self.assertRaises(ValueError):

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "study_id": "betaflight_sitl_closed_loop_smoke_v19_multiseed_seed42",
+  "level": "smoke",
+  "seed": 42,
+  "wsl_executable": "C:\\Windows\\System32\\wsl.exe",
+  "wsl_distribution": "Ubuntu",
+  "betaflight_root": "/home/zhaji/rl-sitl/betaflight",
+  "betaflight_revision": "b41431ae981ced5086a63a89e8217fe6da02df33",
+  "gym_pybullet_drones_revision": "e712698a05a80728b06572819dcf044596707754",
+  "duration_seconds": 6.0,
+  "frequency_hz": 500,
+  "arm_seconds": 1.0,
+  "trajectory_start_seconds": 1.5,
+  "target_position": [
+    0.0,
+    0.0,
+    1.0
+  ],
+  "betaflight_config": "configs/sitl_enable_rx_udp.txt"
+}

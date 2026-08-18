@@ -1,0 +1,182 @@
+{
+  "study_id": "betaflight_sitl_closed_loop_smoke_v19_multiseed",
+  "completed_at_utc": "2026-08-02T09:45:19.326777+00:00",
+  "num_seeds": 5,
+  "seeds": [
+    7,
+    42,
+    123,
+    256,
+    512
+  ],
+  "pass_count": 5,
+  "total_elapsed": 181.5759759999928,
+  "metrics_aggregate": {
+    "motor_packet_fraction": {
+      "mean": 0.9956666666666665,
+      "std": 0.0030623157540949045,
+      "min": 0.9903333333333333
+    },
+    "altitude_gain_m": {
+      "mean": 0.13423477331122574,
+      "std": 0.023563797301519467,
+      "min": 0.10536457688615992,
+      "max": 0.1758199512910893
+    },
+    "motor_output_max": {
+      "mean": 1.0,
+      "min": 1.0
+    },
+    "motor_output_mean": {
+      "mean": 0.409684120496288,
+      "std": 0.025030969070154063
+    }
+  },
+  "per_seed": [
+    {
+      "seed": 7,
+      "status": "complete",
+      "elapsed_seconds": 36.29814740002621,
+      "exit_code": 0,
+      "metrics": {
+        "state_packets_sent": 3000.0,
+        "rc_packets_sent": 3000.0,
+        "motor_packets_received": 2992.0,
+        "invalid_motor_packets": 0.0,
+        "motor_packet_receive_fraction": 0.9973333333333333,
+        "elapsed_seconds": 34.15023690002272,
+        "initial_altitude": 0.0999608,
+        "final_altitude": 0.062374005943807,
+        "maximum_altitude": 0.2223855368226514,
+        "minimum_altitude": 0.013335637016322809,
+        "final_position_error": 7.250722566320263,
+        "motor_output_max": 1.0,
+        "motor_output_mean_after_arm": 0.41669120040684937,
+        "finite_trajectory": true,
+        "sitl_process_exit_code": 0
+      },
+      "acceptance_criteria": {
+        "motor_packet_receive_fraction": true,
+        "finite_trajectory": true,
+        "motor_output_nonzero": true,
+        "altitude_response": true
+      }
+    },
+    {
+      "seed": 42,
+      "status": "complete",
+      "elapsed_seconds": 36.386797500017565,
+      "exit_code": 0,
+      "metrics": {
+        "state_packets_sent": 3000.0,
+        "rc_packets_sent": 3000.0,
+        "motor_packets_received": 2992.0,
+        "invalid_motor_packets": 0.0,
+        "motor_packet_receive_fraction": 0.9973333333333333,
+        "elapsed_seconds": 34.169874600018375,
+        "initial_altitude": 0.0999608,
+        "final_altitude": 0.06151589319571201,
+        "maximum_altitude": 0.22767840695036112,
+        "minimum_altitude": 0.013335637016322809,
+        "final_position_error": 9.999705802970668,
+        "motor_output_max": 1.0,
+        "motor_output_mean_after_arm": 0.4002241004306823,
+        "finite_trajectory": true,
+        "sitl_process_exit_code": 0
+      },
+      "acceptance_criteria": {
+        "motor_packet_receive_fraction": true,
+        "finite_trajectory": true,
+        "motor_output_nonzero": true,
+        "altitude_response": true
+      }
+    },
+    {
+      "seed": 123,
+      "status": "complete",
+      "elapsed_seconds": 36.198898100003134,
+      "exit_code": 0,
+      "metrics": {
+        "state_packets_sent": 3000.0,
+        "rc_packets_sent": 3000.0,
+        "motor_packets_received": 2983.0,
+        "invalid_motor_packets": 0.0,
+        "motor_packet_receive_fraction": 0.9943333333333333,
+        "elapsed_seconds": 34.171226000005845,
+        "initial_altitude": 0.0999608,
+        "final_altitude": 0.063960170513693,
+        "maximum_altitude": 0.20532537688615993,
+        "minimum_altitude": 0.013335637016322809,
+        "final_position_error": 8.404596025843734,
+        "motor_output_max": 1.0,
+        "motor_output_mean_after_arm": 0.3735612009860575,
+        "finite_trajectory": true,
+        "sitl_process_exit_code": 0
+      },
+      "acceptance_criteria": {
+        "motor_packet_receive_fraction": true,
+        "finite_trajectory": true,
+        "motor_output_nonzero": true,
+        "altitude_response": true
+      }
+    },
+    {
+      "seed": 256,
+      "status": "complete",
+      "elapsed_seconds": 36.211719700018875,
+      "exit_code": 0,
+      "metrics": {
+        "state_packets_sent": 3000.0,
+        "rc_packets_sent": 3000.0,
+        "motor_packets_received": 2971.0,
+        "invalid_motor_packets": 0.0,
+        "motor_packet_receive_fraction": 0.9903333333333333,
+        "elapsed_seconds": 34.1628077000496,
+        "initial_altitude": 0.0999608,
+        "final_altitude": 0.06321122738485889,
+        "maximum_altitude": 0.2757807512910893,
+        "minimum_altitude": 0.013335637016322809,
+        "final_position_error": 11.700066948108194,
+        "motor_output_max": 1.0,
+        "motor_output_mean_after_arm": 0.4072322006739676,
+        "finite_trajectory": true,
+        "sitl_process_exit_code": 0
+      },
+      "acceptance_criteria": {
+        "motor_packet_receive_fraction": true,
+        "finite_trajectory": true,
+        "motor_output_nonzero": true,
+        "altitude_response": true
+      }
+    },
+    {
+      "seed": 512,
+      "status": "complete",
+      "elapsed_seconds": 36.47143799997866,
+      "exit_code": 0,
+      "metrics": {
+        "state_packets_sent": 3000.0,
+        "rc_packets_sent": 3000.0,
+        "motor_packets_received": 2997.0,
+        "invalid_motor_packets": 0.0,
+        "motor_packet_receive_fraction": 0.999,
+        "elapsed_seconds": 34.146589800016955,
+        "initial_altitude": 0.0999608,
+        "final_altitude": 0.06205761847450976,
+        "maximum_altitude": 0.23980779460586701,
+        "minimum_altitude": 0.013335637016322809,
+        "final_position_error": 9.669808441061905,
+        "motor_output_max": 1.0,
+        "motor_output_mean_after_arm": 0.4507118999838829,
+        "finite_trajectory": true,
+        "sitl_process_exit_code": 0
+      },
+      "acceptance_criteria": {
+        "motor_packet_receive_fraction": true,
+        "finite_trajectory": true,
+        "motor_output_nonzero": true,
+        "altitude_response": true
+      }
+    }
+  ]
+}

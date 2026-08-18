@@ -10,9 +10,10 @@ import os
 import platform
 import subprocess
 import sys
+from copy import deepcopy
 from importlib import metadata as importlib_metadata
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, List
+from typing import TYPE_CHECKING, Dict, Iterable, List, Mapping
 
 import numpy as np
 
@@ -185,6 +186,139 @@ def build_manifest(spec: Dict[str, object], command: List[str]) -> Dict[str, obj
         "config": spec,
         "status": "running",
     }
+
+
+RESUME_PROTOCOL_KEYS = (
+    "schema_version",
+    "study_id",
+    "level",
+    "seeds",
+    "bootstrap_seed",
+    "environment",
+    "training",
+    "intent",
+    "evaluation",
+    "generalization",
+)
+
+
+def merge_resume_specs(
+    existing: Mapping[str, object], incoming: Mapping[str, object]
+) -> Dict[str, object]:
+    """Merge chunked variant runs without weakening the registered protocol.
+
+    Resume may add variants, but it may not silently change seeds, environment,
+    training, intent, evaluation, or generalization definitions. Reusing a
+    variant key with a different definition is also rejected.
+    """
+
+    for key in RESUME_PROTOCOL_KEYS:
+        if existing.get(key) != incoming.get(key):
+            raise ValueError(f"resume config changes registered protocol field {key!r}")
+    merged = deepcopy(dict(existing))
+    existing_variants = {
+        str(variant["key"]): deepcopy(dict(variant))
+        for variant in existing["variants"]
+    }
+    ordered = list(existing_variants.values())
+    for variant in incoming["variants"]:
+        candidate = deepcopy(dict(variant))
+        key = str(candidate["key"])
+        if key in existing_variants:
+            if existing_variants[key] != candidate:
+                raise ValueError(f"resume config redefines existing variant {key!r}")
+            continue
+        existing_variants[key] = candidate
+        ordered.append(candidate)
+    merged["variants"] = ordered
+
+    objectives = []
+    for source in (existing, incoming):
+        for objective in source.get("objectives", []):
+            if str(objective) not in objectives:
+                objectives.append(str(objective))
+        objective = source.get("objective")
+        if objective is not None and str(objective) not in objectives:
+            objectives.append(str(objective))
+    if objectives:
+        merged["objectives"] = objectives
+        merged["objective"] = (
+            objectives[0]
+            if len(objectives) == 1
+            else "Composite resumed study; see objectives for registered run scopes."
+        )
+    if "treatment_key" in incoming:
+        merged["treatment_key"] = incoming["treatment_key"]
+    return merged
+
+
+def _manifest_run_record(manifest: Mapping[str, object]) -> Dict[str, object]:
+    keys = (
+        "started_at_utc",
+        "completed_at_utc",
+        "git_commit",
+        "git_status_short",
+        "command",
+        "python",
+        "platform",
+        "dependencies",
+        "config",
+        "status",
+    )
+    return {key: deepcopy(manifest[key]) for key in keys if key in manifest}
+
+
+def build_resume_manifest(
+    existing: Mapping[str, object],
+    merged_spec: Dict[str, object],
+    incoming_spec: Dict[str, object],
+    command: List[str],
+) -> Dict[str, object]:
+    """Preserve prior invocations instead of overwriting resume provenance."""
+
+    current = build_manifest(incoming_spec, command)
+    history = deepcopy(list(existing.get("run_history", [])))
+    if not history:
+        history.append(_manifest_run_record(existing))
+    history.append(_manifest_run_record(current))
+    manifest = build_manifest(merged_spec, command)
+    manifest["schema_version"] = 2
+    manifest["started_at_utc"] = existing.get(
+        "started_at_utc", manifest["started_at_utc"]
+    )
+    manifest["run_history"] = history
+    manifest["git_commits"] = list(dict.fromkeys(
+        str(record["git_commit"])
+        for record in history
+        if record.get("git_commit")
+    ))
+    manifest["provenance_note"] = (
+        "Composite artifact assembled by resume; run_history is authoritative "
+        "for per-invocation commands and dirty-worktree state."
+    )
+    return manifest
+
+
+def validate_result_identity(
+    result: Mapping[str, object], variant: Mapping[str, object], seed: int
+) -> None:
+    if int(result.get("seed", -1)) != int(seed):
+        raise ValueError(f"cached result seed does not match requested seed {seed}")
+    result_variant = result.get("variant")
+    result_key = (
+        str(result_variant.get("key", ""))
+        if isinstance(result_variant, Mapping)
+        else str(result_variant or "")
+    )
+    expected_key = str(variant["key"])
+    if result_key != expected_key:
+        raise ValueError(
+            f"cached result variant {result_key!r} does not match {expected_key!r}"
+        )
+    if isinstance(result_variant, Mapping) and dict(result_variant) != dict(variant):
+        raise ValueError(
+            f"cached result variant definition differs for {expected_key!r}"
+        )
 
 
 def write_result_card(
@@ -897,6 +1031,29 @@ def summarize_comparisons(
     return comparisons
 
 
+def annotate_primary_holm(comparisons: Dict[str, object]) -> Dict[str, object]:
+    """Correct the predeclared safety/task comparison family across baselines/tiers."""
+
+    from research_statistics import holm_adjust
+
+    hypotheses = {}
+    for baseline, comparison in comparisons.items():
+        for tier, tier_metrics in comparison.get("risk_tiers", {}).items():
+            for metric in ("collision_rate", "task_completion"):
+                if metric not in tier_metrics:
+                    continue
+                key = f"{baseline}/{tier}/{metric}"
+                hypotheses[key] = tier_metrics[metric]["randomization_test"]["p_value"]
+    family = holm_adjust(hypotheses)
+    for key, adjusted in family["adjusted_p_values"].items():
+        baseline, tier, metric = key.split("/")
+        record = comparisons[baseline]["risk_tiers"][tier][metric]
+        record["holm_adjusted_p_value"] = adjusted
+        record["holm_reject_0_05"] = family["reject"][key]
+        record["multiplicity_family"] = "all baselines × tiers × {collision, task}"
+    return family
+
+
 def write_checksums(root: Path) -> None:
     lines = []
     for path in sorted(root.rglob("*")):
@@ -909,9 +1066,14 @@ def write_checksums(root: Path) -> None:
 
 def main() -> None:
     args = parse_args()
-    spec = read_json(args.config)
-    validate_spec(spec, args.allow_dirty)
-    output_dir = output_dir_for(spec)
+    incoming_spec = read_json(args.config)
+    validate_spec(incoming_spec, args.allow_dirty)
+    output_dir = output_dir_for(incoming_spec)
+    spec = incoming_spec
+    existing_config_path = output_dir / "config.json"
+    if args.resume and existing_config_path.is_file():
+        spec = merge_resume_specs(read_json(existing_config_path), incoming_spec)
+        validate_spec(spec, args.allow_dirty)
     plan = {
         "output_dir": str(output_dir),
         "level": spec["level"],
@@ -925,7 +1087,13 @@ def main() -> None:
     if output_dir.exists() and any(output_dir.iterdir()) and not args.resume:
         raise FileExistsError(f"refusing to overwrite existing study: {output_dir}")
     output_dir.mkdir(parents=True, exist_ok=True)
-    manifest = build_manifest(spec, sys.argv)
+    existing_manifest_path = output_dir / "manifest.json"
+    if args.resume and existing_manifest_path.is_file():
+        manifest = build_resume_manifest(
+            read_json(existing_manifest_path), spec, incoming_spec, sys.argv
+        )
+    else:
+        manifest = build_manifest(spec, sys.argv)
     write_json(output_dir / "manifest.json", manifest)
     write_json(output_dir / "config.json", spec)
 
@@ -937,6 +1105,7 @@ def main() -> None:
             result_path = output_dir / str(variant["key"]) / f"seed_{seed}" / "result.json"
             if args.resume and result_path.exists():
                 result = read_json(result_path)
+                validate_result_identity(result, variant, int(seed))
             else:
                 result = run_seed(spec, variant, int(seed))
                 write_json(result_path, result)
@@ -946,18 +1115,26 @@ def main() -> None:
             bootstrap_seed=int(spec.get("bootstrap_seed", 20260801)),
         )
         results_by_variant[str(variant["key"])] = variant_results
+    paired_comparisons = summarize_comparisons(
+        results_by_variant,
+        treatment_key=str(spec.get("treatment_key", "pretrained_semantic")),
+        bootstrap_seed=int(spec.get("bootstrap_seed", 20260801)) + 1000,
+    )
+    multiplicity = annotate_primary_holm(paired_comparisons)
     summary_payload = {
         "variants": summaries,
-        "paired_comparisons": summarize_comparisons(
-            results_by_variant,
-            treatment_key=str(spec.get("treatment_key", "pretrained_semantic")),
-            bootstrap_seed=int(spec.get("bootstrap_seed", 20260801)) + 1000,
-        ),
+        "paired_comparisons": paired_comparisons,
+        "primary_multiplicity": multiplicity,
     }
     write_json(output_dir / "summary.json", summary_payload)
     write_result_card(output_dir, spec, summaries)
     manifest["status"] = "complete"
     manifest["completed_at_utc"] = dt.datetime.now(dt.timezone.utc).isoformat()
+    if manifest.get("run_history"):
+        manifest["run_history"][-1]["status"] = "complete"
+        manifest["run_history"][-1]["completed_at_utc"] = manifest[
+            "completed_at_utc"
+        ]
     write_json(output_dir / "manifest.json", manifest)
     write_checksums(output_dir)
     print(json.dumps({**plan, "status": "complete"}, ensure_ascii=False, indent=2))

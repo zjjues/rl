@@ -1,0 +1,24 @@
+{
+  "created_at_utc": "2026-08-02T09:42:53.757667+00:00",
+  "project_revision": "44cdbed6048cd1480252e630fb7d9305653ab3c2",
+  "betaflight_revision": "b41431ae981ced5086a63a89e8217fe6da02df33",
+  "betaflight_binary_sha256": "367ebb2b8c807ff8979ac102f3625238227e78576cd6f2c315a78748820abf6f",
+  "simulator_revision": "e712698a05a80728b06572819dcf044596707754",
+  "python": "3.10.20 | packaged by conda-forge | (main, Jun 11 2026, 03:28:51) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "packages": {
+    "numpy": "2.2.6",
+    "pybullet": "3.2.5",
+    "gym-pybullet-drones": "2.1.0",
+    "control": "0.10.2",
+    "transforms3d": "0.4.2"
+  },
+  "network": {
+    "wsl_guest_ip": "172.24.250.16",
+    "windows_host_ip_from_wsl": "172.24.240.1",
+    "pwm_port": 9002,
+    "state_port": 9003,
+    "rc_port": 9004
+  },
+  "scope": "single-drone Betaflight flight-controller SITL with PyBullet physics; not HIL or real flight"
+}

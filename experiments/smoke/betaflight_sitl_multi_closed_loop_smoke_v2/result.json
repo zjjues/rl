@@ -1,0 +1,8 @@
+{
+  "status": "complete",
+  "num_drones": 2,
+  "drone_results": [
+    "drone0: PASS",
+    "drone1: PASS"
+  ]
+}

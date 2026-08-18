@@ -1,0 +1,14 @@
+{
+  "status": "valid",
+  "study_id": "uav_imappo_main",
+  "level": "pilot",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\pilot\\uav_imappo_main",
+  "variant_count": 4,
+  "seed_count": 10,
+  "expected_result_count": 40,
+  "checksum_entry_count": 44,
+  "errors": [],
+  "warnings": [
+    "study invocation used a dirty Git worktree"
+  ]
+}

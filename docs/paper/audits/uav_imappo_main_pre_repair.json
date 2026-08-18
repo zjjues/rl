@@ -1,0 +1,20 @@
+{
+  "status": "invalid",
+  "study_id": "uav_imappo_main",
+  "level": "pilot",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\pilot\\uav_imappo_main",
+  "variant_count": 4,
+  "seed_count": 10,
+  "expected_result_count": 40,
+  "checksum_entry_count": 44,
+  "errors": [
+    "artifact variant definitions differ from expected config",
+    "artifact treatment_key differs from expected config",
+    "summary variant keys do not match expected variants",
+    "manifest run history does not cover all expected variants"
+  ],
+  "warnings": [
+    "recorded command references absent config: configs/research/uav_ippo_only.pilot.json",
+    "study invocation used a dirty Git worktree"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "status": "complete",
+  "metrics": {
+    "state_packets_sent": 3000.0,
+    "rc_packets_sent": 3000.0,
+    "motor_packets_received": 2997.0,
+    "invalid_motor_packets": 0.0,
+    "motor_packet_receive_fraction": 0.999,
+    "elapsed_seconds": 34.146589800016955,
+    "initial_altitude": 0.0999608,
+    "final_altitude": 0.06205761847450976,
+    "maximum_altitude": 0.23980779460586701,
+    "minimum_altitude": 0.013335637016322809,
+    "final_position_error": 9.669808441061905,
+    "motor_output_max": 1.0,
+    "motor_output_mean_after_arm": 0.4507118999838829,
+    "finite_trajectory": true,
+    "sitl_process_exit_code": 0
+  },
+  "acceptance_criteria": {
+    "motor_packet_receive_fraction": true,
+    "finite_trajectory": true,
+    "motor_output_nonzero": true,
+    "altitude_response": true
+  }
+}

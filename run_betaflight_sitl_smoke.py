@@ -61,20 +61,46 @@ def main() -> None:
     guest_ip, host_ip = resolve_wsl_network(wsl, distribution)
     duration = float(spec["duration_seconds"])
     frequency = int(spec["frequency_hz"])
-    process_timeout = int(np.ceil(duration + 8.0))
+    process_timeout = int(np.ceil(duration * 4.0 + 10.0))  # generous margin for PyBullet real-time
     command = (
-        f"cd {shlex.quote(sitl_root)} && exec timeout {process_timeout}s "
-        f"./obj/main/betaflight_SITL.elf --ip {shlex.quote(host_ip)}"
+        f"cd {shlex.quote(sitl_root)} && "
+        f"script -q -c 'timeout {process_timeout}s ./obj/main/betaflight_SITL.elf --ip {shlex.quote(host_ip)}' /dev/null"
     )
 
     from gym_pybullet_drones.control.CTBRControl import CTBRControl
     from gym_pybullet_drones.envs.CtrlAviary import CtrlAviary
     from gym_pybullet_drones.utils.enums import DroneModel, Physics
 
+    # Pre-load: provision EEPROM via --config (one-shot, exits after save).
+    config_path = spec.get("betaflight_config")
+    if config_path:
+        config_abs = f"{sitl_root}/{config_path}"
+        provision_cmd = (
+            f"cd {shlex.quote(sitl_root)} && "
+            f"timeout 15s ./obj/main/betaflight_SITL.elf --ip {shlex.quote(host_ip)} "
+            f"--config {shlex.quote(config_path)}"
+        )
+        provision_result = subprocess.run(
+            [wsl, "-d", distribution, "--", "bash", "-lc", provision_cmd],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            timeout=20,
+        )
+        # Log the provision output for diagnostics
+        stdout_text = provision_result.stdout or ""
+        stderr_text = provision_result.stderr or ""
+        provision_log = (output / "sitl_provision.log")
+        provision_log.write_text(stdout_text + "\n" + stderr_text, encoding="utf-8")
+        if provision_result.returncode not in (0, 124):  # 124 = timeout (expected)
+            raise RuntimeError(
+                f"SITL --config provisioning failed (exit {provision_result.returncode}):\n"
+                f"{stderr_text[:500]}"
+            )
+
     log_file = (output / "sitl_stdout.log").open("w", encoding="utf-8")
     sitl_process = subprocess.Popen(
         [wsl, "-d", distribution, "--", "bash", "-lc", command],
-        stdout=log_file, stderr=subprocess.STDOUT, text=True,
+        stdout=log_file, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     bridge = None
@@ -82,7 +108,7 @@ def main() -> None:
     positions, motor_values = [], []
     started = time.perf_counter()
     try:
-        time.sleep(1.0)
+        time.sleep(3.0)  # allow SITL flash init to complete before sending packets
         if sitl_process.poll() is not None:
             raise RuntimeError("Betaflight SITL exited before the bridge started")
         bridge = BetaflightUdpBridge(guest_ip, timeout=2.0 / frequency)

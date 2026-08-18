@@ -10,9 +10,16 @@ from typing import Dict, Tuple
 import numpy as np
 
 
-PORT_PWM = 9002
-PORT_STATE = 9003
-PORT_RC = 9004
+PORT_PWM_BASE = 9002
+PORT_STATE_BASE = 9003
+PORT_RC_BASE = 9004
+PORT_OFFSET = 10  # per-drone port increment
+
+
+def ports_for_drone(drone_id: int = 0) -> Tuple[int, int, int]:
+    """Return (pwm_port, state_port, rc_port) for the given drone."""
+    offset = drone_id * PORT_OFFSET
+    return PORT_PWM_BASE + offset, PORT_STATE_BASE + offset, PORT_RC_BASE + offset
 
 
 def quaternion_xyzw_to_rotation(quaternion: np.ndarray) -> np.ndarray:
@@ -100,13 +107,15 @@ class BridgeAudit:
 class BetaflightUdpBridge:
     """Own UDP sockets for one externally managed Betaflight SITL process."""
 
-    def __init__(self, sitl_ip: str, bind_ip: str = "0.0.0.0", timeout: float = 0.003):
+    def __init__(self, sitl_ip: str, bind_ip: str = "0.0.0.0", timeout: float = 0.003, drone_id: int = 0):
         self.sitl_ip = str(sitl_ip)
+        self.drone_id = int(drone_id)
+        self.port_pwm, self.port_state, self.port_rc = ports_for_drone(self.drone_id)
         self.state_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.rc_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.motor_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.motor_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.motor_socket.bind((bind_ip, PORT_PWM))
+        self.motor_socket.bind((bind_ip, self.port_pwm))
         self.motor_socket.settimeout(float(timeout))
         self.audit = BridgeAudit()
 
@@ -118,9 +127,9 @@ class BetaflightUdpBridge:
         armed: bool,
         previous_motor_thrust: np.ndarray,
     ) -> Tuple[np.ndarray, bool]:
-        self.state_socket.sendto(pack_fdm_state(timestamp, observation), (self.sitl_ip, PORT_STATE))
+        self.state_socket.sendto(pack_fdm_state(timestamp, observation), (self.sitl_ip, self.port_state))
         self.audit.state_packets_sent += 1
-        self.rc_socket.sendto(ctbr_to_rc(timestamp, command, armed=armed), (self.sitl_ip, PORT_RC))
+        self.rc_socket.sendto(ctbr_to_rc(timestamp, command, armed=armed), (self.sitl_ip, self.port_rc))
         self.audit.rc_packets_sent += 1
         try:
             packet, _ = self.motor_socket.recvfrom(64)

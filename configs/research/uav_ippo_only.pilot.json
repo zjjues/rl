@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_imappo_main",
+  "level": "pilot",
+  "objective": "IPPO baseline: independent PPO (no shared critic).",
+  "seeds": [
+    7,
+    11,
+    23,
+    42,
+    100,
+    256,
+    512,
+    1024,
+    2048,
+    4096
+  ],
+  "bootstrap_seed": 20260802,
+  "environment": {
+    "name": "uav-scheduling-v2",
+    "n_agents": 8,
+    "n_targets": 6,
+    "safety_reward_coef": 1.0,
+    "task_reward_coef": 1.2,
+    "intent_reward_profiles_enabled": true
+  },
+  "training": {
+    "episodes": 3000,
+    "steps": 200,
+    "rollout_length": 128,
+    "minibatch_size": 64,
+    "eval_interval": 100,
+    "actor_lr": 0.0003,
+    "critic_lr": 0.0003,
+    "eta": 0.5,
+    "eta_end": 0.1,
+    "entropy_coef": 0.001,
+    "entropy_coef_end": 0.0001,
+    "potential_update_mode": "normal",
+    "potential_update_interval": 4,
+    "device": "cuda"
+  },
+  "intent": {
+    "dim": 25,
+    "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "encoder_revision": "",
+    "projection_seed": 17,
+    "code_seed": 29
+  },
+  "variants": [
+    {
+      "key": "ippo",
+      "intent_source": "onehot",
+      "algorithm": "ippo",
+      "critic_mode": "concat",
+      "policy_mode": "direct",
+      "use_action_mask": false,
+      "safety_filter_mode": "none",
+      "disable_intent_reward": true
+    }
+  ],
+  "evaluation": {
+    "episodes": 50,
+    "risk_tiers": {
+      "easy": {
+        "spawn_region_scale": 0.5,
+        "spawn_separation_scale": 1.2,
+        "intent_mode": "dense"
+      },
+      "medium": {
+        "spawn_region_scale": 0.4,
+        "spawn_separation_scale": 1.0,
+        "intent_mode": "dense"
+      },
+      "hard": {
+        "spawn_region_scale": 0.3,
+        "spawn_separation_scale": 0.8,
+        "intent_mode": "dense"
+      }
+    }
+  }
+}

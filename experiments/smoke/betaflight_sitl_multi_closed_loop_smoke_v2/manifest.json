@@ -1,0 +1,10 @@
+{
+  "created_at_utc": "2026-08-02T09:42:34.857949+00:00",
+  "project_revision": "44cdbed6048cd1480252e630fb7d9305653ab3c2",
+  "betaflight_revision": "b41431ae981ced5086a63a89e8217fe6da02df33",
+  "simulator_revision": "e712698a05a80728b06572819dcf044596707754",
+  "python": "3.10.20 | packaged by conda-forge | (main, Jun 11 2026, 03:28:51) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "num_drones": 2,
+  "scope": "multi-drone Betaflight SITL with PyBullet physics"
+}

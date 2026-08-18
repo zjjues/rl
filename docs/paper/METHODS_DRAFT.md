@@ -1,5 +1,34 @@
 # 方法章节持续草稿
 
+## 0.1 Betaflight SITL 高保真迁移
+
+### 架构
+
+单机闭环由三部分组成：
+1. **PyBullet 物理引擎**（Windows, rl-pybullet conda env）：运行刚体动力学，RACE 机型 830g
+2. **Betaflight SITL**（WSL2 Ubuntu）：运行真实飞控固件（commit `b41431ae`），含 PID 控制器、混控器、滤波器
+3. **UDP Bridge**（`src/betaflight_sitl_bridge.py`）：双向转发
+   - Bridge→SITL: 状态包 `@18d`（姿态/角速度/加速度/位置）→ port 9003；RC 包 `@d16H`（摇杆通道）→ port 9004
+   - SITL→Bridge: 电机包 `@4f`（归一化推力 [0,1]）→ port 9002
+
+### SITL 定制
+
+为在 WSL2 网络 NAT 下实现解锁与持续闭环，对 Betaflight 源码做以下修改：
+- `SITL_ATTITUDE_DIRECT`：跳过 Mahony 姿态估计，直接使用 FDM 四元数
+- `frameStatusUdp` SIMULATOR 路径：RC 帧间隔不触发 RXLOSS
+- `isUpright()` SIMULATOR 分支：绕过倾角解锁检查
+- 每帧 FDM 持续 `ENABLE_ARMING_FLAG(ARMED)`：抵抗内部 disarm()
+
+### 多机扩展
+
+- `--port-offset <n>` CLI 参数：SITL 端口 = base + n（bf0:9002-9004, bf1:9012-9014）
+- 每机独立 EEPROM、SITL 实例目录 (`bf0/`, `bf1/`)
+- Bridge `drone_id` 参数 + `ports_for_drone()`
+
+### 当前状态
+
+单机闭环 smoke v19 通过，双机 smoke multi v2 通过。尚未达到冻结论文实验标准（需 10+ seeds，冲突场景，安全层验证）。
+
 ## 0. 当前主方法候选：文本目标概念瓶颈与残差控制
 
 冻结文本编码器先将指令 (g) 映射为句向量 (e)。目标解码器输出七维可解释画像
@@ -229,3 +258,27 @@ RPM。控制器与模拟器以 30 Hz 交互，PyBullet 以 240 Hz 积分。该�
 - 可行性掩码是否属于策略的一部分；
 - 复杂度与智能体数量的关系；
 - 与 MAPPO、IPPO、HAPPO、MADDPG/MATD3 的关系。
+
+## 9. 分块运行的 provenance 与结果冻结
+
+一个 study 可以为控制 GPU 时长而按变体分块执行，但 `--resume` 只能追加变体，不能改变 seeds、环境、训练超参数、意图定义、评估风险层或泛化 suite。同名变体必须与已有完整定义一致；缓存结果必须同时匹配 seed、variant key 和完整变体字段。若任一条件不满足，runner 终止而不是复用结果。
+
+Composite manifest 使用 schema v2。顶层 `config` 表示合并后的完整研究协议，`run_history` 对每次调用保存命令、内嵌子配置、Git commit、dirty-worktree 状态、Python/依赖和起止时间。逐次记录不可由后一次 resume 覆盖。Artifact validator 独立核对：
+
+1. 外部预注册配置与顶层协议字段、变体定义；
+2. manifest 内嵌配置与 run-history 变体覆盖；
+3. 每个 variant/seed 的文件存在性、seed 和变体身份；
+4. summary 中 primary metric 的 raw 数组与逐 seed 原值；
+5. 除 checksum 文件自身外的完整 SHA-256 集合。
+
+`valid` 仅表示 artifact 内部一致，不自动提升证据等级。若训练时 Git 工作区非 clean，validator 保留 warning；`paper` 级 artifact 将该 warning 视为错误。
+
+## 10. 配对推断与多重比较
+
+所有算法按研究 seed 配对。对 treatment 与 baseline 的差值 \(d_s\) 报告均值、median、win rate、paired standardized effect \(d_z=\bar d/s_d\) 和 seed-level bootstrap 95% CI。缺失/非有限观测只按完整 pair 同步排除，禁止两组分别删值后重新配对。
+
+均值差的双侧零假设使用 paired sign-flip randomization test。seed 数不超过 16 时枚举全部 \(2^n\) 个符号排列；更大样本使用固定 seed 的 Monte Carlo 近似。预注册主 family 包含所有 baseline、risk tier 上的 collision rate 与 task completion。本轮 3 baselines × 3 tiers × 2 metrics 共 18 个假设，使用 Holm step-down 控制 family-wise error rate 0.05。未校正 CI 与 Holm 结论冲突时，主张以 Holm 结果为准并同时报告两者。
+
+## 11. 架构 pilot 的解释边界
+
+`uav_imappo_main` 的四个变体都使用 25 维真实 one-hot identity code，并设置 `disable_intent_reward=true`。因此它隔离的是 attention critic、action mask 与算法结构差异，而不是文本编码或语言理解。该实验可以否证“attention + mask 必然优于 concat MAPPO”，不能用于支持“语义意图提高 MARL 性能”。语义贡献必须由独立的 language/one-hot/random/hash、w/o NLI gate、w/o intent reward、w/o CBF 和动态干预实验建立。

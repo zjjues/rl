@@ -1,5 +1,61 @@
 # 研究变更日志
 
+## 2026-08-18：修复主实验 provenance，加入精确统计与自动论文产物
+
+### 工程变更
+
+- 发现 `uav_imappo_main` 由分块 `--resume` 运行组装时，顶层 `config.json`、`manifest.json`、`RESULT_CARD.md` 和 `summary.json` 被最后一次 IPPO-only 运行覆盖；40 个逐 seed 结果仍存在，但证据链相互矛盾。
+- `run_research_study.py` 现在只允许 resume 增加新变体，禁止改变 seeds、环境、训练、意图、评估和泛化协议，也禁止用同名 key 重定义变体；缓存结果必须逐项核验 seed、variant key 和完整变体定义。
+- composite manifest 升级为 schema v2，保留逐次命令、内嵌配置、Git commit、dirty 状态和完成时间；不再覆盖历史调用。
+- 新增 `validate_research_artifact.py` / `src/research_artifact.py`，核对预注册配置、manifest、40 个逐 seed 结果、summary raw 值和 SHA-256。
+- 修复前审计保存在 `docs/paper/audits/uav_imappo_main_pre_repair.json`；修复后审计为 valid、40/40 results、44 checksum entries、0 errors，唯一警告为原始训练使用 dirty worktree。
+- 配对统计新增精确 sign-flip test、paired standardized effect size 和 18 项主比较的 Holm FWER 校正；非有限值按 pair 同步剔除。
+- 新增 `generate_paper_artifacts.py`，自动生成 CSV、bootstrap-CI 图、paired forest plot、统计报告和生成文件哈希清单。
+- 将已删除 runner 中仍有价值的几何诊断迁移到 `src/intent_geometry.py`，并仅恢复泛化协议 v1/v2/v7/v8 的最小继承链。
+
+### 论文影响
+
+- 10-seed 架构 pilot 现在是内部一致、带 checksum 的可验证 pilot，但因历史 dirty worktree 和每层仅 50 个评估回合，仍不能升级为 frozen paper evidence。
+- I-MAPPO 对 MAPPO 的 collision/task 比较经 Holm 校正后均不显著；hard 碰撞的未校正配对差为 +0.12576、95% CI [0.03364, 0.21996]，但 Holm p=0.296875。
+- I-MAPPO 相对 IPPO/MATD3 的显著结果表现为碰撞更少但任务完成更低的权衡，不构成全面优势。
+- 所有架构 pilot 变体使用 one-hot intent 并关闭 intent reward，因此这些结果不能证明自然语言或语义意图的价值。
+
+### 后续验证
+
+- 运行 5-seed 语义完整方法因果消融，先验证 NLI gate、attention、mask、intent reward 和 CBF 的独立贡献；
+- 消融通过后在 clean commit 上冻结不少于 10 seeds、每 seed/tier 不少于 100 回合的 paper 配置；
+- 将可导出的 I-MAPPO 策略接入 Betaflight 双机冲突场景，而不是只做定高 smoke；
+- 独立人类/外部语言数据和 HIL/实机仍是不可由合成实验替代的硬门槛。
+
+## 2026-08-02：Betaflight SITL 单机闭环打通 + 多机原型
+
+### 工程变更
+
+- **SITL 源码 5 处修复**（WSL `/home/zhaji/rl-sitl/betaflight`）：
+  - `src/main/rx/rx.c`：`frameStatusUdp` 添加 SIMULATOR 路径，RC 帧间隔不触发 RXLOSS
+  - `src/main/flight/imu.c`：`isUpright()` SIMULATOR 分支始终返回 true，绕过倾角检查
+  - `src/platform/SIMULATOR/sitl.c`：包含 `fc/runtime_config.h`，每帧 FDM 持续 `ENABLE_ARMING_FLAG(ARMED)`
+  - `src/platform/SIMULATOR/sitl.c`：添加 `--port-offset <n>` 参数支持多实例端口隔离
+  - 构建：`make TARGET=SITL -j$(nproc) OPTIONS=SITL_ATTITUDE_DIRECT`
+- **Bridge 多机支持**：`ports_for_drone()` 端口偏移 (base + 10×id)
+- **Runner 改进**：`script -q -c` 无缓冲、UTF-8 编码、启动延迟 3s
+- **新增文件**：`run_betaflight_sitl_multi_smoke.py`、`run_betaflight_sitl_multiseed.py`
+- **测试**：85 passed（主环境），18 个实验配置冻结
+
+### 论文影响
+
+- Betaflight SITL × PyBullet 闭环 pipeline 从不可用推进到端到端通过验收
+- 单机 V19：电机接收率 99%，满油门输出，高度响应 +0.15m
+- 多机 Multi V1：双无人机各自独立 SITL 实例，端口偏移隔离
+- 当前状态为 smoke test 级别，未达到冻结论文实验标准（需 10+ seeds）
+
+### 后续验证
+
+- 多 seed 统计验证（当前运行中）
+- 多机冲突场景 + 安全层
+- 鲁棒压力测试（延迟、噪声、风扰）
+- HIL 复核
+
 ## 2026-08-01：加入跟踪延迟预算鲁棒 QP
 
 ### 工程变更

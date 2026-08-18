@@ -2,6 +2,69 @@
 
 当前没有满足 `paper` 或 `frozen` 协议的结果。
 
+## 2026-08-18 I-MAPPO 架构 pilot（审计修复后）
+
+Study：`experiments/pilot/uav_imappo_main/`。8 UAV、6 targets、3000 training episodes，I-MAPPO/MAPPO/MATD3/IPPO 各 10 个配对 seeds；每 seed/tier 50 个评估回合。四种方法均使用 one-hot intent 并关闭 intent reward。
+
+Artifact validator 结果：`valid`，40/40 per-seed results、44 checksum entries、0 errors；唯一 warning 为历史训练运行使用 dirty Git worktree。修复前顶层 provenance 只覆盖 IPPO，该失败审计与修复后审计分别保存在：
+
+- `docs/paper/audits/uav_imappo_main_pre_repair.json`
+- `docs/paper/audits/uav_imappo_main_post_repair.json`
+
+| Variant | Easy collision | Medium collision | Hard collision | Easy task | Medium task | Hard task |
+|---|---:|---:|---:|---:|---:|---:|
+| I-MAPPO | 0.1191 | 0.2090 | 0.5478 | 0.5510 | 0.5556 | 0.5542 |
+| MAPPO | 0.1135 | 0.1777 | 0.4221 | 0.5481 | 0.5530 | 0.5518 |
+| MATD3 | 0.3779 | 0.4691 | 0.5640 | 0.5807 | 0.5876 | 0.5864 |
+| IPPO | 0.3030 | 0.4059 | 0.6249 | 0.6479 | 0.6533 | 0.6562 |
+
+配对主 family 使用 18 项 Holm 校正。I-MAPPO 相对 MAPPO 的 collision/task 结果全部不拒绝零假设；hard collision 的均值差为 +0.12576，bootstrap 95% CI [0.03364, 0.21996]，exact p=0.037109，但 Holm p=0.296875。I-MAPPO 相对 IPPO/MATD3 的 easy/medium collision 更低，但 task completion 也更低，显示安全—任务权衡而非全面优势。
+
+生成产物：`docs/paper/generated/uav_imappo_main/`，包含两张图、两个 CSV、完整统计报告和哈希 manifest。
+
+限制：level 为 pilot；50 eval episodes 低于 paper 门槛 100；原始训练来自 dirty worktree；没有自然语言输入。因此不能登记为 paper/frozen 结果，也不支持语义意图优势。
+
+## 2026-08-02 Betaflight SITL 单机闭环 smoke
+
+`betaflight_sitl_closed_loop_smoke_v19`（seed=7，单机，WSL2 Betaflight × Windows PyBullet）：
+
+| 指标 | 值 | 阈值 | 状态 |
+|------|-----|------|------|
+| 电机包接收率 | 99.03% | ≥80% | ✅ |
+| 轨迹有限 | true | true | ✅ |
+| 电机输出 max | 1.0 | >0.05 | ✅ |
+| 电机输出 mean (解锁后) | 0.374 | — | — |
+| 高度响应 | 0.099→0.249m (+0.15m) | >0.10m | ✅ |
+
+SITL 构建参数：`OPTIONS=SITL_ATTITUDE_DIRECT`，4 处解锁/姿态补丁。
+
+### 多 seed 验证（5 seeds）
+
+`betaflight_sitl_closed_loop_smoke_v19_multiseed`（seeds=7,42,123,256,512）：
+
+| 指标 | Mean | Std | Min | 状态 |
+|------|------|-----|-----|------|
+| 电机包接收率 | 0.9957 | — | 0.9903 | ✅ |
+| 高度增益 | 0.134m | 0.024m | — | ✅ |
+| 电机输出 max | 1.000 | — | 1.000 | ✅ |
+| 电机输出 mean | 0.410 | — | — | — |
+| 通过率 | **5/5** | — | — | ✅ |
+
+总耗时 181.6s（5 seeds 串行）。所有 seed 全部通过验收标准。
+此结果为 smoke 级别（5 seeds），不是冻结论文实验（需 10+ seeds 及冲突场景）。
+
+## 2026-08-02 Betaflight SITL 多机闭环 smoke
+
+`betaflight_sitl_multi_closed_loop_smoke_v2`（seed=7，双机，各独立 SITL 实例，端口偏移）：
+
+| 无人机 | 高度响应 | 电机包率 | 电机 max | 电机 mean | 状态 |
+|--------|----------|----------|----------|-----------|------|
+| Drone 0 | 0.100→0.308m (+0.21m) | 99.60% | 1.0 | 0.401 | ✅ |
+| Drone 1 | 0.100→0.217m (+0.12m) | 99.78% | 1.0 | 0.324 | ✅ |
+
+多实例通过 `--port-offset` 实现（bf0:9002-9004, bf1:9012-9014）。
+此结果为 smoke 级别（1 seed），不是冻结论文实验。
+
 ## 2026-08-01 PyBullet Crazyflie 跨动力学 pilot
 
 `pybullet_transfer_smoke_v1` 将高层速度控制与 QP/循环安全层放入 Crazyflie 刚体/旋翼

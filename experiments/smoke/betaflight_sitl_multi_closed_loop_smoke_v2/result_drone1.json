@@ -1,0 +1,26 @@
+{
+  "status": "complete",
+  "metrics": {
+    "state_packets_sent": 4000.0,
+    "rc_packets_sent": 4000.0,
+    "motor_packets_received": 3991.0,
+    "invalid_motor_packets": 0.0,
+    "motor_packet_receive_fraction": 0.99775,
+    "drone_id": 1,
+    "elapsed_seconds": 39.06192030000966,
+    "initial_altitude": 0.0999608,
+    "final_altitude": 0.06216651797755041,
+    "maximum_altitude": 0.2174052774580134,
+    "minimum_altitude": 0.01333795392930028,
+    "final_position_error": 10.511608565350423,
+    "motor_output_max": 1.0,
+    "motor_output_mean_after_arm": 0.3240457155180297,
+    "finite_trajectory": true
+  },
+  "acceptance_criteria": {
+    "motor_packet_receive_fraction": true,
+    "finite_trajectory": true,
+    "motor_output_nonzero": true,
+    "altitude_response": true
+  }
+}

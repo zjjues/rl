@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_imappo_paper_smoke",
+  "level": "smoke",
+  "started_at_utc": "2026-08-02T12:22:03.508094+00:00",
+  "git_commit": "44cdbed6048cd1480252e630fb7d9305653ab3c2",
+  "git_status_short": "M docs/paper/CONTINUATION_STATE.md\n M docs/paper/METHODS_DRAFT.md\n M docs/paper/PUBLICATION_READINESS.md\n M docs/paper/RESEARCH_CHANGELOG.md\n M docs/paper/RESULTS_LEDGER.md\n D experiments/smoke/betaflight_sitl_closed_loop_smoke_v1/config.json\n D experiments/smoke/betaflight_sitl_closed_loop_smoke_v1/sitl_stdout.log\n D experiments/smoke/betaflight_sitl_closed_loop_smoke_v2/config.json\n D experiments/smoke/betaflight_sitl_closed_loop_smoke_v2/sitl_stdout.log\n D experiments/smoke/betaflight_sitl_closed_loop_smoke_v3/RESULT_CARD.md\n D experiments/smoke/betaflight_sitl_closed_loop_smoke_v3/checksums.sha256\n D experiments/smoke/betaflight_sitl_closed_loop_smoke_v3/config.json\n D experiments/smoke/betaflight_sitl_closed_loop_smoke_v3/manifest.json\n D experiments/smoke/betaflight_sitl_closed_loop_smoke_v3/result.json\n D experiments/smoke/betaflight_sitl_closed_loop_smoke_v3/sitl_stdout.log\n M run_betaflight_sitl_smoke.py\n M src/betaflight_sitl_bridge.py\n?? configs/research/betaflight_sitl.multi_smoke.v1.json\n?? configs/research/betaflight_sitl.multi_smoke.v2.json\n?? configs/research/betaflight_sitl.smoke.v19.json\n?? configs/research/uav_imappo_main.paper.json\n?? configs/research/uav_imappo_paper.smoke.json\n?? experiments/smoke/betaflight_sitl_closed_loop_smoke_v19/\n?? experiments/smoke/betaflight_sitl_closed_loop_smoke_v19_multiseed/\n?? experiments/smoke/betaflight_sitl_closed_loop_smoke_v19_multiseed_seed123/\n?? experiments/smoke/betaflight_sitl_closed_loop_smoke_v19_multiseed_seed256/\n?? experiments/smoke/betaflight_sitl_closed_loop_smoke_v19_multiseed_seed42/\n?? experiments/smoke/betaflight_sitl_closed_loop_smoke_v19_multiseed_seed512/\n?? experiments/smoke/betaflight_sitl_closed_loop_smoke_v19_multiseed_seed7/\n?? experiments/smoke/betaflight_sitl_multi_closed_loop_smoke_v2/\n?? run_betaflight_sitl_multi_smoke.py\n?? run_betaflight_sitl_multiseed.py\n?? \"\\346\\255\\243\\346\\226\\207.docx\"",
+  "command": [
+    "run_research_study.py",
+    "--config",
+    "configs/research/uav_imappo_paper.smoke.json",
+    "--allow-dirty"
+  ],
+  "python": "3.10.20 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:13:20) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "dependencies": {
+    "numpy": "1.26.4",
+    "torch": "2.4.1+cpu",
+    "gymnasium": "1.1.1",
+    "sentence-transformers": "3.2.1",
+    "scipy": "1.15.3"
+  },
+  "seed_protocol": {
+    "training_reset": "seed * 1000000 + training_episode",
+    "periodic_eval_reset": "seed * 1000000 + 500000 + evaluation_episode",
+    "collision_probe_reset": "seed * 1000000 + 600000 + evaluation_episode",
+    "final_tier_reset": "seed * 1000000 + 10000 + tier_index * 1000 + evaluation_episode",
+    "query_reset": "seed * 1000000 + 100000 + query_index * 10000 + tier_index * 1000 + evaluation_episode"
+  },
+  "config": {
+    "schema_version": 1,
+    "study_id": "uav_imappo_paper_smoke",
+    "level": "smoke",
+    "objective": "Smoke test: verify I-MAPPO vs MAPPO pipeline before full paper run.",
+    "seeds": [
+      7
+    ],
+    "bootstrap_seed": 20260802,
+    "environment": {
+      "name": "uav-scheduling-v2",
+      "n_agents": 8,
+      "n_targets": 6,
+      "safety_reward_coef": 1.0,
+      "task_reward_coef": 1.2,
+      "intent_reward_profiles_enabled": true
+    },
+    "training": {
+      "episodes": 10,
+      "steps": 200,
+      "rollout_length": 128,
+      "minibatch_size": 64,
+      "eval_interval": 5,
+      "actor_lr": 0.0003,
+      "critic_lr": 0.0003,
+      "eta": 0.5,
+      "eta_end": 0.1,
+      "entropy_coef": 0.001,
+      "entropy_coef_end": 0.0001,
+      "potential_update_mode": "normal",
+      "potential_update_interval": 4,
+      "device": "cpu"
+    },
+    "intent": {
+      "dim": 64,
+      "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+      "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+      "projection_seed": 17,
+      "code_seed": 29,
+      "adapter_ridge": 0.01,
+      "semantic_weight": 0.0,
+      "objective_weight": 0.0
+    },
+    "variants": [
+      {
+        "key": "imappo",
+        "intent_source": "onehot",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "direct",
+        "safety_filter_mode": "none",
+        "use_action_mask": true
+      },
+      {
+        "key": "mappo",
+        "intent_source": "onehot",
+        "algorithm": "imappo",
+        "critic_mode": "concat",
+        "policy_mode": "direct",
+        "safety_filter_mode": "none",
+        "use_action_mask": false,
+        "disable_intent_reward": true
+      },
+      {
+        "key": "matd3",
+        "intent_source": "onehot",
+        "algorithm": "matd3",
+        "critic_mode": "concat",
+        "policy_mode": "direct",
+        "safety_filter_mode": "none",
+        "use_action_mask": false,
+        "disable_intent_reward": true
+      }
+    ],
+    "evaluation": {
+      "episodes": 3,
+      "risk_tiers": {
+        "hard": {
+          "spawn_region_scale": 0.3,
+          "spawn_separation_scale": 0.8,
+          "intent_mode": "dense"
+        }
+      }
+    }
+  },
+  "status": "complete",
+  "completed_at_utc": "2026-08-02T12:22:53.160478+00:00"
+}
