@@ -1,6 +1,6 @@
 # UAV I-MAPPO 架构先导实验统计报告
 
-> 自动生成；证据等级为 pilot，不是 frozen paper result。
+> **证据失效通知（2026-08-20）：** `mappo` 变体实际运行 `algorithm="imappo"`，未实现的 `critic_mode="concat"` 执行为 attention。本报告仅保留历史数值，所有 MAPPO/attention-vs-concat 方法解释撤回。最新审计：`docs/paper/audits/uav_imappo_main_semantic_protocol_audit.json`。
 
 ## Artifact 审计
 

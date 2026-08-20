@@ -10,6 +10,7 @@ import os
 import platform
 import subprocess
 import sys
+import time
 from copy import deepcopy
 from importlib import metadata as importlib_metadata
 from pathlib import Path
@@ -123,6 +124,9 @@ def validate_spec(spec: Dict[str, object], allow_dirty: bool) -> None:
     variant_keys = [str(item["key"]) for item in spec["variants"]]
     if len(variant_keys) != len(set(variant_keys)):
         raise ValueError("variant keys must be unique")
+    from research_protocol import validate_variant_protocol
+
+    validate_variant_protocol(spec)
     forbidden = {"qmix", "vdn", "qmix_vdn"}
     if any(key.lower() in forbidden for key in variant_keys):
         raise ValueError("discrete QMIX/VDN cannot be registered in this continuous-action study")
@@ -146,6 +150,10 @@ def validate_spec(spec: Dict[str, object], allow_dirty: bool) -> None:
         for item in spec["variants"]
     ) and not str(spec["intent"].get("nli_model_revision", "")):
         raise ValueError("NLI decoder variants must pin intent.nli_model_revision")
+    if "ablation_contract" in spec:
+        from research_ablation import validate_ablation_contract
+
+        validate_ablation_contract(spec)
 
 
 def output_dir_for(spec: Dict[str, object]) -> Path:
@@ -199,6 +207,7 @@ RESUME_PROTOCOL_KEYS = (
     "intent",
     "evaluation",
     "generalization",
+    "ablation_contract",
 )
 
 
@@ -554,6 +563,12 @@ def build_config(spec: Dict[str, object], variant: Dict[str, object], seed: int)
 
 
 def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> Dict[str, object]:
+    started = time.perf_counter()
+    import torch
+
+    cuda_active = str(spec["training"].get("device", "cpu")).startswith("cuda") and torch.cuda.is_available()
+    if cuda_active:
+        torch.cuda.reset_peak_memory_stats()
     import envs.uav_scheduling_env  # noqa: F401
     from imappo import (
         build_uav_env_factory,
@@ -755,6 +770,35 @@ def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> 
                 ),
                 "transitions": dynamic_results,
             }
+    if cuda_active:
+        torch.cuda.synchronize()
+    parameter_audit = {}
+    for name in ("actor", "critic", "potential"):
+        module = getattr(algo, name, None)
+        if not isinstance(module, torch.nn.Module):
+            continue
+        parameters = list(module.parameters())
+        parameter_audit[name] = {
+            "total": int(sum(parameter.numel() for parameter in parameters)),
+            "trainable": int(
+                sum(parameter.numel() for parameter in parameters if parameter.requires_grad)
+            ),
+        }
+    text_cache = {"entry_count": 0, "keys": []}
+    if "objective_semantic_adapter" in sys.modules:
+        from objective_semantic_adapter import frozen_model_cache_info
+
+        text_cache = frozen_model_cache_info()
+    result["resource_audit"] = {
+        "wall_time_seconds": float(time.perf_counter() - started),
+        "device": str(cfg.device),
+        "cuda_peak_allocated_mb": (
+            float(torch.cuda.max_memory_allocated() / (1024.0 ** 2))
+            if cuda_active else 0.0
+        ),
+        "model_parameters": parameter_audit,
+        "frozen_text_model_cache": text_cache,
+    }
     return result
 
 
@@ -891,6 +935,7 @@ def summarize_comparisons(
     results_by_variant: Dict[str, List[Dict[str, object]]],
     treatment_key: str,
     bootstrap_seed: int,
+    baseline_keys: Optional[Iterable[str]] = None,
 ) -> Dict[str, object]:
     from research_statistics import paired_difference_summary
 
@@ -898,8 +943,13 @@ def summarize_comparisons(
         return {}
     treatment = sorted(results_by_variant[treatment_key], key=lambda item: int(item["seed"]))
     comparisons = {}
+    selected_baselines = (
+        None if baseline_keys is None else {str(key) for key in baseline_keys}
+    )
     for baseline_key, baseline_results in results_by_variant.items():
         if baseline_key == treatment_key:
+            continue
+        if selected_baselines is not None and baseline_key not in selected_baselines:
             continue
         baseline = sorted(baseline_results, key=lambda item: int(item["seed"]))
         if [item["seed"] for item in treatment] != [item["seed"] for item in baseline]:
@@ -1031,15 +1081,66 @@ def summarize_comparisons(
     return comparisons
 
 
-def annotate_primary_holm(comparisons: Dict[str, object]) -> Dict[str, object]:
+def summarize_ablation_comparisons(
+    results_by_variant: Dict[str, List[Dict[str, object]]],
+    contract_audit: Mapping[str, object],
+    bootstrap_seed: int,
+) -> Dict[str, object]:
+    """Build the exact chained contrasts registered by an ablation contract."""
+
+    comparisons = {}
+    for index, registered in enumerate(contract_audit["comparisons"]):
+        reference = str(registered["reference"])
+        variant = str(registered["variant"])
+        selected = summarize_comparisons(
+            results_by_variant,
+            treatment_key=variant,
+            bootstrap_seed=bootstrap_seed + index * 10_000,
+            baseline_keys=[reference],
+        )[reference]
+        selected.update(
+            {
+                "direction": "variant_minus_reference",
+                "reference_key": reference,
+                "variant_key": variant,
+                "factor": registered["factor"],
+                "changed_fields": registered["changed_fields"],
+                "hypothesis": registered["hypothesis"],
+                "primary_metrics": registered["primary_metrics"],
+                "primary_tiers": registered["primary_tiers"],
+            }
+        )
+        comparisons[variant] = selected
+    return comparisons
+
+
+def annotate_primary_holm(
+    comparisons: Dict[str, object],
+    contract_audit: Optional[Mapping[str, object]] = None,
+) -> Dict[str, object]:
     """Correct the predeclared safety/task comparison family across baselines/tiers."""
 
     from research_statistics import holm_adjust
 
     hypotheses = {}
+    registered = {
+        str(item["variant"]): item
+        for item in contract_audit.get("comparisons", [])
+    } if contract_audit else {}
     for baseline, comparison in comparisons.items():
-        for tier, tier_metrics in comparison.get("risk_tiers", {}).items():
-            for metric in ("collision_rate", "task_completion"):
+        tier_names = (
+            registered[baseline]["primary_tiers"]
+            if baseline in registered
+            else comparison.get("risk_tiers", {})
+        )
+        metrics = (
+            registered[baseline]["primary_metrics"]
+            if baseline in registered
+            else ("collision_rate", "task_completion")
+        )
+        for tier in tier_names:
+            tier_metrics = comparison.get("risk_tiers", {}).get(tier, {})
+            for metric in metrics:
                 if metric not in tier_metrics:
                     continue
                 key = f"{baseline}/{tier}/{metric}"
@@ -1050,7 +1151,16 @@ def annotate_primary_holm(comparisons: Dict[str, object]) -> Dict[str, object]:
         record = comparisons[baseline]["risk_tiers"][tier][metric]
         record["holm_adjusted_p_value"] = adjusted
         record["holm_reject_0_05"] = family["reject"][key]
-        record["multiplicity_family"] = "all baselines × tiers × {collision, task}"
+        record["multiplicity_family"] = (
+            "predeclared ablation contrasts"
+            if contract_audit
+            else "all baselines × tiers × {collision, task}"
+        )
+    family["family_definition"] = (
+        "ablation_contract primary_metrics × primary_tiers"
+        if contract_audit
+        else "all baselines × tiers × {collision, task}"
+    )
     return family
 
 
@@ -1115,17 +1225,30 @@ def main() -> None:
             bootstrap_seed=int(spec.get("bootstrap_seed", 20260801)),
         )
         results_by_variant[str(variant["key"])] = variant_results
-    paired_comparisons = summarize_comparisons(
-        results_by_variant,
-        treatment_key=str(spec.get("treatment_key", "pretrained_semantic")),
-        bootstrap_seed=int(spec.get("bootstrap_seed", 20260801)) + 1000,
-    )
-    multiplicity = annotate_primary_holm(paired_comparisons)
+    contract_audit = None
+    if "ablation_contract" in spec:
+        from research_ablation import validate_ablation_contract
+
+        contract_audit = validate_ablation_contract(spec)
+        paired_comparisons = summarize_ablation_comparisons(
+            results_by_variant,
+            contract_audit=contract_audit,
+            bootstrap_seed=int(spec.get("bootstrap_seed", 20260801)) + 1000,
+        )
+    else:
+        paired_comparisons = summarize_comparisons(
+            results_by_variant,
+            treatment_key=str(spec.get("treatment_key", "pretrained_semantic")),
+            bootstrap_seed=int(spec.get("bootstrap_seed", 20260801)) + 1000,
+        )
+    multiplicity = annotate_primary_holm(paired_comparisons, contract_audit)
     summary_payload = {
         "variants": summaries,
         "paired_comparisons": paired_comparisons,
         "primary_multiplicity": multiplicity,
     }
+    if contract_audit is not None:
+        summary_payload["ablation_contract_audit"] = contract_audit
     write_json(output_dir / "summary.json", summary_payload)
     write_result_card(output_dir, spec, summaries)
     manifest["status"] = "complete"

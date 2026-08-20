@@ -2,11 +2,19 @@
 
 当前没有满足 `paper` 或 `frozen` 协议的结果。
 
-## 2026-08-18 I-MAPPO 架构 pilot（审计修复后）
+## 2026-08-20 架构 pilot 解释撤回与修正 smoke
+
+最新语义协议审计将 `uav_imappo_main` 判为 `invalid`。虽然 40/40 per-seed 文件与 44 项 checksum 完整，但 treatment identity 不成立：`mappo` key 实际使用 `algorithm="imappo"`，未实现的 `critic_mode="concat"` 又执行为 attention。该 artifact 只能作为失败案例研究，不能作为 MAPPO、attention-vs-concat 或强算法比较证据。
+
+审计：`docs/paper/audits/uav_imappo_main_semantic_protocol_audit.json`。2026-08-18 的 pre/post repair 审计只证明文件身份和 provenance 修复，在加入计算语义验证之前生成，不覆盖本次错误。
+
+修正后的 `uav_marl_architecture_v2_smoke` 已完成 5 个变体 × 1 seed × 10 episodes，并通过 artifact 审计：I-MAPPO attention、I-MAPPO no-mask、centralized-MLP MAPPO、local-critic IPPO、centralized-twin-critic MATD3 的注册算法与实际路径一致。其 hard-tier 点估计仅用于管线诊断，不进入论文效果台账；正式证据必须来自 clean 10-seed、100 eval episodes/tier 的 `uav_marl_architecture_v2_paper`。
+
+## 2026-08-18 I-MAPPO 架构 pilot（历史数值；方法解释已撤回）
 
 Study：`experiments/pilot/uav_imappo_main/`。8 UAV、6 targets、3000 training episodes，I-MAPPO/MAPPO/MATD3/IPPO 各 10 个配对 seeds；每 seed/tier 50 个评估回合。四种方法均使用 one-hot intent 并关闭 intent reward。
 
-Artifact validator 结果：`valid`，40/40 per-seed results、44 checksum entries、0 errors；唯一 warning 为历史训练运行使用 dirty Git worktree。修复前顶层 provenance 只覆盖 IPPO，该失败审计与修复后审计分别保存在：
+当时的结构 validator 结果为 `valid`，只证明 40/40 per-seed results、44 checksum entries 与 JSON 身份一致；2026-08-20 新增语义协议检查后结果为 `invalid`。修复前顶层 provenance 只覆盖 IPPO，历史审计分别保存在：
 
 - `docs/paper/audits/uav_imappo_main_pre_repair.json`
 - `docs/paper/audits/uav_imappo_main_post_repair.json`
@@ -18,11 +26,11 @@ Artifact validator 结果：`valid`，40/40 per-seed results、44 checksum entri
 | MATD3 | 0.3779 | 0.4691 | 0.5640 | 0.5807 | 0.5876 | 0.5864 |
 | IPPO | 0.3030 | 0.4059 | 0.6249 | 0.6479 | 0.6533 | 0.6562 |
 
-配对主 family 使用 18 项 Holm 校正。I-MAPPO 相对 MAPPO 的 collision/task 结果全部不拒绝零假设；hard collision 的均值差为 +0.12576，bootstrap 95% CI [0.03364, 0.21996]，exact p=0.037109，但 Holm p=0.296875。I-MAPPO 相对 IPPO/MATD3 的 easy/medium collision 更低，但 task completion 也更低，显示安全—任务权衡而非全面优势。
+这些数值是历史输出，不再解释为 I-MAPPO 相对 MAPPO 的效应；Holm 校正不能修复错误的算法身份。
 
 生成产物：`docs/paper/generated/uav_imappo_main/`，包含两张图、两个 CSV、完整统计报告和哈希 manifest。
 
-限制：level 为 pilot；50 eval episodes 低于 paper 门槛 100；原始训练来自 dirty worktree；没有自然语言输入。因此不能登记为 paper/frozen 结果，也不支持语义意图优势。
+限制：除 pilot、50 eval、dirty worktree 和无自然语言外，还存在决定性的 algorithm/critic identity 错误。因此不能登记为任何方法比较证据。
 
 ## 2026-08-02 Betaflight SITL 单机闭环 smoke
 

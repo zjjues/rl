@@ -119,6 +119,23 @@ class ResearchArtifactTests(unittest.TestCase):
             self.assertEqual(report["status"], "invalid")
             self.assertTrue(any("checksum mismatch" in item for item in report["errors"]))
 
+    def test_paper_artifact_requires_per_seed_resource_audit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = self.make_artifact(root)
+            config["level"] = "paper"
+            config["evaluation"]["episodes"] = 100
+            write_json(root / "config.json", config)
+            manifest = json.loads((root / "manifest.json").read_text())
+            manifest["config"] = config
+            write_json(root / "manifest.json", manifest)
+            write_checksums(root)
+            report = validate_study_artifact(root, config)
+            self.assertEqual(report["status"], "invalid")
+            self.assertTrue(
+                any("lacks resource_audit" in item for item in report["errors"])
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

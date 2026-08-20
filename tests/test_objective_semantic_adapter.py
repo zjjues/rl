@@ -9,11 +9,55 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from objective_semantic_adapter import ObjectiveSemanticAdapter, fit_dual_ridge  # noqa: E402
+from objective_semantic_adapter import (  # noqa: E402
+    ObjectiveSemanticAdapter,
+    _cached_frozen_model,
+    clear_frozen_model_cache,
+    fit_dual_ridge,
+    frozen_model_cache_info,
+)
 from intent_objectives import OBJECTIVE_KEYS  # noqa: E402
 
 
 class ObjectiveSemanticAdapterTests(unittest.TestCase):
+    def tearDown(self):
+        clear_frozen_model_cache()
+
+    def test_frozen_model_cache_reuses_exact_revision_and_device(self):
+        class Parameter:
+            def __init__(self):
+                self.requires_grad = True
+
+            def requires_grad_(self, value):
+                self.requires_grad = value
+
+        class FakeModel:
+            def __init__(self):
+                self.training = True
+                self.parameter = Parameter()
+
+            def eval(self):
+                self.training = False
+
+            def parameters(self):
+                return [self.parameter]
+
+        calls = []
+
+        def factory():
+            calls.append(1)
+            return FakeModel()
+
+        first = _cached_frozen_model("encoder", "model", "rev", "cuda", factory)
+        second = _cached_frozen_model("encoder", "model", "rev", "cuda", factory)
+        third = _cached_frozen_model("encoder", "model", "rev2", "cuda", factory)
+        self.assertIs(first, second)
+        self.assertIsNot(first, third)
+        self.assertEqual(len(calls), 2)
+        self.assertFalse(first.training)
+        self.assertFalse(first.parameter.requires_grad)
+        self.assertEqual(frozen_model_cache_info()["entry_count"], 2)
+
     def test_dual_ridge_recovers_training_targets(self):
         rng = np.random.default_rng(7)
         embeddings = rng.normal(size=(8, 12)).astype(np.float32)

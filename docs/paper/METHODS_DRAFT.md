@@ -281,4 +281,20 @@ Composite manifest 使用 schema v2。顶层 `config` 表示合并后的完整�
 
 ## 11. 架构 pilot 的解释边界
 
-`uav_imappo_main` 的四个变体都使用 25 维真实 one-hot identity code，并设置 `disable_intent_reward=true`。因此它隔离的是 attention critic、action mask 与算法结构差异，而不是文本编码或语言理解。该实验可以否证“attention + mask 必然优于 concat MAPPO”，不能用于支持“语义意图提高 MARL 性能”。语义贡献必须由独立的 language/one-hot/random/hash、w/o NLI gate、w/o intent reward、w/o CBF 和动态干预实验建立。
+`uav_imappo_main` 的四个变体都使用 25 维真实 one-hot identity code，并设置 `disable_intent_reward=true`。2026-08-20 的实现审计进一步发现，名为 MAPPO 的变体实际仍使用 `algorithm="imappo"`，且未实现的 `critic_mode="concat"` 执行为 attention。故该实验连“attention + mask 相对 concat MAPPO”也不能回答；历史数值只保留为 protocol-identity 失败案例。
+
+修正协议 `uav_marl_architecture_v2_paper` 使用五个显式计算路径：identity-conditioned attention I-MAPPO、其 no-mask 版本、全局状态 centralized-MLP MAPPO、local-critic IPPO 和 centralized-twin-critic MATD3。运行前 semantic validator 检查保留 baseline key 与 algorithm 一致，拒绝任何未知 critic mode，并禁止 IPPO/MAPPO 的静默 critic 覆盖。正式比较必须从 clean commit 重新训练，不能重标旧 checkpoint 或逐 seed JSON。
+
+## 12. 链式消融契约
+
+语义系统的多个机制存在依赖关系，因此全部相对 full 的平行消融会把表示、解码器和规则先验混在一起。预注册消融改为以 full 为根的有向树。每条边定义 reference、variant、唯一 factor、精确 changed fields、primary tiers、primary metrics 与双侧可证伪假设。验证器要求每个非 full 变体恰有一个父节点、整张图从 full 可达、无环，并比较完整 variant 字典确认没有未声明漂移。
+
+主链为：full → no-profile-prior → identity-oracle → no-intent。第一条隔离解码目标画像进入经典控制先验的影响；第二条在 neutral prior 下比较冻结语义几何与 canonical-label identity code；第三条移除 actor/critic intent 输入及 intent-potential shaping。其余 mask、critic attention、intent shaping、CBF、NLI gate 和 learned residual 均直接相对 full 单因素改变。
+
+`intent_source="none"` 不改变任务生成：标签仍从同一 catalog、同一 posture 和共同随机数协议采样，环境仍使用同一标签奖励画像；actor 与 critic 接收全零 64 维向量。为保持与 full 相同的动作可行域，posture-derived mask 仍生效，因此它是“无 actor/critic intent、保留 mask 侧信道”的对照，而非信息论意义的零任务信息。metadata 与报告必须披露该边界。
+
+## 13. 资源与模型缓存审计
+
+MiniLM 和 NLI CrossEncoder 在单个 study 进程内按 `(model, revision, device)` 复用。缓存对象固定为 eval mode 且所有参数 `requires_grad=false`；每个变体仍独立拟合轻量 objective adapter、维护 profile cache 并初始化 MARL 网络。该优化不改变模型权重或预测函数，只消除重复磁盘加载与显存构造。
+
+每个逐 seed result 记录总墙钟时间、CUDA 峰值、actor/critic/potential 的总参数和可训练参数、以及当时的冻结文本模型缓存键。paper 报告同时给出 transition 数、训练更新次数与这些系统资源，防止只报告任务指标而隐藏推理/训练代价。

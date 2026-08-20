@@ -1,0 +1,395 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_imappo_ablation_smoke_v2",
+  "level": "smoke",
+  "started_at_utc": "2026-08-18T03:25:19.790272+00:00",
+  "git_commit": "86872472bfe05b408debe8938e68fecaf88dd2e0",
+  "git_status_short": "M configs/research/uav_imappo_ablation.pilot.json\n M configs/research/uav_imappo_ablation.smoke.json\n M run_research_study.py\n M src/imappo.py\n M src/research_artifact.py\n M tests/test_imappo_intent_alignment.py\n?? configs/research/uav_marl_architecture_v2.paper.json\n?? configs/research/uav_marl_architecture_v2.smoke.json\n?? docs/paper/audits/uav_imappo_main_semantic_protocol_audit.json\n?? docs/paper/audits/uav_marl_architecture_v2_smoke.json\n?? experiments/smoke/uav_marl_architecture_v2_smoke/\n?? src/research_ablation.py\n?? src/research_protocol.py\n?? tests/test_research_ablation.py\n?? tests/test_research_protocol.py",
+  "command": [
+    "run_research_study.py",
+    "--config",
+    "configs\\research\\uav_imappo_ablation.smoke.json",
+    "--allow-dirty"
+  ],
+  "python": "3.10.20 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:13:20) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "dependencies": {
+    "numpy": "1.26.4",
+    "torch": "2.4.1+cu124",
+    "gymnasium": "1.1.1",
+    "sentence-transformers": "3.2.1",
+    "scipy": "1.15.3"
+  },
+  "seed_protocol": {
+    "training_reset": "seed * 1000000 + training_episode",
+    "periodic_eval_reset": "seed * 1000000 + 500000 + evaluation_episode",
+    "collision_probe_reset": "seed * 1000000 + 600000 + evaluation_episode",
+    "final_tier_reset": "seed * 1000000 + 10000 + tier_index * 1000 + evaluation_episode",
+    "query_reset": "seed * 1000000 + 100000 + query_index * 10000 + tier_index * 1000 + evaluation_episode"
+  },
+  "config": {
+    "schema_version": 1,
+    "study_id": "uav_imappo_ablation_smoke_v2",
+    "level": "smoke",
+    "objective": "Pipeline validation for the pre-registered chained semantic and controller ablation.",
+    "seeds": [
+      7
+    ],
+    "bootstrap_seed": 20260802,
+    "treatment_key": "imappo_full",
+    "environment": {
+      "name": "uav-scheduling-v2",
+      "n_agents": 8,
+      "n_targets": 6,
+      "safety_reward_coef": 1.0,
+      "task_reward_coef": 1.2,
+      "intent_reward_profiles_enabled": true
+    },
+    "training": {
+      "episodes": 10,
+      "steps": 100,
+      "rollout_length": 128,
+      "minibatch_size": 64,
+      "eval_interval": 5,
+      "actor_lr": 0.0003,
+      "critic_lr": 0.0003,
+      "eta": 0.5,
+      "eta_end": 0.1,
+      "entropy_coef": 0.001,
+      "entropy_coef_end": 0.0001,
+      "potential_update_mode": "normal",
+      "potential_update_interval": 4,
+      "device": "cuda"
+    },
+    "intent": {
+      "dim": 64,
+      "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+      "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+      "nli_model": "cross-encoder/nli-deberta-v3-small",
+      "nli_model_revision": "e9890682d9e4279b7ae6d0fcfb435a43206280ec",
+      "nli_batch_size": 32,
+      "projection_seed": 17,
+      "code_seed": 29,
+      "adapter_ridge": 0.01,
+      "semantic_weight": 0.5,
+      "objective_weight": 1.0
+    },
+    "variants": [
+      {
+        "key": "imappo_full",
+        "intent_source": "objective_grounded_semantic",
+        "intent_profile_decoder": "nli_prototype_gated",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "residual_rule",
+        "rule_prior_context": "objective_profile",
+        "residual_action_scale": 0.25,
+        "safety_filter_mode": "pairwise_cbf",
+        "cbf_base_min_distance": 1.0,
+        "cbf_iterations": 4,
+        "use_action_mask": true,
+        "disable_intent_reward": false
+      },
+      {
+        "key": "no_mask",
+        "intent_source": "objective_grounded_semantic",
+        "intent_profile_decoder": "nli_prototype_gated",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "residual_rule",
+        "rule_prior_context": "objective_profile",
+        "residual_action_scale": 0.25,
+        "safety_filter_mode": "pairwise_cbf",
+        "cbf_base_min_distance": 1.0,
+        "cbf_iterations": 4,
+        "use_action_mask": false,
+        "disable_intent_reward": false
+      },
+      {
+        "key": "no_attention",
+        "intent_source": "objective_grounded_semantic",
+        "intent_profile_decoder": "nli_prototype_gated",
+        "algorithm": "imappo",
+        "critic_mode": "uniform",
+        "policy_mode": "residual_rule",
+        "rule_prior_context": "objective_profile",
+        "residual_action_scale": 0.25,
+        "safety_filter_mode": "pairwise_cbf",
+        "cbf_base_min_distance": 1.0,
+        "cbf_iterations": 4,
+        "use_action_mask": true,
+        "disable_intent_reward": false
+      },
+      {
+        "key": "no_intent_reward",
+        "intent_source": "objective_grounded_semantic",
+        "intent_profile_decoder": "nli_prototype_gated",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "residual_rule",
+        "rule_prior_context": "objective_profile",
+        "residual_action_scale": 0.25,
+        "safety_filter_mode": "pairwise_cbf",
+        "cbf_base_min_distance": 1.0,
+        "cbf_iterations": 4,
+        "use_action_mask": true,
+        "disable_intent_reward": true
+      },
+      {
+        "key": "no_cbf",
+        "intent_source": "objective_grounded_semantic",
+        "intent_profile_decoder": "nli_prototype_gated",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "residual_rule",
+        "rule_prior_context": "objective_profile",
+        "residual_action_scale": 0.25,
+        "safety_filter_mode": "none",
+        "cbf_base_min_distance": 1.0,
+        "cbf_iterations": 4,
+        "use_action_mask": true,
+        "disable_intent_reward": false
+      },
+      {
+        "key": "no_nli_gate",
+        "intent_source": "objective_grounded_semantic",
+        "intent_profile_decoder": "nli_entailment",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "residual_rule",
+        "rule_prior_context": "objective_profile",
+        "residual_action_scale": 0.25,
+        "safety_filter_mode": "pairwise_cbf",
+        "cbf_base_min_distance": 1.0,
+        "cbf_iterations": 4,
+        "use_action_mask": true,
+        "disable_intent_reward": false
+      },
+      {
+        "key": "prior_only",
+        "intent_source": "objective_grounded_semantic",
+        "intent_profile_decoder": "nli_prototype_gated",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "residual_rule",
+        "rule_prior_context": "objective_profile",
+        "residual_action_scale": 0.0,
+        "safety_filter_mode": "pairwise_cbf",
+        "cbf_base_min_distance": 1.0,
+        "cbf_iterations": 4,
+        "use_action_mask": true,
+        "disable_intent_reward": false
+      },
+      {
+        "key": "no_profile_prior",
+        "intent_source": "objective_grounded_semantic",
+        "intent_profile_decoder": "nli_prototype_gated",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "residual_rule",
+        "rule_prior_context": "neutral",
+        "residual_action_scale": 0.25,
+        "safety_filter_mode": "pairwise_cbf",
+        "cbf_base_min_distance": 1.0,
+        "cbf_iterations": 4,
+        "use_action_mask": true,
+        "disable_intent_reward": false
+      },
+      {
+        "key": "identity_oracle",
+        "intent_source": "onehot",
+        "intent_profile_decoder": "none",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "residual_rule",
+        "rule_prior_context": "neutral",
+        "residual_action_scale": 0.25,
+        "safety_filter_mode": "pairwise_cbf",
+        "cbf_base_min_distance": 1.0,
+        "cbf_iterations": 4,
+        "use_action_mask": true,
+        "disable_intent_reward": false
+      },
+      {
+        "key": "no_intent",
+        "intent_source": "none",
+        "intent_profile_decoder": "none",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "residual_rule",
+        "rule_prior_context": "neutral",
+        "residual_action_scale": 0.25,
+        "safety_filter_mode": "pairwise_cbf",
+        "cbf_base_min_distance": 1.0,
+        "cbf_iterations": 4,
+        "use_action_mask": true,
+        "disable_intent_reward": true
+      }
+    ],
+    "evaluation": {
+      "episodes": 3,
+      "risk_tiers": {
+        "hard": {
+          "spawn_region_scale": 0.3,
+          "spawn_separation_scale": 0.8,
+          "intent_mode": "dense"
+        }
+      }
+    },
+    "ablation_contract": {
+      "version": 1,
+      "treatment_key": "imappo_full",
+      "comparisons": [
+        {
+          "reference": "imappo_full",
+          "variant": "no_mask",
+          "factor": "action_mask",
+          "changed_fields": [
+            "use_action_mask"
+          ],
+          "primary_metrics": [
+            "collision_rate",
+            "task_completion"
+          ],
+          "primary_tiers": [
+            "hard"
+          ],
+          "hypothesis": "Removing the intent-derived action mask changes hard-tier safety or task completion."
+        },
+        {
+          "reference": "imappo_full",
+          "variant": "no_attention",
+          "factor": "attention_critic",
+          "changed_fields": [
+            "critic_mode"
+          ],
+          "primary_metrics": [
+            "collision_rate",
+            "task_completion"
+          ],
+          "primary_tiers": [
+            "hard"
+          ],
+          "hypothesis": "Replacing the intent-attention critic changes hard-tier safety or task completion."
+        },
+        {
+          "reference": "imappo_full",
+          "variant": "no_intent_reward",
+          "factor": "intent_potential_shaping",
+          "changed_fields": [
+            "disable_intent_reward"
+          ],
+          "primary_metrics": [
+            "collision_rate",
+            "task_completion"
+          ],
+          "primary_tiers": [
+            "hard"
+          ],
+          "hypothesis": "Removing intent-potential shaping changes hard-tier safety or task completion."
+        },
+        {
+          "reference": "imappo_full",
+          "variant": "no_cbf",
+          "factor": "cbf_safety_filter",
+          "changed_fields": [
+            "safety_filter_mode"
+          ],
+          "primary_metrics": [
+            "collision_rate",
+            "task_completion"
+          ],
+          "primary_tiers": [
+            "hard"
+          ],
+          "hypothesis": "Removing the pairwise CBF filter changes hard-tier safety or task completion."
+        },
+        {
+          "reference": "imappo_full",
+          "variant": "no_nli_gate",
+          "factor": "nli_prototype_gate",
+          "changed_fields": [
+            "intent_profile_decoder"
+          ],
+          "primary_metrics": [
+            "collision_rate",
+            "task_completion"
+          ],
+          "primary_tiers": [
+            "hard"
+          ],
+          "hypothesis": "Replacing prototype-gated NLI decoding with ungated entailment changes hard-tier safety or task completion."
+        },
+        {
+          "reference": "imappo_full",
+          "variant": "prior_only",
+          "factor": "learned_residual",
+          "changed_fields": [
+            "residual_action_scale"
+          ],
+          "primary_metrics": [
+            "collision_rate",
+            "task_completion"
+          ],
+          "primary_tiers": [
+            "hard"
+          ],
+          "hypothesis": "Suppressing the learned residual changes hard-tier safety or task completion."
+        },
+        {
+          "reference": "imappo_full",
+          "variant": "no_profile_prior",
+          "factor": "semantic_rule_prior",
+          "changed_fields": [
+            "rule_prior_context"
+          ],
+          "primary_metrics": [
+            "collision_rate",
+            "task_completion"
+          ],
+          "primary_tiers": [
+            "hard"
+          ],
+          "hypothesis": "Removing the decoded objective-profile rule prior changes hard-tier safety or task completion."
+        },
+        {
+          "reference": "no_profile_prior",
+          "variant": "identity_oracle",
+          "factor": "semantic_representation",
+          "changed_fields": [
+            "intent_profile_decoder",
+            "intent_source"
+          ],
+          "primary_metrics": [
+            "collision_rate",
+            "task_completion"
+          ],
+          "primary_tiers": [
+            "hard"
+          ],
+          "hypothesis": "Replacing semantic geometry with a canonical-label identity oracle changes hard-tier safety or task completion when the rule prior is neutral."
+        },
+        {
+          "reference": "identity_oracle",
+          "variant": "no_intent",
+          "factor": "intent_channel",
+          "changed_fields": [
+            "disable_intent_reward",
+            "intent_source"
+          ],
+          "primary_metrics": [
+            "collision_rate",
+            "task_completion"
+          ],
+          "primary_tiers": [
+            "hard"
+          ],
+          "hypothesis": "Removing both policy intent input and intent-potential shaping changes hard-tier safety or task completion relative to the identity oracle."
+        }
+      ]
+    }
+  },
+  "status": "interrupted",
+  "interrupted_at_utc": "2026-08-20T05:49:00+00:00",
+  "interruption_reason": "Stopped after 2/10 variants because repeated frozen NLI model construction made the smoke protocol impractically slow; results retained as incomplete diagnostic evidence."
+}

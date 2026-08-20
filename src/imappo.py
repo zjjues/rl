@@ -471,12 +471,15 @@ class IMAPPO:
     def __init__(self, config: IMAPPOConfig):
         if config.policy_mode not in {"direct", "residual_rule"}:
             raise ValueError(f"unsupported policy_mode: {config.policy_mode}")
+        if config.critic_mode not in {"attention", "uniform", "mlp", "local"}:
+            raise ValueError(f"unsupported critic_mode: {config.critic_mode}")
         if config.rule_prior_context not in {
             "neutral", "oracle_posture", "intent_retrieval", "objective_profile",
             "oracle_profile",
         }:
             raise ValueError(f"unsupported rule_prior_context: {config.rule_prior_context}")
         if config.intent_profile_decoder not in {
+            "none",
             "dual_ridge", "concept_anchor", "contrastive_anchor", "prototype_ridge",
             "augmented_prototype_ridge",
             "nli_entailment",
@@ -515,7 +518,7 @@ class IMAPPO:
             "objective_grounded_semantic",
         }:
             self._init_intent_library()
-        elif config.algorithm in {"mappo", "ippo"}:
+        elif config.algorithm in {"mappo", "ippo"} or config.intent_source == "none":
             self.task_intent_library = IntentLibrary.create_onehot()
             if config.intent_train_labels:
                 self.task_intent_library = self.task_intent_library.subset_by_labels(
@@ -682,6 +685,8 @@ class IMAPPO:
             return torch.empty((0, self.config.intent_dim), device=self.device)
         if self.config.algorithm in {"mappo", "ippo"}:
             return torch.zeros((len(entries), self.config.intent_dim), device=self.device)
+        if self.config.intent_source == "none":
+            return torch.zeros((len(entries), self.config.intent_dim), device=self.device)
         if self.config.intent_source == "objective_grounded_semantic":
             if self.objective_semantic_adapter is None:
                 raise RuntimeError("objective semantic adapter is not initialized")
@@ -730,12 +735,15 @@ class IMAPPO:
 
     def intent_representation_metadata(self) -> Dict[str, object]:
         """Return metadata that must accompany every experiment result."""
-        if self.config.algorithm in {"mappo", "ippo"}:
+        if self.config.algorithm in {"mappo", "ippo"} or self.config.intent_source == "none":
             return {
                 "representation_type": "none",
                 "semantic_geometry": False,
                 "intent_conditioning": False,
-                "task_labels_hidden_from_policy": True,
+                "task_labels_hidden_from_actor_and_critic": True,
+                "task_posture_exposed_via_action_mask": bool(
+                    self.config.intent_source == "none" and self.config.use_action_mask
+                ),
                 "policy_mode": self.config.policy_mode,
                 "navigation_prior": (
                     "target_tracking_plus_neighbor_potential_field"
@@ -879,6 +887,19 @@ class IMAPPO:
                 uniform_mask,
                 labels[0],
             )
+        if self.config.intent_source == "none":
+            _, labels, _ = self.task_intent_library.sample_with_info(
+                1, posture=tactical_posture
+            )
+            label = labels[0]
+            posture = self.task_intent_library.posture_for_label(label)
+            if posture == "neutral":
+                posture = tactical_posture
+            return (
+                torch.zeros(self.config.intent_dim, device=self.device),
+                self._action_mask_for_posture(posture),
+                label,
+            )
 
         # Representation-library modes use the same posture taxonomy as the environment.
         if self.intent_library is not None:
@@ -931,6 +952,19 @@ class IMAPPO:
                 )
                 label = self.task_intent_library.labels[int(candidates[0])]
             return torch.zeros(self.config.intent_dim, device=self.device), uniform_mask, label
+        if self.config.intent_source == "none":
+            label = "safety_first" if mode == "dense" else "balanced"
+            if self.task_intent_library.get_by_label(label) is None:
+                candidates = self.task_intent_library.indices_for_posture(
+                    evaluation_tactical_posture(mode)
+                )
+                label = self.task_intent_library.labels[int(candidates[0])]
+            posture = self.task_intent_library.posture_for_label(label)
+            return (
+                torch.zeros(self.config.intent_dim, device=self.device),
+                self._action_mask_for_posture(posture),
+                label,
+            )
 
         # Representation-library modes use pre-cached, named evaluation intents.
         if self.intent_library is not None:

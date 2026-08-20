@@ -1,0 +1,17 @@
+{
+  "status": "invalid",
+  "study_id": "uav_imappo_main",
+  "level": "pilot",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\pilot\\uav_imappo_main",
+  "variant_count": 4,
+  "seed_count": 10,
+  "expected_result_count": 40,
+  "checksum_entry_count": 44,
+  "variant_protocol_audit": null,
+  "errors": [
+    "invalid variant protocol: variant 'mappo' uses unsupported critic_mode 'concat'; legacy 'concat' was not implemented and executed as attention"
+  ],
+  "warnings": [
+    "study invocation used a dirty Git worktree"
+  ]
+}

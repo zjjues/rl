@@ -21,6 +21,7 @@ PROTOCOL_KEYS = (
     "intent",
     "evaluation",
     "generalization",
+    "ablation_contract",
 )
 PRIMARY_METRICS = ("collision_rate", "task_completion", "episode_return")
 
@@ -115,6 +116,21 @@ def validate_study_artifact(
         }
 
     reference = dict(expected_spec) if expected_spec is not None else config
+    try:
+        from research_protocol import validate_variant_protocol
+
+        protocol_audit = validate_variant_protocol(reference)
+    except ValueError as exc:
+        protocol_audit = None
+        errors.append(f"invalid variant protocol: {exc}")
+    contract_audit = None
+    if "ablation_contract" in reference:
+        try:
+            from research_ablation import validate_ablation_contract
+
+            contract_audit = validate_ablation_contract(reference)
+        except ValueError as exc:
+            errors.append(f"invalid ablation contract: {exc}")
     for key in PROTOCOL_KEYS:
         if config.get(key) != reference.get(key):
             errors.append(f"artifact config differs from expected protocol field {key!r}")
@@ -128,6 +144,7 @@ def validate_study_artifact(
         errors.append("artifact treatment_key differs from expected config")
 
     seeds = [int(seed) for seed in reference.get("seeds", [])]
+    artifact_level = str(reference.get("level", ""))
     tiers = list(reference.get("evaluation", {}).get("risk_tiers", {}))
     result_values: Dict[str, Dict[str, Dict[str, list[float]]]] = {}
     observed_paths = set()
@@ -146,6 +163,32 @@ def validate_study_artifact(
             result_variant = result.get("variant")
             if not isinstance(result_variant, Mapping) or dict(result_variant) != variant:
                 errors.append(f"result variant mismatch: {relative.as_posix()}")
+            if artifact_level == "paper":
+                resource = result.get("resource_audit")
+                if not isinstance(resource, Mapping):
+                    errors.append(f"paper result lacks resource_audit: {relative.as_posix()}")
+                else:
+                    required_resource = {
+                        "wall_time_seconds",
+                        "device",
+                        "cuda_peak_allocated_mb",
+                        "model_parameters",
+                        "frozen_text_model_cache",
+                    }
+                    missing_resource = sorted(required_resource - set(resource))
+                    if missing_resource:
+                        errors.append(
+                            f"paper resource_audit missing {missing_resource}: "
+                            f"{relative.as_posix()}"
+                        )
+                    elif (
+                        not np.isfinite(float(resource["wall_time_seconds"]))
+                        or float(resource["wall_time_seconds"]) <= 0.0
+                        or not np.isfinite(float(resource["cuda_peak_allocated_mb"]))
+                    ):
+                        errors.append(
+                            f"paper resource_audit is non-finite: {relative.as_posix()}"
+                        )
             tier_metrics = result.get("tier_metrics")
             if not isinstance(tier_metrics, Mapping):
                 errors.append(f"missing tier_metrics: {relative.as_posix()}")
@@ -194,6 +237,9 @@ def validate_study_artifact(
             errors.append("summary lacks primary_multiplicity audit")
         elif int(multiplicity.get("family_size", -1)) <= 0:
             errors.append("primary_multiplicity family is empty")
+    if contract_audit is not None and summary is not None:
+        if summary.get("ablation_contract_audit") != contract_audit:
+            errors.append("summary ablation contract audit differs from config")
 
     if manifest is not None:
         if manifest.get("config") != config:
@@ -220,7 +266,7 @@ def validate_study_artifact(
             if covered != set(expected_variants):
                 errors.append("manifest run history does not cover all expected variants")
 
-    level = str(reference.get("level", ""))
+    level = artifact_level
     eval_episodes = int(reference.get("evaluation", {}).get("episodes", 0))
     if level == "paper":
         if len(seeds) < 10 or eval_episodes < 100:
@@ -236,6 +282,7 @@ def validate_study_artifact(
         "seed_count": len(seeds),
         "expected_result_count": len(expected_variants) * len(seeds),
         "checksum_entry_count": checksum_count,
+        "variant_protocol_audit": protocol_audit,
         "errors": errors,
         "warnings": sorted(set(warnings)),
     }

@@ -2,12 +2,92 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
 from intent_objectives import OBJECTIVE_KEYS, resolve_intent_reward_profile
 from intent_semantic_encoder import _normalise_rows, _project_embeddings
+
+
+_FROZEN_MODEL_CACHE: Dict[Tuple[str, str, str, str], object] = {}
+
+
+def clear_frozen_model_cache() -> None:
+    """Clear process-local encoder reuse, primarily for isolated tests."""
+
+    _FROZEN_MODEL_CACHE.clear()
+
+
+def frozen_model_cache_info() -> Dict[str, object]:
+    return {
+        "entry_count": len(_FROZEN_MODEL_CACHE),
+        "keys": [list(key) for key in sorted(_FROZEN_MODEL_CACHE)],
+    }
+
+
+def _freeze_for_inference(model: object) -> object:
+    module = getattr(model, "model", model)
+    if hasattr(module, "eval"):
+        module.eval()
+    if hasattr(module, "parameters"):
+        for parameter in module.parameters():
+            parameter.requires_grad_(False)
+    return model
+
+
+def _cached_frozen_model(
+    kind: str,
+    name: str,
+    revision: str,
+    device: Optional[str],
+    factory: Callable[[], object],
+) -> object:
+    """Reuse immutable encoders across sequential variants in one study process."""
+
+    key = (str(kind), str(name), str(revision or "unversioned"), str(device or "auto"))
+    if key not in _FROZEN_MODEL_CACHE:
+        _FROZEN_MODEL_CACHE[key] = _freeze_for_inference(factory())
+    return _FROZEN_MODEL_CACHE[key]
+
+
+def _load_sentence_transformer(
+    model_name: str, model_revision: Optional[str], device: Optional[str]
+) -> object:
+    try:
+        from sentence_transformers import SentenceTransformer
+    except ImportError as exc:
+        raise RuntimeError(
+            "objective-grounded semantics requires sentence-transformers"
+        ) from exc
+
+    def factory() -> object:
+        kwargs = {"device": device}
+        if model_revision:
+            kwargs["revision"] = model_revision
+        return SentenceTransformer(model_name, **kwargs)
+
+    return _cached_frozen_model(
+        "sentence_transformer", model_name, model_revision or "", device, factory
+    )
+
+
+def _load_cross_encoder(
+    model_name: str, model_revision: str, device: Optional[str]
+) -> object:
+    from sentence_transformers import CrossEncoder
+
+    return _cached_frozen_model(
+        "cross_encoder",
+        model_name,
+        model_revision,
+        device,
+        lambda: CrossEncoder(
+            model_name,
+            revision=model_revision,
+            device=device,
+        ),
+    )
 
 
 OBJECTIVE_TEXT_ANCHORS: Dict[str, Tuple[str, str]] = {
@@ -240,14 +320,7 @@ class ObjectiveSemanticAdapter:
     ) -> "ObjectiveSemanticAdapter":
         if len(entries) < 2:
             raise ValueError("objective adapter requires at least two training intents")
-        try:
-            from sentence_transformers import SentenceTransformer
-        except ImportError as exc:
-            raise RuntimeError("objective-grounded semantics requires sentence-transformers") from exc
-        model_kwargs = {"device": device}
-        if model_revision:
-            model_kwargs["revision"] = model_revision
-        model = SentenceTransformer(model_name, **model_kwargs)
+        model = _load_sentence_transformer(model_name, model_revision, device)
         descriptions = [description for _, description in entries]
         embeddings = model.encode(
             descriptions,
@@ -273,12 +346,8 @@ class ObjectiveSemanticAdapter:
         }:
             if not nli_model_revision:
                 raise ValueError("nli_entailment requires a pinned nli_model_revision")
-            from sentence_transformers import CrossEncoder
-
-            nli_model = CrossEncoder(
-                nli_model_name,
-                revision=nli_model_revision,
-                device=device,
+            nli_model = _load_cross_encoder(
+                nli_model_name, nli_model_revision, device
             )
             label_names = {
                 str(value).lower() for value in nli_model.model.config.id2label.values()

@@ -1,15 +1,15 @@
-# I-MAPPO 实验计划与结果
+# I-MAPPO 实验计划与结果（历史架构结果已撤回解释）
 
-> 最后更新：2026-08-18
+> 最后更新：2026-08-20
 > 实验分支：testv1
-> 证据等级：经 artifact 审计的 pilot；不是 frozen paper result
+> 证据等级：历史文件完整但方法协议无效；不得作为算法比较结果
 
-完整自动统计报告与图表位于 `docs/paper/generated/uav_imappo_main/`。修复后审计为 40/40 results、44 checksum entries、0 errors；历史 dirty-worktree warning 保留。下述实验仅隔离 one-hot 条件下的架构差异，不验证自然语言语义。
+**撤回说明：** 2026-08-20 审计确认 `mappo` key 实际注册 `algorithm="imappo"`，且 `critic_mode="concat"` 没有实现、旧代码执行为 attention。下述 40-run 数值保留用于 provenance 和失败分析，但所有“标准 MAPPO”“attention-vs-concat”和强基线结论撤回。最新审计见 `docs/paper/audits/uav_imappo_main_semantic_protocol_audit.json`。
 
 ## 1. 实验概述
 
 ### 研究问题
-I-MAPPO（Intent-conditioned Multi-Agent PPO）在 8 机 6 目标 UAV 协调任务中，attention critic + action mask 机制相对于标准 MAPPO（concat critic）、MATD3、IPPO 是否有性能优势？
+历史注册问题是 I-MAPPO 相对 MAPPO/MATD3/IPPO 是否有优势；由于 MAPPO treatment identity 失败，该问题未被本实验回答。
 
 ### 实验环境
 - **环境**：uav-scheduling-v2，8 架无人机 + 6 个移动目标
@@ -22,9 +22,9 @@ I-MAPPO（Intent-conditioned Multi-Agent PPO）在 8 机 6 目标 UAV 协调任�
 | 变体 | 算法 | Critic | Action Mask | 说明 |
 |------|------|--------|-------------|------|
 | **imappo** | MAPPO | attention | ✅ | 意图作为 Query 的交叉注意力 Critic |
-| **mappo** | MAPPO | concat | ❌ | 标准 concat Critic（基线） |
-| **matd3** | MATD3 | concat | ❌ | 连续动作 MARL 基线 |
-| **ippo** | IPPO | concat | ❌ | 独立 PPO（无共享 Critic） |
+| **mappo** | 实际 I-MAPPO | 请求 concat、实际 attention | ❌ | 标签错误，非标准 MAPPO |
+| **matd3** | MATD3 | centralized twin critics | ❌ | concat 配置字段被算法忽略 |
+| **ippo** | IPPO | local | ❌ | concat 配置在构建时被覆盖 |
 
 所有变体使用 onehot 意图编码（25 维），环境配置一致。
 
@@ -35,7 +35,7 @@ I-MAPPO（Intent-conditioned Multi-Agent PPO）在 8 机 6 目标 UAV 协调任�
 
 ---
 
-## 2. 实验结果（40 runs，4 variants × 10 paired seeds）
+## 2. 历史输出（40 runs；禁止作算法效应解释）
 
 ### 碰撞率（↓ 越低越好）
 
@@ -55,13 +55,9 @@ I-MAPPO（Intent-conditioned Multi-Agent PPO）在 8 机 6 目标 UAV 协调任�
 | imappo | 0.551 | 0.556 | 0.554 |
 | mappo | 0.548 | 0.553 | 0.552 |
 
-### 关键发现
+### 已撤回的旧解释
 
-1. **碰撞率**：MAPPO 点估计在所有难度最低。I-MAPPO 相对 MAPPO 的 easy/medium/hard 配对差经 18-family Holm 校正均不显著；hard 的未校正 CI 不跨零，但 Holm p=0.296875，因此不能主张稳定差异。
-
-2. **任务完成**：IPPO 相对 I-MAPPO 的三个风险层均在 Holm 校正后显著更高，但 easy/medium 碰撞率也显著更高，表现为更激进的安全—任务权衡。I-MAPPO 与 MAPPO 的任务差异不显著。
-
-3. **方法主张**：I-MAPPO 没有在 collision/task 任一主维度全面占优；当前结果直接否定“attention critic + action mask 已带来稳定 MAPPO 增益”。所有方法均使用 one-hot 且关闭 intent reward，本实验与语言理解无关。
+Holm p 值和 bootstrap CI 数学上仍对应这些文件，但 comparison label 错误，不能修复 treatment identity。修正协议位于 `configs/research/uav_marl_architecture_v2.paper.json`，必须重新训练。
 
 ---
 

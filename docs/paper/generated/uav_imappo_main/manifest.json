@@ -1,12 +1,17 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "status": "invalidated",
+  "invalidated_at": "2026-08-20",
+  "invalidation_reason": "The mappo key ran algorithm=imappo and legacy critic_mode=concat executed the attention path; method-comparison claims are withdrawn.",
+  "authoritative_audit": "docs/paper/audits/uav_imappo_main_semantic_protocol_audit.json",
   "source_study": "D:\\seu\\p\\rl\\experiments\\pilot\\uav_imappo_main",
   "source_config": "D:\\seu\\p\\rl\\configs\\research\\uav_imappo_main.paper.json",
   "files": {
     "figure_main_metrics.png": "ea5d540f6def75076348bee8bcf1d65519770b146861578938a1d3b1c8341f7e",
     "figure_paired_primary.png": "548215f3a98b8b7199a6ab4ea74f8d2a490ac51dba3cb32f49b7f470d1202dd7",
+    "INVALIDATION_NOTICE.md": "95861470add0bd3f0db6fc2ba2bc915a252f7959c1a1555c10e75def2f087b80",
     "main_results.csv": "b4927b873431dfdeea808cffe2eb2111c4fbf16c9100b85e9905d7fe55df947b",
     "paired_primary_results.csv": "5921198f542908c20e2f0365757365b08ecd0fe96ce974241754780c0649b0ad",
-    "PILOT_STATISTICAL_REPORT.md": "f6a0ba913d98e2af74b3c9b98de38da6ba1cc694a2757be378f1c5033a8979a6"
+    "PILOT_STATISTICAL_REPORT.md": "d5b42c825c71601b9efb90f458ded857b68a37448831afee8296fa1da95cfac7"
   }
 }

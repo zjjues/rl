@@ -44,6 +44,67 @@ class IMAPPOIntentAlignmentTests(unittest.TestCase):
         _, mask, _ = algo.sample_episode_intent_and_mask("stealth")
         self.assertTrue((mask == 1).all().item())
 
+    def test_zero_intent_control_hides_vector_but_preserves_task_protocol(self):
+        algo = IMAPPO(
+            IMAPPOConfig(
+                algorithm="imappo",
+                n_agents=4,
+                n_targets=4,
+                obs_dim=30,
+                state_dim=120,
+                intent_dim=25,
+                intent_source="none",
+                intent_profile_decoder="none",
+                use_action_mask=True,
+                device="cpu",
+            )
+        )
+        intent, mask, label = algo.sample_episode_intent_and_mask("stealth")
+        self.assertTrue((intent == 0).all().item())
+        self.assertTrue(label)
+        self.assertIn(
+            algo.task_intent_library.posture_for_label(label), {"stealth", "neutral"}
+        )
+        self.assertTrue((mask[:, 2] == 0).all().item())
+        metadata = algo.intent_representation_metadata()
+        self.assertFalse(metadata["intent_conditioning"])
+        self.assertTrue(metadata["task_posture_exposed_via_action_mask"])
+
+    def test_zero_intent_query_encoder_never_uses_canonical_identity(self):
+        algo = IMAPPO(
+            IMAPPOConfig(
+                algorithm="imappo",
+                n_agents=4,
+                n_targets=4,
+                obs_dim=30,
+                state_dim=120,
+                intent_dim=25,
+                intent_source="none",
+                intent_profile_decoder="none",
+                device="cpu",
+            )
+        )
+        encoded = algo.encode_intent_queries(
+            [("balanced", "Maintain balanced mission progress.")]
+        )
+        self.assertEqual(tuple(encoded.shape), (1, 25))
+        self.assertTrue((encoded == 0).all().item())
+
+    def test_unknown_critic_mode_is_rejected_instead_of_using_attention(self):
+        with self.assertRaisesRegex(ValueError, "unsupported critic_mode"):
+            IMAPPO(
+                IMAPPOConfig(
+                    n_agents=4,
+                    n_targets=4,
+                    obs_dim=30,
+                    state_dim=120,
+                    intent_dim=8,
+                    intent_source="legacy_hash",
+                    critic_mode="concat",
+                    device="cpu",
+                )
+            )
+
     def test_posture_alignment_ablation_can_sample_conflicting_intent(self):
         algo = IMAPPO(
             IMAPPOConfig(

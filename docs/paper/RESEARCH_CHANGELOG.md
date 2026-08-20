@@ -1,5 +1,35 @@
 # 研究变更日志
 
+## 2026-08-20：撤回伪 MAPPO 解释，加入可机器审计的链式消融
+
+### 证据更正
+
+- 语义协议审计发现，历史 `uav_imappo_main` 中名为 `mappo` 的变体实际注册为 `algorithm="imappo"`；同时 `critic_mode="concat"` 从未有实现分支，旧代码将其落入 attention critic。MATD3 忽略该字段，IPPO 又在构建时静默覆盖为 local critic。
+- 因此 2026-08-18 的“标准 concat MAPPO”解释撤回。40 个逐 seed 文件、summary 和 checksum 仍保留为历史 artifact，但最新审计状态为 `invalid`，错误记录在 `docs/paper/audits/uav_imappo_main_semantic_protocol_audit.json`。
+- 该更正不是统计显著性变化，而是 treatment identity 失败；任何 MAPPO 优劣、attention-vs-concat 或强基线结论均不得继续引用这些数值。
+
+### 工程变更
+
+- 新增 `src/research_protocol.py`：拒绝未实现的 critic mode、保留算法名与实际 algorithm 不一致、以及 IPPO 非 local / MAPPO 非 centralized critic 等协议错误。
+- 新增 `intent_source="none"`：I-MAPPO actor/critic 获得严格全零 intent；任务标签、奖励画像、共同随机数和 posture-derived action mask 保持不变，并在 metadata 中显式披露 mask 侧信道。
+- 新增 `src/research_ablation.py`：消融形成以 full treatment 为根的有向树；每个非 treatment 变体必须有且仅有一个 reference，并精确声明 changed fields、主风险层、主指标和可证伪假设。任何未声明漂移都会在 dry-run 前失败。
+- 统计 runner 按契约计算 `variant-reference` 链式效应，而不再把所有消融错误地与 full 比较；Holm family 只包含预注册 primary tiers × metrics。
+- 冻结 MiniLM/CrossEncoder 按 model/revision/device 在单进程复用，避免不同变体重复加载；逐 seed 结果新增 wall time、CUDA 峰值、模型参数和文本模型缓存审计。
+- 新增 `generate_ablation_artifacts.py`，从通过审计的 artifact 自动生成均值表、链式比较表、资源表、森林图、报告和哈希 manifest。
+- 新增修正架构协议 `uav_marl_architecture_v2.{smoke,paper}.json`：真实 MAPPO 使用 centralized MLP critic，IPPO 显式 local，MATD3 标记为 centralized twin critics。架构 smoke 已完成并通过 5/5 variant identity 与 checksum 审计；数值不作效果推断。
+
+### 论文影响
+
+- 强基线门槛从“已有 10-seed 主实验”退回为“实现和 smoke 已验证，paper 主实验未执行”。这是必要的证据降级。
+- 增强消融预注册 10 个变体、9 条链式对比：mask、attention、intent shaping、CBF、NLI gate、learned residual、semantic rule prior、semantic-vs-identity、identity-vs-no-intent。
+- `identity_oracle` 是 canonical-label 控制，不是文本理解；`no_intent` 的 mask 侧信道必须与结果同时披露。
+
+### 后续验证
+
+- 完成增强消融 smoke artifact 审计，再决定 50-run pilot 的预算；
+- 在 clean commit 上运行修正的 50-run architecture paper protocol，而不是修补或重命名旧结果；
+- 独立语言语料、冲突场景策略进 SITL、HIL/实机仍是不可由本轮工程修复替代的硬门槛。
+
 ## 2026-08-18：修复主实验 provenance，加入精确统计与自动论文产物
 
 ### 工程变更

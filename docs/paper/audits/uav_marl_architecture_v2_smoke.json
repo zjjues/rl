@@ -1,0 +1,50 @@
+{
+  "status": "valid",
+  "study_id": "uav_marl_architecture_v2_smoke",
+  "level": "smoke",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\smoke\\uav_marl_architecture_v2_smoke",
+  "variant_count": 5,
+  "seed_count": 1,
+  "expected_result_count": 5,
+  "checksum_entry_count": 9,
+  "variant_protocol_audit": {
+    "status": "valid",
+    "variant_count": 5,
+    "variants": [
+      {
+        "key": "imappo",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "imappo_no_mask",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "mappo",
+        "algorithm": "mappo",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "mlp"
+      },
+      {
+        "key": "ippo",
+        "algorithm": "ippo",
+        "critic_mode": "local",
+        "critic_mode_effective": "local"
+      },
+      {
+        "key": "matd3",
+        "algorithm": "matd3",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "centralized_twin_critics"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": [
+    "study invocation used a dirty Git worktree"
+  ]
+}
