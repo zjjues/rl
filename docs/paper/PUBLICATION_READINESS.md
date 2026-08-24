@@ -1,5 +1,11 @@
 # 可发表性差距审计
 
+## 2026-08-24 机器化 submission gate
+
+新增 `submission_readiness.v1.json` 和独立审计器，把最终投稿条件拆为 11 个 critical gates：独立人工偏好、blind language gate、语义泛化、UAV 强基线、UAV 因果消融、两项 VMAS、官方 HARL 数值交叉核验、多机冲突 SITL、HIL/实机、冻结匿名 artifact。当前结果为 `not_ready`、**0/11 final gates met**。
+
+这里的 0/11 是严格完成判定，不是对既有工程进度的否定，也不是录用概率：calibration、smoke、代码实现和负结果审计仍贡献于约 48%–52% 的阶段性证据准备度，但任何一项都不能替代对应 final artifact。审计文件为 `docs/paper/audits/submission_readiness_v1.json`，规则见 `SUBMISSION_READINESS_GATE.md`。
+
 ## 2026-08-24 长实验可靠性更新
 
 已关闭“单个算法×种子中断会丢失全部训练进度”的工程缺口：IMAPPO/HAPPO/MATD3 现在具备绑定协议与源码指纹的 episode 边界原子恢复，CPU 确定性测试验证连续与中断恢复路径逐 tensor 相等；最近完整回归 **183 passed**。六个 `*.paper.json` 配置已通过 dry-run，遗留 `uav_imappo_main.paper.json` 中伪 `concat` critic、pilot 等级和 50-episode 评估已修正为独立的 `uav_imappo_main_paper_v2`。

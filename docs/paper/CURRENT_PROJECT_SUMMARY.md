@@ -50,7 +50,8 @@
 - 训练、monitor、collision probe、final tier 和 query 使用注册的配对 seed 公式。
 - 已实现 IQM、bootstrap 95% CI、paired differences、win rate、performance profile、exact paired tests 和 Holm 多重校正。
 - artifact 支持 checksums、canonical protocol hash、implementation hash、严格 partial audit、跨实现 resume 拒绝和原子写入。
-- 最近一次完整代码回归为 **183 passed, 14 warnings**；warnings 来自可选 PettingZoo 与 Matplotlib/PyParsing deprecation。此次仅改变实验状态和文档，没有代码变更。
+- 新增版本化 submission-readiness gate；正式研究会复用完整 artifact validator，人工偏好会重算 JSONL 审计，外部系统证据必须满足冻结字段、样本量和误差阈值。当前审计为 `not_ready`、0/11 final gates met。
+- 最新完整代码回归为 **191 passed, 14 warnings, 8.14 s**；本轮新增独立 readiness 审计工具及测试，但不修改训练源码，训练 implementation fingerprint 仍与 checkpoint 一致。
 
 ## 3. 已完成且可保留的证据
 
@@ -125,6 +126,8 @@ VMAS navigation 单 seed native return：attention-PPO `-2.711723`、MAPPO `-0.7
 
 因此当前项目可以诚实定位为“具有严谨 provenance、强基线路径、负结果约束和多层安全验证的完整研究平台”，不能定位为“已证明语义 MARL 优势”或“顶刊投稿完成稿”。工程准备度约 96% 不等于论文准备度；真正缺口主要是昂贵的多种子证据、独立人工数据和真实系统验证。
 
+机器审计将上述六类硬缺口细分为 11 个二值 final gates，当前 `0/11` 通过。该数字表示尚无最终门槛完整闭环，不是开发完成百分比；calibration、pilot 和已实现代码不会被错误折算为正式 evidence gate。详情见 `SUBMISSION_READINESS_GATE.md` 与 `audits/submission_readiness_v1.json`。
+
 ## 7. 当前允许与禁止的论文表述
 
 允许：
@@ -166,6 +169,8 @@ D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config con
 - 当前恢复状态：`docs/paper/CONTINUATION_STATE.md`
 - 本总结：`docs/paper/CURRENT_PROJECT_SUMMARY.md`
 - 可发表性审计：`docs/paper/PUBLICATION_READINESS.md`
+- 投稿机器门槛：`docs/paper/SUBMISSION_READINESS_GATE.md`
+- 当前机器审计：`docs/paper/audits/submission_readiness_v1.json`
 - 正式结果与负结果：`docs/paper/RESULTS_LEDGER.md`
 - 方法草稿：`docs/paper/METHODS_DRAFT.md`
 - 实验协议：`docs/paper/EXPERIMENT_PROTOCOL.md`
@@ -180,4 +185,4 @@ D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config con
 
 ## 10. 收口判定
 
-当前实验进程已经停止，最新可恢复训练状态、全部已知证据等级、负结果、作废原因、资源预算、论文边界和后续恢复步骤均已记录。封存前快速验证结果：62 份相关 config/audit/活动实验 JSON 全部可解析；`git diff --check` 通过；checkpoint/resume/artifact 三组针对性回归 **20 passed, 1 optional-PettingZoo warning**。除非用户明确要求继续，后续不应自动恢复训练。
+当前实验进程已经停止，最新可恢复训练状态、全部已知证据等级、负结果、作废原因、资源预算、论文边界和后续恢复步骤均已记录。最新验证结果：64 份相关 config/audit/活动实验 JSON 全部可解析；`git diff --check` 通过；完整回归 **191 passed, 14 warnings**；`--require-ready` 在当前 11 项 blocker 下按设计返回非零。除非用户明确要求继续，后续不应自动恢复训练。

@@ -1,5 +1,20 @@
 # 研究变更日志
 
+## 2026-08-24：投稿准备度从主观清单升级为机器 gate
+
+### 工程变更
+
+- 新增 `submission_readiness.py`、`audit_submission_readiness.py` 和版本化 `submission_readiness.v1.json`，11 个 critical gates 未全部满足时拒绝 `ready`。
+- 正式 study gate 复用 checksum/provenance artifact validator；人工偏好 gate 重新读取 JSONL、重算 SHA-256 与独立复核审计；外部语言/HARL/SITL/HIL/frozen bundle 使用字段、样本量和误差联合合同。
+- evidence path 禁止逃逸仓库；配置拒绝重复 key、未知 kind、缺失 path 和“仅文件存在”合同。8 个测试覆盖通过、阈值失败、非关键 gate、正式偏好重算、artifact 篡改、schema 缺失、path escape 与存在性伪证据。
+- 审计工具位于仓库级工具层，不进入训练源码指纹；当前 implementation fingerprint 仍为 `c4e55820…40573`，不会无意义作废 episode-2050 checkpoint。
+- 最新全量回归 **191 passed, 14 warnings, 8.14 s**；64 份相关 JSON 全部解析；当前 `--require-ready` 按设计非零退出。
+
+### 论文影响
+
+- 当前审计诚实输出 `not_ready`、0/11 final gates met；这不等同于 0% 开发进度，calibration/pilot 仍不能替代 final evidence。
+- 审计首次把“缺少正式语义泛化 paper config/artifact”单独暴露为 blocker，避免仅完成架构/消融后错误宣布顶刊 ready。
+
 ## 2026-08-24：按要求结束当前实验并形成统一总结
 
 ### 状态变更

@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "audit_id": "multi_uav_semantic_marl_submission_readiness_v1",
+  "gates": [
+    {
+      "key": "formal_human_preferences",
+      "title": "Writer-disjoint independently reviewed human preference dataset",
+      "kind": "formal_preference_dataset",
+      "critical": true,
+      "manifest": "data/formal/preferences_v1/frozen_manifest.json",
+      "min_records_per_class": 50,
+      "min_writers_per_split": 5
+    },
+    {
+      "key": "blind_language_gate",
+      "title": "Frozen multi-source relevance gate passes unseen preference and OOD tests",
+      "kind": "json_contract",
+      "critical": true,
+      "path": "docs/paper/audits/preference_relevance_gate_final_v2.json",
+      "equals": {
+        "schema_version": 1,
+        "evidence_level": "frozen_blind_test",
+        "final_blind_test": true,
+        "decision.outcome": "pass",
+        "dataset.writer_disjoint": true,
+        "dataset.test_access_count": 1
+      },
+      "at_least": {
+        "gate.development_source_count": 2,
+        "metrics.preference_test.record_count": 650,
+        "metrics.ood_test.record_count": 1000
+      },
+      "at_most": {
+        "metrics.preference_test.false_reject_rate": 0.1,
+        "metrics.ood_test.false_accept_rate": 0.05
+      }
+    },
+    {
+      "key": "semantic_generalization",
+      "title": "Ten-seed seen/paraphrase/unseen semantic-to-behavior generalization study",
+      "kind": "study_artifact",
+      "critical": true,
+      "config": "configs/research/uav_intent_generalization.paper.json",
+      "study_dir": "experiments/paper/uav_intent_generalization_paper_v1",
+      "required_level": "paper",
+      "minimum_result_count": 40
+    },
+    {
+      "key": "uav_strong_baselines",
+      "title": "UAV strong-baseline architecture comparison",
+      "kind": "study_artifact",
+      "critical": true,
+      "config": "configs/research/uav_marl_architecture_v3.paper.json",
+      "study_dir": "experiments/paper/uav_marl_architecture_v3_paper",
+      "required_level": "paper",
+      "minimum_result_count": 60
+    },
+    {
+      "key": "uav_causal_ablation",
+      "title": "Ten-variant chained causal ablation",
+      "kind": "study_artifact",
+      "critical": true,
+      "config": "configs/research/uav_imappo_ablation.paper.json",
+      "study_dir": "experiments/paper/uav_imappo_ablation_paper_v2",
+      "required_level": "paper",
+      "minimum_result_count": 100
+    },
+    {
+      "key": "vmas_navigation_reproduction",
+      "title": "VMAS navigation ten-seed cross-scene reproduction",
+      "kind": "study_artifact",
+      "critical": true,
+      "config": "configs/research/vmas_navigation_architecture_v1.paper.json",
+      "study_dir": "experiments/paper/vmas_navigation_architecture_v1_paper",
+      "required_level": "paper",
+      "minimum_result_count": 50
+    },
+    {
+      "key": "vmas_dispersion_reproduction",
+      "title": "VMAS dispersion ten-seed cross-scene reproduction",
+      "kind": "study_artifact",
+      "critical": true,
+      "config": "configs/research/vmas_dispersion_architecture_v1.paper.json",
+      "study_dir": "experiments/paper/vmas_dispersion_architecture_v1_paper",
+      "required_level": "paper",
+      "minimum_result_count": 50
+    },
+    {
+      "key": "official_harl_numeric_crosscheck",
+      "title": "Official HARL numerical HAPPO cross-check",
+      "kind": "json_contract",
+      "critical": true,
+      "path": "docs/paper/audits/official_harl_numeric_crosscheck.json",
+      "equals": {
+        "schema_version": 1,
+        "official_repository": "https://github.com/PKU-MARL/HARL",
+        "official_commit": "b1af98b0dbab72a2eee9d160751cd09aedbb8ce2",
+        "algorithm": "happo",
+        "comparison.status": "passed"
+      },
+      "at_least": {
+        "comparison.seed_count": 3,
+        "comparison.update_case_count": 30
+      },
+      "at_most": {
+        "comparison.max_abs_logprob_error": 1e-6,
+        "comparison.max_abs_factor_error": 1e-6,
+        "comparison.max_abs_parameter_error": 1e-5
+      }
+    },
+    {
+      "key": "multi_uav_conflict_sitl",
+      "title": "Policy-in-loop multi-UAV conflict SITL",
+      "kind": "json_contract",
+      "critical": true,
+      "path": "docs/paper/audits/multi_uav_conflict_sitl_final.json",
+      "equals": {
+        "schema_version": 1,
+        "evidence_level": "policy_in_loop_conflict_sitl",
+        "decision.outcome": "pass",
+        "safety_fallback.enabled": true
+      },
+      "at_least": {
+        "protocol.agent_count": 4,
+        "protocol.seed_count": 10,
+        "protocol.conflict_episode_count": 100,
+        "protocol.disturbance_condition_count": 4
+      },
+      "at_most": {
+        "metrics.physical_collision_rate": 0.01,
+        "metrics.unhandled_failsafe_rate": 0.0
+      }
+    },
+    {
+      "key": "hil_or_real_flight",
+      "title": "HIL or controlled real-flight validation",
+      "kind": "json_contract",
+      "critical": true,
+      "path": "docs/paper/audits/hil_or_real_flight_final.json",
+      "one_of": {
+        "evidence_level": [
+          "hardware_in_the_loop",
+          "controlled_real_flight"
+        ]
+      },
+      "equals": {
+        "schema_version": 1,
+        "decision.outcome": "pass",
+        "system_identification.coverage_validated": true,
+        "ethics_and_safety.approved": true
+      },
+      "at_least": {
+        "protocol.agent_count": 2,
+        "protocol.trial_count": 30,
+        "protocol.disturbance_condition_count": 3
+      },
+      "at_most": {
+        "metrics.physical_collision_rate": 0.0,
+        "metrics.unhandled_failsafe_rate": 0.0
+      }
+    },
+    {
+      "key": "frozen_submission_bundle",
+      "title": "Checksummed anonymous frozen submission artifact",
+      "kind": "json_contract",
+      "critical": true,
+      "path": "experiments/frozen/submission_bundle_v1/manifest.json",
+      "equals": {
+        "schema_version": 1,
+        "status": "valid",
+        "anonymous": true,
+        "checksums_verified": true,
+        "contains_superseded_results": false,
+        "contains_partial_results": false
+      },
+      "at_least": {
+        "paper_table_count": 4,
+        "paper_figure_count": 6,
+        "failure_case_count": 20,
+        "environment_count": 3
+      }
+    }
+  ]
+}
