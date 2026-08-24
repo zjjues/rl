@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "source_study": "D:\\seu\\p\\rl\\experiments\\smoke\\uav_imappo_ablation_smoke_v2",
+  "source_config": "D:\\seu\\p\\rl\\configs\\research\\uav_imappo_ablation.smoke.json",
+  "files": {
+    "ablation_means.csv": "bcba754bd989e4ff75389efbb15faf6337b01ff02a41a23772718a1577110a17",
+    "ablation_primary_comparisons.csv": "7c9033f82a7ba1af7bee42e1dcc4244f1b0f6afe25d2dc14486fc9ca3fa760e7",
+    "ABLATION_REPORT.md": "f7f2766974ba7320b513b91ec1b753e7c5b62d5250267c883f4081e0f5b054c1",
+    "figure_ablation_primary.png": "0c4446e91f59df042717781d63b6c01bdd2329eb28cd87fe9e26d4ee012842f3",
+    "resource_audit.csv": "fa141fb0fc0d5b0375a2813a4dc6f14e5224736836863f9265417da043150310"
+  }
+}

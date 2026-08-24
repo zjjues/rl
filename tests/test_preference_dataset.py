@@ -7,7 +7,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from preference_dataset import validate_preference_records  # noqa: E402
+from preference_dataset import (  # noqa: E402
+    PREFERENCE_CLASSES,
+    audit_formal_preference_dataset,
+    inter_annotator_agreement,
+    validate_preference_records,
+)
 
 
 def record(record_id, text, objective, polarity, annotator, split):
@@ -49,6 +54,92 @@ class PreferenceDatasetTests(unittest.TestCase):
             validate_preference_records([
                 record("a", "Allow aircraft contact.", "collision", "low", "p1", "train")
             ])
+
+    def test_formal_records_require_independent_review_and_report_agreement(self):
+        reviewed = record(
+            "a", "Conserve the battery during flight.",
+            "energy", "high", "writer-1", "train"
+        )
+        reviewed.update({
+            "elicited_objective": "energy",
+            "elicited_polarity": "high",
+            "reviewer_id": "reviewer-1",
+            "reviewer_objective": "energy",
+            "reviewer_polarity": "high",
+            "decision": "agreed",
+            "collection_batch": "batch-1",
+            "prompt_id": "prompt-1",
+            "language": "en",
+            "consent_version": "v1",
+        })
+        audit = validate_preference_records(
+            [reviewed], require_independent_review=True
+        )
+        self.assertEqual(audit["independent_review"]["raw_agreement"], 1.0)
+
+    def test_adjudication_must_be_independent(self):
+        reviewed = record(
+            "a", "Battery reserves are optional today.",
+            "energy", "low", "writer-1", "train"
+        )
+        reviewed.update({
+            "elicited_objective": "energy",
+            "elicited_polarity": "low",
+            "reviewer_id": "reviewer-1",
+            "reviewer_objective": "time",
+            "reviewer_polarity": "high",
+            "decision": "adjudicated",
+            "adjudicator_id": "writer-1",
+            "collection_batch": "batch-1",
+            "prompt_id": "prompt-1",
+            "language": "en",
+            "consent_version": "v1",
+        })
+        with self.assertRaisesRegex(ValueError, "independent adjudicator"):
+            validate_preference_records([reviewed], require_independent_review=True)
+
+    def test_agreement_uses_pre_adjudication_labels(self):
+        audit = inter_annotator_agreement([
+            ("energy:high", "energy:high"),
+            ("time:low", "time:high"),
+        ])
+        self.assertEqual(audit["raw_agreement"], 0.5)
+        self.assertEqual(audit["disagreement_count"], 1)
+
+    def test_formal_dataset_contract_checks_class_and_writer_minima(self):
+        records = []
+        splits = ("train", "dev", "test")
+        for index, label in enumerate(PREFERENCE_CLASSES):
+            split = splits[index % len(splits)]
+            objective, polarity = (
+                ("neutral", "neutral") if label == "neutral"
+                else tuple(label.split(":"))
+            )
+            item = record(
+                f"r-{index}", f"Independent operator wording number {index}.",
+                objective, polarity, f"writer-{split}-{index}", split,
+            )
+            item.update({
+                "elicited_objective": objective,
+                "elicited_polarity": polarity,
+                "reviewer_id": f"reviewer-{index}",
+                "reviewer_objective": objective,
+                "reviewer_polarity": polarity,
+                "decision": "agreed",
+                "collection_batch": "batch-1",
+                "prompt_id": f"prompt-{index}",
+                "language": "en",
+                "consent_version": "v1",
+            })
+            records.append(item)
+        audit = audit_formal_preference_dataset(
+            records, min_records_per_class=1, min_writers_per_split=1
+        )
+        self.assertEqual(audit["formal_acceptance"], "passed")
+        with self.assertRaisesRegex(ValueError, "below registered minimum"):
+            audit_formal_preference_dataset(
+                records, min_records_per_class=2, min_writers_per_split=1
+            )
 
 
 if __name__ == "__main__":

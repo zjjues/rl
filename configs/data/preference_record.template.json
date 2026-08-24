@@ -1,0 +1,19 @@
+{
+  "id": "batch01-writer001-prompt001",
+  "text": "Natural operator wording written without copying an example.",
+  "objective": "energy",
+  "polarity": "high",
+  "annotator_id": "writer-001",
+  "source": "human-elicitation-v1",
+  "split": "train",
+  "elicited_objective": "energy",
+  "elicited_polarity": "high",
+  "reviewer_id": "reviewer-001",
+  "reviewer_objective": "energy",
+  "reviewer_polarity": "high",
+  "decision": "agreed",
+  "collection_batch": "batch-01",
+  "prompt_id": "prompt-001",
+  "language": "en",
+  "consent_version": "v1"
+}

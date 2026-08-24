@@ -1,0 +1,56 @@
+{
+  "status": "valid",
+  "study_id": "uav_marl_architecture_v3_smoke",
+  "level": "smoke",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\smoke\\uav_marl_architecture_v3_smoke",
+  "variant_count": 6,
+  "seed_count": 1,
+  "expected_result_count": 6,
+  "checksum_entry_count": 10,
+  "variant_protocol_audit": {
+    "status": "valid",
+    "variant_count": 6,
+    "variants": [
+      {
+        "key": "imappo",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "imappo_no_mask",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "mappo",
+        "algorithm": "mappo",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "mlp"
+      },
+      {
+        "key": "ippo",
+        "algorithm": "ippo",
+        "critic_mode": "local",
+        "critic_mode_effective": "local"
+      },
+      {
+        "key": "happo",
+        "algorithm": "happo",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "centralized_mlp_sequential_independent_actors"
+      },
+      {
+        "key": "matd3",
+        "algorithm": "matd3",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "centralized_twin_critics"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": [
+    "study invocation used a dirty Git worktree"
+  ]
+}

@@ -1,0 +1,338 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_marl_architecture_v3_paper",
+  "method": "linear environment-step extrapolation from measured smoke wall time",
+  "uncertainty": "high; run a 100-training-episode calibration before final reservation",
+  "smoke_workload_units": {
+    "training": 1000,
+    "evaluation": 900,
+    "total": 1900
+  },
+  "paper_workload_units": {
+    "training": 600000,
+    "evaluation": 60000,
+    "total": 660000
+  },
+  "blended_scale": 347.36842105263156,
+  "conservative_scale": 600.0,
+  "fixed_cold_start_seconds": 0.0,
+  "seed_count": 10,
+  "run_count": 60,
+  "estimated_gpu_hours_low": 60.93001113130237,
+  "estimated_gpu_hours_high": 105.24274649952228,
+  "per_variant": {
+    "imappo": {
+      "smoke_wall_seconds": 11.862382899969816,
+      "recurring_smoke_seconds": 11.862382899969816,
+      "estimated_seconds_per_seed_low": 4120.617217884252,
+      "estimated_seconds_per_seed_high": 7117.42973998189,
+      "estimated_gpu_hours_all_seeds_low": 11.446158938567367,
+      "estimated_gpu_hours_all_seeds_high": 19.77063816661636
+    },
+    "imappo_no_mask": {
+      "smoke_wall_seconds": 6.673916999949142,
+      "recurring_smoke_seconds": 6.673916999949142,
+      "estimated_seconds_per_seed_low": 2318.308010508649,
+      "estimated_seconds_per_seed_high": 4004.3501999694854,
+      "estimated_gpu_hours_all_seeds_low": 6.439744473635137,
+      "estimated_gpu_hours_all_seeds_high": 11.123194999915237
+    },
+    "mappo": {
+      "smoke_wall_seconds": 6.674775999970734,
+      "recurring_smoke_seconds": 6.674775999970734,
+      "estimated_seconds_per_seed_low": 2318.606399989834,
+      "estimated_seconds_per_seed_high": 4004.8655999824405,
+      "estimated_gpu_hours_all_seeds_low": 6.440573333305094,
+      "estimated_gpu_hours_all_seeds_high": 11.12462666661789
+    },
+    "ippo": {
+      "smoke_wall_seconds": 6.586266200058162,
+      "recurring_smoke_seconds": 6.586266200058162,
+      "estimated_seconds_per_seed_low": 2287.8608905465194,
+      "estimated_seconds_per_seed_high": 3951.7597200348973,
+      "estimated_gpu_hours_all_seeds_low": 6.355169140406998,
+      "estimated_gpu_hours_all_seeds_high": 10.97711033343027
+    },
+    "happo": {
+      "smoke_wall_seconds": 24.894332899944857,
+      "recurring_smoke_seconds": 24.894332899944857,
+      "estimated_seconds_per_seed_low": 8647.505112612424,
+      "estimated_seconds_per_seed_high": 14936.599739966914,
+      "estimated_gpu_hours_all_seeds_low": 24.02084753503451,
+      "estimated_gpu_hours_all_seeds_high": 41.490554833241426
+    },
+    "matd3": {
+      "smoke_wall_seconds": 6.453972899820656,
+      "recurring_smoke_seconds": 6.453972899820656,
+      "estimated_seconds_per_seed_low": 2241.906375727175,
+      "estimated_seconds_per_seed_high": 3872.3837398923934,
+      "estimated_gpu_hours_all_seeds_low": 6.227517710353265,
+      "estimated_gpu_hours_all_seeds_high": 10.756621499701092
+    }
+  },
+  "max_chunk_hours": 12.0,
+  "chunks": [
+    {
+      "index": 1,
+      "variant": "imappo",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256
+      ],
+      "estimated_hours_high": 11.862382899969816,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "imappo",
+        "--only-seeds",
+        "7,11,23,42,100,256"
+      ]
+    },
+    {
+      "index": 2,
+      "variant": "imappo",
+      "seeds": [
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 7.908255266646544,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "imappo",
+        "--only-seeds",
+        "512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 3,
+      "variant": "imappo_no_mask",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 11.123194999915238,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "imappo_no_mask",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 4,
+      "variant": "mappo",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 11.124626666617889,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "mappo",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 5,
+      "variant": "ippo",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 10.977110333430272,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "ippo",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 6,
+      "variant": "happo",
+      "seeds": [
+        7,
+        11
+      ],
+      "estimated_hours_high": 8.298110966648286,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "7,11",
+        "--resume"
+      ]
+    },
+    {
+      "index": 7,
+      "variant": "happo",
+      "seeds": [
+        23,
+        42
+      ],
+      "estimated_hours_high": 8.298110966648286,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "23,42",
+        "--resume"
+      ]
+    },
+    {
+      "index": 8,
+      "variant": "happo",
+      "seeds": [
+        100,
+        256
+      ],
+      "estimated_hours_high": 8.298110966648286,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "100,256",
+        "--resume"
+      ]
+    },
+    {
+      "index": 9,
+      "variant": "happo",
+      "seeds": [
+        512,
+        1024
+      ],
+      "estimated_hours_high": 8.298110966648286,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "512,1024",
+        "--resume"
+      ]
+    },
+    {
+      "index": 10,
+      "variant": "happo",
+      "seeds": [
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 8.298110966648286,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 11,
+      "variant": "matd3",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 10.756621499701094,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "matd3",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    }
+  ],
+  "safety_contract": {
+    "protocol_reduction_allowed": false,
+    "resume_required_after_first_chunk": true,
+    "final_summary_written_only_when_all_registered_pairs_exist": true
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "reviewed_at_utc": "2026-08-20T07:01:12Z",
+  "decision_rule": "No external corpus may be converted into a six-objective preference label unless the released annotation directly supports that label.",
+  "sources": [
+    {
+      "dataset_id": "aerialvln-kaggle-v8",
+      "title": "AerialVLN",
+      "source_url": "https://www.kaggle.com/datasets/shuboliu/aerialvln",
+      "paper_url": "https://openaccess.thecvf.com/content/ICCV2023/papers/Liu_AerialVLN_Vision-and-Language_Navigation_for_UAVs_ICCV_2023_paper.pdf",
+      "source_version": "8",
+      "last_updated": "2024-10-19T07:00:54.6Z",
+      "total_bytes": 393931815,
+      "license_name": "Attribution 4.0 International (CC BY 4.0)",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "human_language_evidence": "AMT workers described UAV reference-path videos",
+      "label_compatibility": "navigation_instruction_not_preference",
+      "approved_usage": "ood_negative_control",
+      "status": "selected_archive_and_val_unseen_hashes_pinned_not_vendored"
+    },
+    {
+      "dataset_id": "citynav-iccv2025",
+      "title": "CityNav: A Large-Scale Dataset for Real-World Aerial Navigation",
+      "source_url": "https://github.com/water-cookie/citynav",
+      "paper_url": "https://openaccess.thecvf.com/content/ICCV2025/papers/Lee_CityNav_A_Large-Scale_Dataset_for_Real-World_Aerial_Navigation_ICCV_2025_paper.pdf",
+      "source_version": "372ecbd1df58b46ffaad91c118c4838b88b87710",
+      "archive_bytes": 190078685,
+      "archive_sha256": "121d052e81a4d3f58fb9c6a45ceac3c616bb191dd5ae39cf5ac2dbd636af65bd",
+      "license_name": "Attribution 4.0 International (CC BY 4.0)",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "human_language_evidence": "32,637 participant-collected natural-language goal descriptions paired with human demonstration trajectories in real-city 3D environments",
+      "label_compatibility": "navigation_instruction_not_preference",
+      "approved_usage": "ood_negative_control",
+      "status": "preregistered_final_ood_completed_failed_no_retuning",
+      "result": "Frozen relevance gate false-accept rate 0.961516 (Wilson 95% CI 0.959374-0.963549); registered outcome fail."
+    },
+    {
+      "dataset_id": "geotext-1652",
+      "title": "GeoText-1652",
+      "source_url": "https://github.com/MultimodalGeo/GeoText-1652",
+      "paper_url": "https://arxiv.org/abs/2311.12751",
+      "label_compatibility": "image_caption_and_spatial_relation_not_preference",
+      "approved_usage": "none",
+      "status": "rejected_for_preference_evidence",
+      "reason": "Captions and bounding-box spatial descriptions do not label operator reward preferences."
+    },
+    {
+      "dataset_id": "rosetta-preferences",
+      "title": "ROSETTA preference data",
+      "source_url": "https://github.com/StanfordVL/rosetta",
+      "paper_url": "https://sanjanasrivastava.github.io/rosetta-project/",
+      "label_compatibility": "unconstrained_manipulation_preferences_require_new_mapping_annotation",
+      "approved_usage": "none",
+      "status": "deferred",
+      "reason": "The public repository exposes examples but no pinned full 116-preference release with the UAV six-axis labels required here."
+    },
+    {
+      "dataset_id": "flight-2026",
+      "title": "FLIGHT",
+      "source_url": "https://buaa-colalab.github.io/FLIGHT/",
+      "paper_url": "https://arxiv.org/abs/2606.06836",
+      "label_compatibility": "uav_task_and_reasoning_text_not_preference",
+      "approved_usage": "none",
+      "status": "rejected_for_human_preference_evidence",
+      "reason": "Task/reasoning texts are derived with VLM annotation and planning checks, not independent operator preference labels."
+    }
+  ]
+}

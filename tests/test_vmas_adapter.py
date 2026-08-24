@@ -31,8 +31,29 @@ class VMASAdapterTests(unittest.TestCase):
             self.assertIsInstance(truncated, bool)
             self.assertIsInstance(info, dict)
             self.assertIsInstance(next_info, dict)
+            self.assertIn("collision", next_info)
+            self.assertIn("uav_0", next_info)
         finally:
             env.close()
+
+    def test_adapter_enforces_registered_episode_horizon(self):
+        env = VMASAdapter("dispersion", n_agents=3, max_steps=1)
+        try:
+            env.reset(seed=9)
+            actions = [np.zeros(2, dtype=np.float32) for _ in range(3)]
+            _, _, _, truncated, _ = env.step(actions)
+            self.assertTrue(truncated)
+        finally:
+            env.close()
+
+    def test_info_normalisation_does_not_invent_uav_objectives(self):
+        info = VMASAdapter._normalise_info({
+            "agent_0": {"agent_collisions": np.asarray(1.0), "final_rew": -2.0},
+            "agent_1": {"agent_collisions": np.asarray(0.0), "final_rew": -1.0},
+        })
+        self.assertTrue(info["collision"])
+        self.assertEqual(info["uav_0"]["reward_env"], -2.0)
+        self.assertNotIn("task_completion", info["uav_0"])
 
     def test_formal_config_rejects_uav_rule_residual_on_vmas(self):
         spec = {

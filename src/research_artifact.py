@@ -22,8 +22,8 @@ PROTOCOL_KEYS = (
     "evaluation",
     "generalization",
     "ablation_contract",
+    "reporting",
 )
-PRIMARY_METRICS = ("collision_rate", "task_completion", "episode_return")
 
 
 def _sha256(path: Path) -> str:
@@ -117,6 +117,15 @@ def validate_study_artifact(
 
     reference = dict(expected_spec) if expected_spec is not None else config
     try:
+        from research_metrics import resolve_metric_contract
+
+        metric_contract = resolve_metric_contract(reference)
+        required_metrics = tuple(metric_contract["artifact_metrics"])
+    except ValueError as exc:
+        metric_contract = None
+        required_metrics = ()
+        errors.append(f"invalid metric contract: {exc}")
+    try:
         from research_protocol import validate_variant_protocol
 
         protocol_audit = validate_variant_protocol(reference)
@@ -150,7 +159,7 @@ def validate_study_artifact(
     observed_paths = set()
     for variant_key, variant in expected_variants.items():
         result_values[variant_key] = {
-            tier: {metric: [] for metric in PRIMARY_METRICS} for tier in tiers
+            tier: {metric: [] for metric in required_metrics} for tier in tiers
         }
         for seed in seeds:
             relative = Path(variant_key) / f"seed_{seed}" / "result.json"
@@ -163,6 +172,28 @@ def validate_study_artifact(
             result_variant = result.get("variant")
             if not isinstance(result_variant, Mapping) or dict(result_variant) != variant:
                 errors.append(f"result variant mismatch: {relative.as_posix()}")
+            if variant.get("algorithm") == "happo":
+                implementation = result.get("algorithm_implementation")
+                expected_happo = {
+                    "algorithm": "happo",
+                    "actor_parameter_sharing": "independent",
+                    "actor_count": int(
+                        reference.get("environment", {}).get("n_agents", 0)
+                    ),
+                    "update_scheme": "random_sequential_likelihood_factor",
+                    "critic": "centralized_mlp",
+                }
+                if not isinstance(implementation, Mapping):
+                    errors.append(
+                        f"HAPPO result lacks algorithm_implementation: {relative.as_posix()}"
+                    )
+                else:
+                    for field, expected_value in expected_happo.items():
+                        if implementation.get(field) != expected_value:
+                            errors.append(
+                                f"HAPPO implementation {field} mismatch: "
+                                f"{relative.as_posix()}"
+                            )
             if artifact_level == "paper":
                 resource = result.get("resource_audit")
                 if not isinstance(resource, Mapping):
@@ -198,7 +229,7 @@ def validate_study_artifact(
                 if not isinstance(values, Mapping):
                     errors.append(f"missing tier {tier!r}: {relative.as_posix()}")
                     continue
-                for metric in PRIMARY_METRICS:
+                for metric in required_metrics:
                     key = f"{tier}_{metric}"
                     if key not in values or not np.isfinite(float(values[key])):
                         errors.append(f"missing/non-finite {key}: {relative.as_posix()}")
@@ -218,7 +249,7 @@ def validate_study_artifact(
     for variant_key in set(summary_variants) & set(expected_variants):
         risk_tiers = summary_variants[variant_key].get("risk_tiers", {})
         for tier in tiers:
-            for metric in PRIMARY_METRICS:
+            for metric in required_metrics:
                 try:
                     raw = risk_tiers[tier][metric]["raw"]
                 except (KeyError, TypeError):
@@ -237,6 +268,15 @@ def validate_study_artifact(
             errors.append("summary lacks primary_multiplicity audit")
         elif int(multiplicity.get("family_size", -1)) <= 0:
             errors.append("primary_multiplicity family is empty")
+    if (
+        summary is not None
+        and metric_contract is not None
+        and "reporting" in reference
+    ):
+        observed_contract = summary.get("metric_contract")
+        expected_contract = json.loads(json.dumps(metric_contract))
+        if observed_contract != expected_contract:
+            errors.append("summary metric_contract differs from registered reporting")
     if contract_audit is not None and summary is not None:
         if summary.get("ablation_contract_audit") != contract_audit:
             errors.append("summary ablation contract audit differs from config")

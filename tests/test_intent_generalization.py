@@ -18,6 +18,7 @@ from intent_generalization import (  # noqa: E402
     validate_generalization_suite,
 )
 from intent_semantic_encoder import IntentLibrary  # noqa: E402
+from intent_objectives import OBJECTIVE_KEYS  # noqa: E402
 
 
 class IntentGeneralizationTests(unittest.TestCase):
@@ -27,7 +28,8 @@ class IntentGeneralizationTests(unittest.TestCase):
         )
         keys = {str(query["key"]) for query in suite["queries"]}
         self.assertFalse(any(key.startswith("cf_collision_") for key in keys))
-        self.assertEqual(len(suite["exclude_query_keys"]), 3)
+        self.assertNotIn("collision", suite["preference_objectives"])
+        self.assertEqual(suite["safety_constraints"], ["collision"])
 
     def test_counterfactual_profile_overrides_one_objective(self):
         query = {
@@ -44,7 +46,7 @@ class IntentGeneralizationTests(unittest.TestCase):
             {"key": "b", "split": "unseen", "canonical_label": "energy_saving"},
             {"key": "c", "split": "unseen", "canonical_label": "rapid_response"},
         ]
-        predictions = np.ones((3, 7), dtype=np.float32)
+        predictions = np.ones((3, len(OBJECTIVE_KEYS)), dtype=np.float32)
         diagnostic = objective_profile_prediction_diagnostics(queries, predictions)
         self.assertEqual(diagnostic["by_split"]["unseen"]["n_queries"], 2)
         self.assertEqual(len(diagnostic["queries"]), 3)
@@ -137,7 +139,7 @@ class IntentGeneralizationTests(unittest.TestCase):
         diagnostic = intent_behavior_controllability(queries, behavior)
         unseen = diagnostic["hard"]["unseen"]
         self.assertAlmostEqual(unseen["safety_tradeoff_spearman"], 1.0)
-        self.assertAlmostEqual(unseen["collision_preference_spearman"], 1.0)
+        self.assertNotIn("collision_preference_spearman", unseen)
         self.assertAlmostEqual(unseen["task_preference_spearman"], 1.0)
         self.assertIn("energy_preference_spearman", unseen)
         self.assertIn("distance_preference_spearman", unseen)

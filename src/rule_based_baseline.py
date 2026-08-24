@@ -27,6 +27,54 @@ def _cbf_min_distance(
     ))
 
 
+def _pairwise_cbf_terms(
+    observations: torch.Tensor,
+    *,
+    dt: float,
+    velocity_retention: float,
+    action_gain: float,
+    min_distance: float,
+) -> Tuple[List[Tuple[int, int]], torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Precompute the invariant geometry for cyclic pairwise projections.
+
+    Keeping pair identities as Python integers avoids extracting CUDA index
+    scalars inside the Gauss--Seidel loop. All continuous quantities remain on
+    the input device, so the filter does not introduce per-pair host/device
+    synchronisation.
+    """
+    n_agents = int(observations.size(0))
+    pairs = [(i, j) for i in range(n_agents) for j in range(i + 1, n_agents)]
+    if not pairs:
+        empty = observations.new_empty((0,))
+        return pairs, empty, observations.new_empty((0, 3)), empty
+
+    pair_i = torch.tensor(
+        [pair[0] for pair in pairs], dtype=torch.long, device=observations.device
+    )
+    pair_j = torch.tensor(
+        [pair[1] for pair in pairs], dtype=torch.long, device=observations.device
+    )
+    positions = observations[:, 0:3]
+    velocities = observations[:, 3:6]
+    relative_position = positions[pair_i] - positions[pair_j]
+    distances = torch.linalg.vector_norm(relative_position, dim=1)
+    default_direction = torch.zeros_like(relative_position)
+    default_direction[:, 0] = 1.0
+    directions = torch.where(
+        (distances <= 1e-6).unsqueeze(1),
+        default_direction,
+        relative_position / distances.clamp_min(1e-6).unsqueeze(1),
+    )
+    relative_velocity = velocities[pair_i] - velocities[pair_j]
+    radial_velocity = torch.sum(directions * relative_velocity, dim=1)
+    required_radial_actions = (
+        min_distance
+        - distances
+        - dt * velocity_retention * radial_velocity
+    ) / (dt * action_gain)
+    return pairs, distances, directions, required_radial_actions
+
+
 def pairwise_cbf_constraint_diagnostics(
     observations: torch.Tensor,
     actions: torch.Tensor,
@@ -50,42 +98,177 @@ def pairwise_cbf_constraint_diagnostics(
     if dt <= 0.0 or action_gain <= 0.0:
         raise ValueError("invalid CBF dynamics parameters")
     min_distance = _cbf_min_distance(objective_profile, base_min_distance)
-    positions = observations[:, 0:3]
-    velocities = observations[:, 3:6]
-    violations: List[float] = []
-    predicted_distances: List[float] = []
-    for i in range(len(actions)):
-        for j in range(i + 1, len(actions)):
-            relative_position = positions[i] - positions[j]
-            distance = torch.linalg.vector_norm(relative_position)
-            if float(distance.item()) <= 1e-6:
-                direction = torch.zeros_like(relative_position)
-                direction[0] = 1.0
-            else:
-                direction = relative_position / distance
-            radial_velocity = torch.dot(direction, velocities[i] - velocities[j])
-            radial_action = torch.dot(direction, actions[i] - actions[j])
-            predicted_distance = (
-                float(distance.item())
-                + dt * velocity_retention * float(radial_velocity.item())
-                + dt * action_gain * float(radial_action.item())
-            )
-            predicted_distances.append(predicted_distance)
-            violations.append(max(0.0, min_distance - predicted_distance))
-    if not violations:
+    pairs, distances, directions, required_radial_actions = _pairwise_cbf_terms(
+        observations,
+        dt=dt,
+        velocity_retention=velocity_retention,
+        action_gain=action_gain,
+        min_distance=min_distance,
+    )
+    if not pairs:
         return {
             "cbf_constraint_max_violation": 0.0,
             "cbf_constraint_mean_violation": 0.0,
             "cbf_constraint_violation_fraction": 0.0,
             "cbf_predicted_min_pairwise_distance": float("inf"),
         }
-    violation_array = np.asarray(violations, dtype=np.float64)
+    pair_i = torch.tensor(
+        [pair[0] for pair in pairs], dtype=torch.long, device=actions.device
+    )
+    pair_j = torch.tensor(
+        [pair[1] for pair in pairs], dtype=torch.long, device=actions.device
+    )
+    radial_actions = torch.sum(
+        directions * (actions[pair_i] - actions[pair_j]), dim=1
+    )
+    predicted_distances = min_distance + dt * action_gain * (
+        radial_actions - required_radial_actions
+    )
+    violations = torch.clamp(min_distance - predicted_distances, min=0.0)
+    stats = torch.stack(
+        (
+            violations.max(),
+            violations.mean(),
+            (violations > 1e-6).to(violations.dtype).mean(),
+            predicted_distances.min(),
+        )
+    ).detach().cpu().tolist()
     return {
-        "cbf_constraint_max_violation": float(violation_array.max()),
-        "cbf_constraint_mean_violation": float(violation_array.mean()),
-        "cbf_constraint_violation_fraction": float(np.mean(violation_array > 1e-6)),
-        "cbf_predicted_min_pairwise_distance": float(min(predicted_distances)),
+        "cbf_constraint_max_violation": float(stats[0]),
+        "cbf_constraint_mean_violation": float(stats[1]),
+        "cbf_constraint_violation_fraction": float(stats[2]),
+        "cbf_predicted_min_pairwise_distance": float(stats[3]),
     }
+
+
+def _numpy_pairwise_cbf_filter_with_diagnostics(
+    observations: torch.Tensor,
+    actions: torch.Tensor,
+    objective_profile: Mapping[str, float] | None,
+    *,
+    dt: float,
+    velocity_retention: float,
+    action_gain: float,
+    base_min_distance: float,
+    iterations: int,
+) -> Tuple[torch.Tensor, Dict[str, float]]:
+    """Run the tiny sequential projection as one host-side transaction.
+
+    The research setting has eight agents and only 28 pair constraints. On a
+    CUDA policy, launching hundreds of scalar-sized kernels is substantially
+    slower than transferring these bounded arrays once. The operation was
+    already non-differentiable because its active-set decisions used host
+    scalars, so detaching here does not remove a supported gradient path.
+    """
+    obs_np = observations.detach().cpu().numpy().astype(np.float32, copy=False)
+    filtered_np = actions.detach().cpu().numpy().astype(np.float32, copy=True)
+    min_distance = np.float32(
+        _cbf_min_distance(objective_profile, base_min_distance)
+    )
+    dt32 = np.float32(dt)
+    velocity_retention32 = np.float32(velocity_retention)
+    action_gain32 = np.float32(action_gain)
+    pairs: List[Tuple[int, int, np.ndarray, np.float32]] = []
+    for i in range(len(filtered_np)):
+        for j in range(i + 1, len(filtered_np)):
+            relative_position = obs_np[i, 0:3] - obs_np[j, 0:3]
+            distance = np.float32(np.linalg.norm(relative_position))
+            if float(distance) <= 1e-6:
+                direction = np.asarray([1.0, 0.0, 0.0], dtype=np.float32)
+            else:
+                direction = relative_position / distance
+            radial_velocity = np.float32(
+                np.dot(direction, obs_np[i, 3:6] - obs_np[j, 3:6])
+            )
+            required = np.float32(
+                (
+                    min_distance
+                    - distance
+                    - dt32 * velocity_retention32 * radial_velocity
+                )
+                / (dt32 * action_gain32)
+            )
+            pairs.append((i, j, direction, required))
+    for _ in range(iterations):
+        for i, j, direction, required in pairs:
+            actual = np.float32(np.dot(direction, filtered_np[i] - filtered_np[j]))
+            violation = np.float32(required - actual)
+            if float(violation) > 0.0:
+                correction = np.float32(0.5) * violation * direction
+                filtered_np[i] = filtered_np[i] + correction
+                filtered_np[j] = filtered_np[j] - correction
+                np.clip(filtered_np, -1.0, 1.0, out=filtered_np)
+
+    if not pairs:
+        diagnostics = {
+            "cbf_constraint_max_violation": 0.0,
+            "cbf_constraint_mean_violation": 0.0,
+            "cbf_constraint_violation_fraction": 0.0,
+            "cbf_predicted_min_pairwise_distance": float("inf"),
+        }
+    else:
+        predicted_distances = []
+        violations = []
+        for i, j, direction, _ in pairs:
+            distance = np.float32(
+                np.linalg.norm(obs_np[i, 0:3] - obs_np[j, 0:3])
+            )
+            radial_velocity = np.float32(
+                np.dot(direction, obs_np[i, 3:6] - obs_np[j, 3:6])
+            )
+            radial_action = np.float32(
+                np.dot(direction, filtered_np[i] - filtered_np[j])
+            )
+            predicted = np.float32(
+                distance
+                + dt32 * velocity_retention32 * radial_velocity
+                + dt32 * action_gain32 * radial_action
+            )
+            predicted_distances.append(float(predicted))
+            violations.append(max(0.0, float(min_distance - predicted)))
+        violation_array = np.asarray(violations, dtype=np.float64)
+        diagnostics = {
+            "cbf_constraint_max_violation": float(violation_array.max()),
+            "cbf_constraint_mean_violation": float(violation_array.mean()),
+            "cbf_constraint_violation_fraction": float(
+                np.mean(violation_array > 1e-6)
+            ),
+            "cbf_predicted_min_pairwise_distance": float(min(predicted_distances)),
+        }
+    filtered = torch.as_tensor(
+        filtered_np, dtype=actions.dtype, device=actions.device
+    )
+    return filtered, diagnostics
+
+
+def apply_pairwise_cbf_filter_with_diagnostics(
+    observations: torch.Tensor,
+    actions: torch.Tensor,
+    objective_profile: Mapping[str, float] | None = None,
+    *,
+    dt: float = 0.2,
+    velocity_retention: float = 0.7,
+    action_gain: float = 0.3,
+    base_min_distance: float = 1.0,
+    iterations: int = 4,
+) -> Tuple[torch.Tensor, Dict[str, float]]:
+    """Return the cyclic CBF projection and its matching audit in one pass."""
+    if observations.ndim != 2 or actions.ndim != 2:
+        raise ValueError("observations and actions must be 2D")
+    if len(observations) != len(actions) or actions.size(1) != 3:
+        raise ValueError("CBF filter requires aligned 3D multi-agent actions")
+    if dt <= 0.0 or action_gain <= 0.0 or iterations < 1:
+        raise ValueError("invalid CBF dynamics/projection parameters")
+    return _numpy_pairwise_cbf_filter_with_diagnostics(
+        observations,
+        actions,
+        objective_profile,
+        dt=dt,
+        velocity_retention=velocity_retention,
+        action_gain=action_gain,
+        base_min_distance=base_min_distance,
+        iterations=iterations,
+    )
 
 
 def apply_pairwise_cbf_filter(
@@ -110,36 +293,16 @@ def apply_pairwise_cbf_filter(
         raise ValueError("CBF filter requires aligned 3D multi-agent actions")
     if dt <= 0.0 or action_gain <= 0.0 or iterations < 1:
         raise ValueError("invalid CBF dynamics/projection parameters")
-    min_distance = _cbf_min_distance(objective_profile, base_min_distance)
-    positions = observations[:, 0:3]
-    velocities = observations[:, 3:6]
-    filtered = actions.clone()
-    n_agents = int(len(filtered))
-    for _ in range(iterations):
-        for i in range(n_agents):
-            for j in range(i + 1, n_agents):
-                relative_position = positions[i] - positions[j]
-                distance = torch.linalg.vector_norm(relative_position)
-                if float(distance.item()) <= 1e-6:
-                    direction = torch.zeros_like(relative_position)
-                    direction[0] = 1.0
-                else:
-                    direction = relative_position / distance
-                relative_velocity = velocities[i] - velocities[j]
-                required_radial_action = (
-                    min_distance
-                    - float(distance.item())
-                    - dt * velocity_retention * torch.dot(direction, relative_velocity)
-                ) / (dt * action_gain)
-                actual_radial_action = torch.dot(
-                    direction, filtered[i] - filtered[j]
-                )
-                violation = required_radial_action - actual_radial_action
-                if float(violation.item()) > 0.0:
-                    correction = 0.5 * violation * direction
-                    filtered[i] = filtered[i] + correction
-                    filtered[j] = filtered[j] - correction
-                    filtered = torch.clamp(filtered, -1.0, 1.0)
+    filtered, _ = apply_pairwise_cbf_filter_with_diagnostics(
+        observations,
+        actions,
+        objective_profile,
+        dt=dt,
+        velocity_retention=velocity_retention,
+        action_gain=action_gain,
+        base_min_distance=base_min_distance,
+        iterations=iterations,
+    )
     return filtered
 
 
@@ -490,18 +653,12 @@ class RuleBasedUAVPolicy:
                 if self.config.rule_prior_context == "oracle_profile" else None
             )
             filter_start = time.perf_counter()
-            actions = apply_pairwise_cbf_filter(
+            actions, cyclic_audit = apply_pairwise_cbf_filter_with_diagnostics(
                 observations.to(self.device),
                 unfiltered_actions,
                 profile,
                 base_min_distance=self.config.cbf_base_min_distance,
                 iterations=self.config.cbf_iterations,
-            )
-            cyclic_audit = pairwise_cbf_constraint_diagnostics(
-                observations.to(self.device),
-                actions,
-                profile,
-                base_min_distance=self.config.cbf_base_min_distance,
             )
             self._last_safety_solver_diagnostics = {
                 "safety_filter_solver_success": float(

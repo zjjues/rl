@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "dataset_id": "aerialvln-kaggle-v8-val-unseen-instructions",
+  "source_url": "https://www.kaggle.com/datasets/shuboliu/aerialvln",
+  "source_version": "8",
+  "license_name": "Attribution 4.0 International (CC BY 4.0)",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "retrieved_at_utc": "2026-08-20T07:18:47Z",
+  "usage": "ood_negative_control",
+  "label_compatibility": "navigation_instruction_not_preference",
+  "records_sha256": "758761ecf82d5908edf4f34577bfa541381ad8a6c7e6202940ad8af0dc0c1119",
+  "split_policy": "preserve official val_unseen split; no train/dev relabeling",
+  "source_archive_sha256": "d8f5d47f7409f3d254b90063e1f0eb693cc581a8af828fc37375cb055c1932d2",
+  "source_archive_compressed_bytes": 66720431,
+  "source_metadata_total_bytes": 393931815,
+  "record_count": 2310,
+  "derived_records_location": "local Git-ignored cache; recreate with audit_external_language_corpus.py",
+  "preference_labels_added": false
+}

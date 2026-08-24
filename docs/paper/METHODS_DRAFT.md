@@ -1,5 +1,19 @@
 # 方法章节持续草稿
 
+## 18. 偏好相关性拒答与一次性外部终测
+
+自由文本首先经过冻结 MiniLM embedding 上的 logistic relevance gate。gate 只决定“是否允许进入六轴 profile decoder”，拒绝样本的六个目标倍率全部回到 1.0；它不改变不可协商 collision 约束。阈值仅由 AerialVLN `val_seen` 负样本上限校准，开发版 gate SHA-256 为 `8518d9be...87fd`，阈值为 `0.0244081132`。AerialVLN `val_unseen` 已在设计阶段查看，因此只作为 development evaluation，不作为最终盲测。
+
+CityNav 在接触文本前完成 v2 预注册：冻结源 commit、190,078,685-byte archive SHA-256、四个 canonical split、gate 哈希/阈值、总体 FAR、Wilson 95% CI 和 5%/10% pass-caution-fail 边界。运行器在模型推理前写 one-shot attempt marker，已有 attempt 或结果时拒绝重跑。32,637 条真实城市目标描述的最终 FAR 为 **0.961516**（95% CI **[0.959374, 0.963549]**），预注册结论为 fail。该语料禁止用于修改当前 gate 或阈值。
+
+这个负结果否定了“冻结 embedding 线性 gate 已学到可迁移偏好相关性”的主张。更合理的解释是分类器区分了开发者模板与 AerialVLN 风格；CityNav 的目标描述产生严重域偏移。后续方法必须使用来源独立、writer-disjoint 的人工偏好 train/dev/test，并把多来源导航/任务语言作为训练负例；CityNav 只能保留为已消耗的最终外部测试。
+
+## 19. VMAS 跨场景架构复现边界
+
+VMAS navigation 与 dispersion 只检验 MARL 架构外部有效性。所有变体统一使用 `intent_source=none`、`intent_profile_decoder=none`、`eta=0`、无 action mask、无 safety filter、direct policy；协议验证器拒绝把 UAV 语言、奖励画像或安全语义带入 VMAS。比较对象为 attention centralized PPO、MAPPO、IPPO、独立 actor 顺序 HAPPO 和 MATD3，唯一有效主指标为场景原生 episode return。
+
+VMASAdapter 固定 v1.5.2，强制注册 horizon，并仅映射原生 reward 与显式 collision diagnostics；`pos_rew` 不会被重命名为 UAV task completion。两个 5-algorithm/1-seed smoke 均通过 checksum/artifact 审计；它们只证明管线，不支持排序。10-seed、100-evaluation-episode paper 配置已冻结，粗略预算为 navigation 36.4–55.5 GPUh、dispersion 32.2–49.0 GPUh，正式运行前仍需 100-episode calibration。
+
 ## 0.1 Betaflight SITL 高保真迁移
 
 ### 架构
@@ -298,3 +312,33 @@ Composite manifest 使用 schema v2。顶层 `config` 表示合并后的完整�
 MiniLM 和 NLI CrossEncoder 在单个 study 进程内按 `(model, revision, device)` 复用。缓存对象固定为 eval mode 且所有参数 `requires_grad=false`；每个变体仍独立拟合轻量 objective adapter、维护 profile cache 并初始化 MARL 网络。该优化不改变模型权重或预测函数，只消除重复磁盘加载与显存构造。
 
 每个逐 seed result 记录总墙钟时间、CUDA 峰值、actor/critic/potential 的总参数和可训练参数、以及当时的冻结文本模型缓存键。paper 报告同时给出 transition 数、训练更新次数与这些系统资源，防止只报告任务指标而隐藏推理/训练代价。
+
+## 14. 小规模 CBF 的等价执行优化
+
+8 UAV 只有 28 条成对约束。原 cyclic projection 在 CUDA 上对距离、violation 和 diagnostics 逐标量 `.item()`，导致每个控制步发生数百次同步；其成本来自执行方式而非约束规模。优化实现仍按固定 lexicographic pair 顺序执行四轮 Gauss--Seidel 投影，并在每个 active constraint 后对完整联合动作执行 `[-1,1]` clipping。不同之处是把观测和候选动作一次性转为 host float32 数组，在同一事务中完成投影与诊断，再把结果返回原设备。CBF 本来就通过离散 active-set 分支不可微，因此该路径不撤销受支持的梯度合同。
+
+可复现实验 `benchmark_cbf_runtime.py` 同时运行冻结的旧实现 oracle 与新实现。8 agents、28 pairs、4 iterations、100 repeats 下，RTX 3050 的 filter+diagnostics 平均延迟为 54.80/0.83 ms，CPU 为 7.61/0.76 ms；最大动作/诊断误差分别为 `4.25e-7`/`2.03e-8`。随机 CPU/CUDA 张量测试还覆盖重合位置的默认方向。该证据支持“注册约束在数值容差内等价且运行更快”，不支持严格 bitwise identity、连续时间安全或硬实时截止保证。
+
+## 15. HAPPO 强基线
+
+HAPPO 基线遵循原论文的 sequential policy update，并以 PKU-MARL/HARL `b1af98b0dbab72a2eee9d160751cd09aedbb8ce2` 为计算协议参照。与共享 actor 的 MAPPO 不同，8 个 UAV 各自拥有独立连续动作 actor π_i；参数存储和 optimizer state 均不共享。每次 rollout 更新抽取一个随机排列 \((i_1,\ldots,i_N)\)，初始 factor \(M=1\)。训练 agent \(i_m\) 时 PPO clipped surrogate 乘以固定的前序 factor；该 agent 完成所有 epoch 后，在整段 rollout 上重算动作对数概率，并更新
+
+\[
+M \leftarrow M\,\exp\{\log \pi_{i_m}^{new}(a_{i_m}|o_{i_m})-\log \pi_{i_m}^{old}(a_{i_m}|o_{i_m})\}.
+\]
+
+所有 actor 更新结束后才训练 centralized MLP value critic。HAPPO 不接收 intent vector、task-derived mask、规则先验或 CBF，故比较的是纯 MARL 强基线。每个 result 记录 independent actor count、sequential factor scheme、actor/critic 参数量；训练日志记录 factor mean/absolute max 和当次第一个 agent。该本地实现经过公式与官方 runner 协议交叉检查，但不是官方 HARL 源码的 vendored copy；正式论文仍需独立的官方框架交叉运行。
+
+## 16. 外部语言数据与构念边界
+
+语言证据分成两类。第一类是独立采集的六维 UAV 操作偏好，直接监督 distance、energy、safety、task、time、threat 的 low/high 与 neutral；writer 按身份隔离 train/dev/test，第二人盲审，分歧由独立第三人裁决。所有阈值在 test SHA-256 冻结前确定，报告裁决前一致率、Cohen's kappa、macro-F1、逐类 recall、校准和拒答率。
+
+第二类是公开 UAV 导航语言，仅用于 out-of-distribution negative control。AerialVLN 指令由人类根据参考飞行视频撰写，具备真实 UAV 措辞，但其标签是路径/目标，不是操作员对多目标 reward 的偏好。导入器因此不输出 objective 或 polarity；机器 manifest 强制 `label_compatibility=navigation_instruction_not_preference` 只能搭配 `usage=ood_negative_control`。在该集合上只报告偏好解码器的误接收/拒答，不报告偏好分类准确率。这一约束阻止通过研究者后验映射制造虚假的外部泛化。
+
+实现中 preference decoder 只输出六轴 profile；collision reward weight 对全部 canonical label 固定为 1.0，环境拒绝语言 profile 对 collision 的非单位 override。该合同的含义是“语言不能放宽接触惩罚”，不是“策略形式上保证永不碰撞”；物理安全仍需独立 CBF/备用控制与系统验证。AerialVLN 128 条 OOD smoke 显示未校准 0.20 profile 偏移阈值仍有 39.06% 激活，故当前不设 production threshold，必须等待独立 preference dev 校准。
+
+## 17. 长实验预算与原子恢复
+
+正式运行仍注册完整 variants、seeds、训练 episode、评测 episode 和风险档。执行时可以选择 variant×seed 子集；每个逐 seed result 原子写入独立目录。若尚有注册 pair 缺失，manifest 为 `partial`，列出 missing pairs，且不生成 summary、显著性检验或 `complete` 标志。后续 `--resume` 首先核验已有 result 的 seed、variant key 和完整 variant definition，所有 pair 齐全后重新从磁盘载入全集并一次性聚合。因此中断和调用顺序不改变统计样本。
+
+预算器用 smoke 实测 wall time 按训练与评测 environment-step 数外推。总 workload 比率给出低估计，训练/评测最大单项比率给出保守估计；同构算法 study 中唯一极端首轮耗时可拆为一次性 text-model/cache cold start，混合算法 study 不作该假设。该范围只用于 GPU 预约，并被标记为高不确定性；100-training-episode calibration 后才更新正式预算。

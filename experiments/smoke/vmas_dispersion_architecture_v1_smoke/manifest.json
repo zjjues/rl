@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "study_id": "vmas_dispersion_architecture_v1_smoke",
+  "level": "smoke",
+  "started_at_utc": "2026-08-24T02:40:22.518183+00:00",
+  "git_commit": "5097665df1fdeb0a784abb21fb1dfaa8abd27f2b",
+  "git_status_short": "M analyze_intent_controllability.py\n M configs/research/uav_intent_generalization_suite.v2.json\n M configs/research/uav_intent_generalization_suite.v7.json\n M configs/research/uav_intent_generalization_suite.v8.json\n M docs/paper/CONTINUATION_STATE.md\n M docs/paper/METHODS_DRAFT.md\n M docs/paper/PREFERENCE_ANNOTATION_PROTOCOL.md\n M docs/paper/PUBLICATION_READINESS.md\n M docs/paper/RESEARCH_CHANGELOG.md\n M docs/paper/RESULTS_LEDGER.md\n M experiments/smoke/uav_imappo_ablation_smoke_v2/imappo_full/seed_7/result.json\n M experiments/smoke/uav_imappo_ablation_smoke_v2/manifest.json\n M experiments/smoke/uav_imappo_ablation_smoke_v2/no_attention/seed_7/result.json\n M experiments/smoke/uav_imappo_ablation_smoke_v2/no_cbf/seed_7/result.json\n M experiments/smoke/uav_imappo_ablation_smoke_v2/no_intent_reward/seed_7/result.json\n M experiments/smoke/uav_imappo_ablation_smoke_v2/no_mask/seed_7/result.json\n M experiments/smoke/uav_imappo_ablation_smoke_v2/no_nli_gate/seed_7/result.json\n M experiments/smoke/uav_imappo_ablation_smoke_v2/prior_only/seed_7/result.json\n M generate_paper_artifacts.py\n M run_research_study.py\n M src/envs/uav_scheduling_env.py\n M src/envs/vmas_adapter.py\n M src/imappo.py\n M src/intent_generalization.py\n M src/intent_objectives.py\n M src/objective_semantic_adapter.py\n M src/preference_dataset.py\n M src/research_artifact.py\n M src/research_protocol.py\n M src/rule_based_baseline.py\n M tests/test_intent_generalization.py\n M tests/test_intent_objectives.py\n M tests/test_objective_semantic_adapter.py\n M tests/test_preference_dataset.py\n M tests/test_research_artifact.py\n M tests/test_research_protocol.py\n M tests/test_research_resume.py\n M tests/test_rule_based_baseline.py\n M tests/test_vmas_adapter.py\n?? audit_external_language_corpus.py\n?? benchmark_cbf_runtime.py\n?? configs/data/\n?? configs/research/preference_relevance_gate.aerialvln_dev.v1.json\n?? configs/research/uav_language_relevance_gate.smoke.json\n?? configs/research/uav_marl_architecture_v3.paper.json\n?? configs/research/uav_marl_architecture_v3.smoke.json\n?? configs/research/vmas_dispersion_architecture_v1.paper.json\n?? configs/research/vmas_dispersion_architecture_v1.smoke.json\n?? configs/research/vmas_navigation_architecture_v1.paper.json\n?? configs/research/vmas_navigation_architecture_v1.smoke.json\n?? docs/paper/CBF_RUNTIME_OPTIMIZATION.md\n?? docs/paper/EXTERNAL_LANGUAGE_DATA_AUDIT.md\n?? docs/paper/HAPPO_BASELINE_PROTOCOL.md\n?? docs/paper/LANGUAGE_SAFETY_CONTRACT.md\n?? docs/paper/audits/aerialvln_v8_source_manifest.json\n?? docs/paper/audits/aerialvln_v8_val_unseen_ood_gated_dev_smoke.json\n?? docs/paper/audits/aerialvln_v8_val_unseen_ood_smoke.json\n?? docs/paper/audits/cbf_runtime_benchmark_cpu.json\n?? docs/paper/audits/cbf_runtime_benchmark_cuda.json\n?? docs/paper/audits/citynav_human_language_final_ood_v2.json\n?? docs/paper/audits/citynav_human_language_final_ood_v2.json.attempt.json\n?? docs/paper/audits/happo_reference_protocol.json\n?? docs/paper/audits/preference_relevance_gate_aerialvln_dev_v1.json\n?? docs/paper/audits/uav_imappo_ablation_runtime_plan.json\n?? docs/paper/audits/uav_imappo_ablation_smoke_v2.json\n?? docs/paper/audits/uav_language_relevance_gate_smoke_v1.json\n?? docs/paper/audits/uav_marl_architecture_v3_runtime_plan.json\n?? docs/paper/audits/uav_marl_architecture_v3_smoke.json\n?? docs/paper/audits/vmas_dispersion_architecture_v1_runtime_plan.json\n?? docs/paper/audits/vmas_dispersion_architecture_v1_smoke.json\n?? docs/paper/audits/vmas_navigation_architecture_v1_runtime_plan.json\n?? docs/paper/audits/vmas_navigation_architecture_v1_smoke.json\n?? docs/paper/generated/uav_imappo_ablation_smoke_v2/\n?? docs/paper/generated/uav_marl_architecture_v3_smoke/\n?? evaluate_external_language_ood.py\n?? evaluate_final_language_ood.py\n?? experiments/smoke/uav_imappo_ablation_smoke_v2/RESULT_CARD.md\n?? experiments/smoke/uav_imappo_ablation_smoke_v2/checksums.sha256\n?? experiments/smoke/uav_imappo_ablation_smoke_v2/identity_oracle/\n?? experiments/smoke/uav_imappo_ablation_smoke_v2/no_intent/\n?? experiments/smoke/uav_imappo_ablation_smoke_v2/no_profile_prior/\n?? experiments/smoke/uav_imappo_ablation_smoke_v2/summary.json\n?? experiments/smoke/uav_imappo_ablation_smoke_v2_interrupted_20260820_7of10/\n?? experiments/smoke/uav_language_relevance_gate_smoke_v1/\n?? experiments/smoke/uav_marl_architecture_v3_smoke/\n?? experiments/smoke/vmas_dispersion_architecture_v1_smoke_metric_contract_superseded_20260824/\n?? experiments/smoke/vmas_navigation_architecture_v1_smoke/\n?? experiments/smoke/vmas_navigation_architecture_v1_smoke_metric_contract_superseded_20260824/\n?? freeze_preference_dataset.py\n?? plan_experiment_runtime.py\n?? src/external_language_corpus.py\n?? src/final_ood_registration.py\n?? src/happo_baseline.py\n?? src/preference_relevance_gate.py\n?? src/research_metrics.py\n?? tests/test_evaluate_external_language_ood.py\n?? tests/test_evaluate_final_language_ood.py\n?? tests/test_external_language_corpus.py\n?? tests/test_final_ood_registration.py\n?? tests/test_generate_paper_artifacts.py\n?? tests/test_happo_baseline.py\n?? tests/test_plan_experiment_runtime.py\n?? tests/test_preference_relevance_gate.py\n?? tests/test_research_metrics.py\n?? train_preference_relevance_gate.py",
+  "command": [
+    "run_research_study.py",
+    "--config",
+    "configs\\research\\vmas_dispersion_architecture_v1.smoke.json",
+    "--allow-dirty"
+  ],
+  "python": "3.10.20 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:13:20) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "dependencies": {
+    "numpy": "1.26.4",
+    "torch": "2.4.1+cu124",
+    "gymnasium": "1.1.1",
+    "sentence-transformers": "3.2.1",
+    "scipy": "1.15.3"
+  },
+  "seed_protocol": {
+    "training_reset": "seed * 1000000 + training_episode",
+    "periodic_eval_reset": "seed * 1000000 + 500000 + evaluation_episode",
+    "collision_probe_reset": "seed * 1000000 + 600000 + evaluation_episode",
+    "final_tier_reset": "seed * 1000000 + 10000 + tier_index * 1000 + evaluation_episode",
+    "query_reset": "seed * 1000000 + 100000 + query_index * 10000 + tier_index * 1000 + evaluation_episode"
+  },
+  "config": {
+    "schema_version": 1,
+    "study_id": "vmas_dispersion_architecture_v1_smoke",
+    "level": "smoke",
+    "objective": "Pipeline validation on VMAS dispersion; no language, UAV objective, action-mask, safety-filter, or preference claim.",
+    "seeds": [
+      7
+    ],
+    "bootstrap_seed": 20260820,
+    "treatment_key": "imappo_attention",
+    "environment": {
+      "name": "vmas:dispersion",
+      "package_name": "vmas",
+      "package_version": "1.5.2",
+      "n_agents": 3,
+      "intent_reward_profiles_enabled": false
+    },
+    "training": {
+      "episodes": 5,
+      "steps": 50,
+      "rollout_length": 64,
+      "minibatch_size": 32,
+      "eval_interval": 5,
+      "actor_lr": 0.0003,
+      "critic_lr": 0.0003,
+      "eta": 0.0,
+      "eta_end": 0.0,
+      "entropy_coef": 0.001,
+      "entropy_coef_end": 0.0001,
+      "potential_update_mode": "frozen",
+      "matd3_warmup_steps": 10,
+      "replay_capacity": 10000,
+      "device": "cuda"
+    },
+    "intent": {
+      "dim": 1,
+      "encoder_model": "not_used",
+      "encoder_revision": "",
+      "projection_seed": 0,
+      "code_seed": 0
+    },
+    "variants": [
+      {
+        "key": "imappo_attention",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "intent_source": "none",
+        "intent_profile_decoder": "none",
+        "disable_intent_reward": true,
+        "use_action_mask": false,
+        "policy_mode": "direct",
+        "safety_filter_mode": "none"
+      },
+      {
+        "key": "mappo",
+        "algorithm": "mappo",
+        "critic_mode": "mlp",
+        "intent_source": "none",
+        "intent_profile_decoder": "none",
+        "disable_intent_reward": true,
+        "use_action_mask": false,
+        "policy_mode": "direct",
+        "safety_filter_mode": "none"
+      },
+      {
+        "key": "ippo",
+        "algorithm": "ippo",
+        "critic_mode": "local",
+        "intent_source": "none",
+        "intent_profile_decoder": "none",
+        "disable_intent_reward": true,
+        "use_action_mask": false,
+        "policy_mode": "direct",
+        "safety_filter_mode": "none"
+      },
+      {
+        "key": "happo",
+        "algorithm": "happo",
+        "critic_mode": "mlp",
+        "intent_source": "none",
+        "intent_profile_decoder": "none",
+        "disable_intent_reward": true,
+        "use_action_mask": false,
+        "policy_mode": "direct",
+        "safety_filter_mode": "none",
+        "actor_parameter_sharing": "independent",
+        "update_scheme": "random_sequential_likelihood_factor"
+      },
+      {
+        "key": "matd3",
+        "algorithm": "matd3",
+        "critic_mode": "mlp",
+        "intent_source": "none",
+        "intent_profile_decoder": "none",
+        "disable_intent_reward": true,
+        "use_action_mask": false,
+        "policy_mode": "direct",
+        "safety_filter_mode": "none"
+      }
+    ],
+    "evaluation": {
+      "episodes": 3,
+      "risk_tiers": {
+        "canonical": {
+          "n_agents": 3,
+          "intent_mode": "standard"
+        }
+      }
+    },
+    "reporting": {
+      "primary_metric": "canonical_episode_return",
+      "primary_metrics": [
+        "episode_return"
+      ],
+      "summary_metrics": [
+        "episode_return"
+      ],
+      "artifact_metrics": [
+        "episode_return"
+      ],
+      "valid_scope": "architecture_only",
+      "invalid_claims": [
+        "language_generalization",
+        "preference_accuracy",
+        "UAV_safety_transfer",
+        "task_completion_from_UAV_schema"
+      ]
+    }
+  },
+  "status": "complete",
+  "completed_at_utc": "2026-08-24T02:40:52.435530+00:00"
+}

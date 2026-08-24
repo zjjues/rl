@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "registration_id": "citynav-human-language-final-ood-v1",
+  "registered_at_utc": "2026-08-20T07:53:41Z",
+  "status": "superseded_before_text_access",
+  "superseded_by": "citynav-human-language-final-ood-v2",
+  "supersession_reason": "Archive path-only inspection showed that the broad glob includes difficulty-derived duplicates. No description text was opened; v2 freezes the four canonical split files.",
+  "source": {
+    "dataset_id": "citynav-iccv2025",
+    "title": "CityNav: A Large-Scale Dataset for Real-World Aerial Navigation",
+    "source_url": "https://github.com/water-cookie/citynav",
+    "source_revision": "372ecbd1df58b46ffaad91c118c4838b88b87710",
+    "download_url": "https://www.dropbox.com/scl/fi/ekbogjn2ptxdde2gik6nx/data.tar.gz?rlkey=oq5smcqlbgc6do5mcowetj3mp&st=gx563bhw&dl=1",
+    "paper_url": "https://openaccess.thecvf.com/content/ICCV2025/papers/Lee_CityNav_A_Large-Scale_Dataset_for_Real-World_Aerial_Navigation_ICCV_2025_paper.pdf",
+    "license_name": "Attribution 4.0 International (CC BY 4.0)",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "language_provenance": "Natural-language goal descriptions paired with human demonstration trajectories and collected from participants in a web-based simulator."
+  },
+  "evaluation_population": {
+    "sampling": "all_released_records",
+    "registered_path_glob": "data/citynav/citynav_*.json",
+    "unit": "each released CityNav natural-language description",
+    "deduplication": "none; report raw records and normalized-unique count separately",
+    "split_reporting": "overall and every source split found by the registered glob",
+    "exclusions": "Only structurally invalid or empty descriptions may be excluded; counts and reasons must be reported."
+  },
+  "frozen_gate": {
+    "path": "configs/research/preference_relevance_gate.aerialvln_dev.v1.json",
+    "sha256": "8518d9be5f73ab83be87c160065a93d2c75678038f8223fef7705d52a9b787fd",
+    "threshold": 0.024408113173431428,
+    "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "training_and_calibration_sources": "Developer-authored positives; AerialVLN train negatives; AerialVLN val_seen negative calibration.",
+    "development_only_source_seen_before_registration": "AerialVLN val_unseen"
+  },
+  "metrics": {
+    "primary": "false_accept_rate_at_frozen_threshold",
+    "confidence_interval": "wilson_95_percent",
+    "secondary": [
+      "accepted_count",
+      "score_p05_median_p95",
+      "normalized_unique_text_count",
+      "per_source_split_false_accept_rate"
+    ]
+  },
+  "decision_rule": {
+    "pass_if_far_at_most": 0.05,
+    "caution_if_far_at_most": 0.1,
+    "fail_if_far_above": 0.1,
+    "interpretation": "Pass supports navigation-language abstention only; caution requires limitation language; fail blocks a robustness claim and cannot trigger retuning on this corpus."
+  },
+  "blinding_and_change_control": {
+    "text_inspected_before_registration": false,
+    "metadata_and_paper_inspected_before_registration": true,
+    "gate_or_threshold_changes_after_evaluation_allowed": false,
+    "evaluation_is_one_shot": true,
+    "permitted_after_registration_before_evaluation": "Source download, hash capture, schema-only parser implementation, parser tests with synthetic fixtures, and manifest validation.",
+    "if_parser_or_source_integrity_fails": "Mark the attempt invalid with an audit trail; do not report it as a model result."
+  },
+  "claim_boundary": "CityNav descriptions are navigation goals, not six-axis UAV operator preference labels. The final test estimates only false activation/abstention under a real-city language shift; it cannot estimate preference classification accuracy or make this development gate paper-ready."
+}

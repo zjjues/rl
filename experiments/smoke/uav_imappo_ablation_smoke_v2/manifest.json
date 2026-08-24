@@ -2,9 +2,9 @@
   "schema_version": 1,
   "study_id": "uav_imappo_ablation_smoke_v2",
   "level": "smoke",
-  "started_at_utc": "2026-08-20T05:52:32.931807+00:00",
-  "git_commit": "86872472bfe05b408debe8938e68fecaf88dd2e0",
-  "git_status_short": "M configs/research/uav_imappo_ablation.pilot.json\n M configs/research/uav_imappo_ablation.smoke.json\n M run_research_study.py\n M src/imappo.py\n M src/objective_semantic_adapter.py\n M src/research_artifact.py\n M tests/test_imappo_intent_alignment.py\n M tests/test_objective_semantic_adapter.py\n?? configs/research/uav_marl_architecture_v2.paper.json\n?? configs/research/uav_marl_architecture_v2.smoke.json\n?? docs/paper/audits/uav_imappo_main_semantic_protocol_audit.json\n?? docs/paper/audits/uav_marl_architecture_v2_smoke.json\n?? experiments/smoke/uav_imappo_ablation_smoke_v2_interrupted_20260820/\n?? experiments/smoke/uav_marl_architecture_v2_smoke/\n?? src/research_ablation.py\n?? src/research_protocol.py\n?? tests/test_research_ablation.py\n?? tests/test_research_protocol.py",
+  "started_at_utc": "2026-08-20T06:24:04.752438+00:00",
+  "git_commit": "5097665df1fdeb0a784abb21fb1dfaa8abd27f2b",
+  "git_status_short": "D experiments/smoke/uav_imappo_ablation_smoke_v2/config.json\n D experiments/smoke/uav_imappo_ablation_smoke_v2/imappo_full/seed_7/result.json\n D experiments/smoke/uav_imappo_ablation_smoke_v2/manifest.json\n D experiments/smoke/uav_imappo_ablation_smoke_v2/no_attention/seed_7/result.json\n D experiments/smoke/uav_imappo_ablation_smoke_v2/no_cbf/seed_7/result.json\n D experiments/smoke/uav_imappo_ablation_smoke_v2/no_intent_reward/seed_7/result.json\n D experiments/smoke/uav_imappo_ablation_smoke_v2/no_mask/seed_7/result.json\n D experiments/smoke/uav_imappo_ablation_smoke_v2/no_nli_gate/seed_7/result.json\n D experiments/smoke/uav_imappo_ablation_smoke_v2/prior_only/seed_7/result.json\n M src/imappo.py\n M src/rule_based_baseline.py\n M tests/test_rule_based_baseline.py\n?? benchmark_cbf_runtime.py\n?? docs/paper/audits/cbf_runtime_benchmark_cpu.json\n?? docs/paper/audits/cbf_runtime_benchmark_cuda.json\n?? experiments/smoke/uav_imappo_ablation_smoke_v2_interrupted_20260820_7of10/",
   "command": [
     "run_research_study.py",
     "--config",
@@ -389,23 +389,6 @@
       ]
     }
   },
-  "status": "interrupted",
-  "interrupted_at_local": "2026-08-20 Asia/Shanghai",
-  "interruption_reason": "User requested the active research task be paused before the repository snapshot was committed and pushed.",
-  "completed_results": 7,
-  "expected_results": 10,
-  "completed_variants": [
-    "imappo_full",
-    "no_mask",
-    "no_attention",
-    "no_intent_reward",
-    "no_cbf",
-    "no_nli_gate",
-    "prior_only"
-  ],
-  "remaining_variants": [
-    "no_profile_prior",
-    "identity_oracle",
-    "no_intent"
-  ]
+  "status": "complete",
+  "completed_at_utc": "2026-08-20T06:27:06.985448+00:00"
 }

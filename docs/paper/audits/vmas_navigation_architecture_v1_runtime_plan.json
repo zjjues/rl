@@ -1,0 +1,302 @@
+{
+  "schema_version": 1,
+  "study_id": "vmas_navigation_architecture_v1_paper",
+  "method": "linear environment-step extrapolation from measured smoke wall time",
+  "uncertainty": "high; run a 100-training-episode calibration before final reservation",
+  "smoke_workload_units": {
+    "training": 250,
+    "evaluation": 150,
+    "total": 400
+  },
+  "paper_workload_units": {
+    "training": 200000,
+    "evaluation": 10000,
+    "total": 210000
+  },
+  "blended_scale": 525.0,
+  "conservative_scale": 800.0,
+  "fixed_cold_start_seconds": 0.0,
+  "seed_count": 10,
+  "run_count": 50,
+  "estimated_gpu_hours_low": 36.448570666349646,
+  "estimated_gpu_hours_high": 55.540679110628034,
+  "per_variant": {
+    "imappo_attention": {
+      "smoke_wall_seconds": 7.44303989992477,
+      "recurring_smoke_seconds": 7.44303989992477,
+      "estimated_seconds_per_seed_low": 3907.5959474605042,
+      "estimated_seconds_per_seed_high": 5954.431919939816,
+      "estimated_gpu_hours_all_seeds_low": 10.85443318739029,
+      "estimated_gpu_hours_all_seeds_high": 16.54008866649949
+    },
+    "mappo": {
+      "smoke_wall_seconds": 3.8538795998319983,
+      "recurring_smoke_seconds": 3.8538795998319983,
+      "estimated_seconds_per_seed_low": 2023.2867899117991,
+      "estimated_seconds_per_seed_high": 3083.1036798655987,
+      "estimated_gpu_hours_all_seeds_low": 5.620241083088331,
+      "estimated_gpu_hours_all_seeds_high": 8.564176888515552
+    },
+    "ippo": {
+      "smoke_wall_seconds": 4.016251499997452,
+      "recurring_smoke_seconds": 4.016251499997452,
+      "estimated_seconds_per_seed_low": 2108.5320374986622,
+      "estimated_seconds_per_seed_high": 3213.0011999979615,
+      "estimated_gpu_hours_all_seeds_low": 5.857033437496284,
+      "estimated_gpu_hours_all_seeds_high": 8.925003333327671
+    },
+    "happo": {
+      "smoke_wall_seconds": 6.2157242000103,
+      "recurring_smoke_seconds": 6.2157242000103,
+      "estimated_seconds_per_seed_low": 3263.2552050054073,
+      "estimated_seconds_per_seed_high": 4972.57936000824,
+      "estimated_gpu_hours_all_seeds_low": 9.064597791681686,
+      "estimated_gpu_hours_all_seeds_high": 13.812720444467333
+    },
+    "matd3": {
+      "smoke_wall_seconds": 3.464410400018096,
+      "recurring_smoke_seconds": 3.464410400018096,
+      "estimated_seconds_per_seed_low": 1818.8154600095004,
+      "estimated_seconds_per_seed_high": 2771.528320014477,
+      "estimated_gpu_hours_all_seeds_low": 5.052265166693057,
+      "estimated_gpu_hours_all_seeds_high": 7.698689777817991
+    }
+  },
+  "max_chunk_hours": 8.0,
+  "chunks": [
+    {
+      "index": 1,
+      "variant": "imappo_attention",
+      "seeds": [
+        101,
+        203,
+        307,
+        401
+      ],
+      "estimated_hours_high": 6.616035466599795,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "imappo_attention",
+        "--only-seeds",
+        "101,203,307,401"
+      ]
+    },
+    {
+      "index": 2,
+      "variant": "imappo_attention",
+      "seeds": [
+        503,
+        607,
+        701,
+        809
+      ],
+      "estimated_hours_high": 6.616035466599795,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "imappo_attention",
+        "--only-seeds",
+        "503,607,701,809",
+        "--resume"
+      ]
+    },
+    {
+      "index": 3,
+      "variant": "imappo_attention",
+      "seeds": [
+        907,
+        1009
+      ],
+      "estimated_hours_high": 3.3080177332998977,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "imappo_attention",
+        "--only-seeds",
+        "907,1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 4,
+      "variant": "mappo",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809,
+        907
+      ],
+      "estimated_hours_high": 7.707759199663997,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "mappo",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809,907",
+        "--resume"
+      ]
+    },
+    {
+      "index": 5,
+      "variant": "mappo",
+      "seeds": [
+        1009
+      ],
+      "estimated_hours_high": 0.8564176888515552,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "mappo",
+        "--only-seeds",
+        "1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 6,
+      "variant": "ippo",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809
+      ],
+      "estimated_hours_high": 7.140002666662137,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "ippo",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809",
+        "--resume"
+      ]
+    },
+    {
+      "index": 7,
+      "variant": "ippo",
+      "seeds": [
+        907,
+        1009
+      ],
+      "estimated_hours_high": 1.7850006666655343,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "ippo",
+        "--only-seeds",
+        "907,1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 8,
+      "variant": "happo",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503
+      ],
+      "estimated_hours_high": 6.906360222233666,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "101,203,307,401,503",
+        "--resume"
+      ]
+    },
+    {
+      "index": 9,
+      "variant": "happo",
+      "seeds": [
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 6.906360222233666,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "607,701,809,907,1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 10,
+      "variant": "matd3",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 7.698689777817991,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "matd3",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809,907,1009",
+        "--resume"
+      ]
+    }
+  ],
+  "safety_contract": {
+    "protocol_reduction_allowed": false,
+    "resume_required_after_first_chunk": true,
+    "final_summary_written_only_when_all_registered_pairs_exist": true
+  }
+}

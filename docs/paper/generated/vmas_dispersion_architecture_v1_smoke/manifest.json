@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "source_study": "D:\\seu\\p\\rl\\experiments\\smoke\\vmas_dispersion_architecture_v1_smoke",
+  "source_config": "D:\\seu\\p\\rl\\configs\\research\\vmas_dispersion_architecture_v1.smoke.json",
+  "files": {
+    "episode_return.csv": "8ba7494365325a59ea8f39ae85053d5eeafbbe9dc23fe3f9d00b531d5490d3f2",
+    "episode_return.png": "ef059f642a4bb2270f5fbedc4efeb98a813eabda02a97fef70da7b6fe3d9a64b",
+    "paired_comparisons.csv": "a07c4cdf84ab0322d3559c8501709acc2a928571854e9c46eda7c0993f497a43",
+    "REPORT.md": "12dcbd8a68cf6b766489b9dbd3664f4616dbaac2cb6e4a39e67744d7fe6cb0ef"
+  }
+}

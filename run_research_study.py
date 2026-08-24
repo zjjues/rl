@@ -30,30 +30,10 @@ if TYPE_CHECKING:
 PAPER_MIN_SEEDS = 10
 PAPER_MIN_EVAL_EPISODES = 100
 
-EVALUATION_METRIC_DIRECTIONS = (
-    ("collision_rate", True),
-    ("task_completion", False),
-    ("episode_return", False),
-    ("episode_collisions", True),
-    ("energy_remaining", False),
-    ("action_magnitude", True),
-    ("speed", False),
-    ("distance_to_target", True),
-    ("min_neighbor_distance", False),
-    ("threat_zone_violation", True),
-    ("distance_to_threat", False),
-    ("policy_residual_magnitude", False),
-    ("safety_filter_correction_magnitude", False),
-    ("cbf_constraint_max_violation", True),
-    ("cbf_constraint_mean_violation", True),
-    ("cbf_constraint_violation_fraction", True),
-    ("cbf_predicted_min_pairwise_distance", False),
-    ("safety_filter_solver_success", False),
-    ("safety_filter_solver_reported_success", False),
-    ("safety_filter_solver_iterations", True),
-    ("safety_filter_solver_time_ms", True),
-    ("safety_filter_used_fallback", True),
-)
+from research_metrics import METRIC_DIRECTIONS, resolve_metric_contract
+
+
+EVALUATION_METRIC_DIRECTIONS = METRIC_DIRECTIONS
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,7 +42,50 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--allow-dirty", action="store_true")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--only-variants",
+        help="comma-separated variant keys for this resumable invocation",
+    )
+    parser.add_argument(
+        "--only-seeds",
+        help="comma-separated integer seeds for this resumable invocation",
+    )
     return parser.parse_args()
+
+
+def resolve_run_selection(
+    spec: Mapping[str, object],
+    only_variants: str | None = None,
+    only_seeds: str | None = None,
+) -> tuple[set[str], set[int]]:
+    all_variants = {str(item["key"]) for item in spec["variants"]}
+    all_seeds = {int(seed) for seed in spec["seeds"]}
+    selected_variants = (
+        {value.strip() for value in only_variants.split(",") if value.strip()}
+        if only_variants else set(all_variants)
+    )
+    try:
+        selected_seeds = (
+            {int(value.strip()) for value in only_seeds.split(",") if value.strip()}
+            if only_seeds else set(all_seeds)
+        )
+    except ValueError as exc:
+        raise ValueError("--only-seeds must contain comma-separated integers") from exc
+    unknown_variants = sorted(selected_variants - all_variants)
+    unknown_seeds = sorted(selected_seeds - all_seeds)
+    if not selected_variants or not selected_seeds:
+        raise ValueError("run selection cannot be empty")
+    if unknown_variants:
+        raise ValueError(f"unknown selected variants: {unknown_variants}")
+    if unknown_seeds:
+        raise ValueError(f"unknown selected seeds: {unknown_seeds}")
+    return selected_variants, selected_seeds
+
+
+def expected_result_path(
+    output_dir: Path, variant_key: str, seed: int
+) -> Path:
+    return output_dir / variant_key / f"seed_{seed}" / "result.json"
 
 
 def read_json(path: Path) -> Dict[str, object]:
@@ -127,6 +150,7 @@ def validate_spec(spec: Dict[str, object], allow_dirty: bool) -> None:
     from research_protocol import validate_variant_protocol
 
     validate_variant_protocol(spec)
+    resolve_metric_contract(spec)
     forbidden = {"qmix", "vdn", "qmix_vdn"}
     if any(key.lower() in forbidden for key in variant_keys):
         raise ValueError("discrete QMIX/VDN cannot be registered in this continuous-action study")
@@ -150,6 +174,39 @@ def validate_spec(spec: Dict[str, object], allow_dirty: bool) -> None:
         for item in spec["variants"]
     ) and not str(spec["intent"].get("nli_model_revision", "")):
         raise ValueError("NLI decoder variants must pin intent.nli_model_revision")
+    for item in spec["variants"]:
+        gate_path_value = str(item.get(
+            "preference_relevance_gate_path",
+            spec["intent"].get("preference_relevance_gate_path", ""),
+        ))
+        if not gate_path_value:
+            continue
+        gate_path = (ROOT / gate_path_value).resolve()
+        if not gate_path.is_file():
+            raise ValueError(f"preference relevance gate does not exist: {gate_path}")
+        expected_hash = str(item.get(
+            "preference_relevance_gate_sha256",
+            spec["intent"].get("preference_relevance_gate_sha256", ""),
+        )).lower()
+        if not expected_hash:
+            raise ValueError("preference relevance gate requires a pinned SHA-256")
+        actual_hash = hashlib.sha256(gate_path.read_bytes()).hexdigest()
+        if actual_hash != expected_hash:
+            raise ValueError(
+                f"preference relevance gate hash mismatch: expected {expected_hash}, "
+                f"got {actual_hash}"
+            )
+        from preference_relevance_gate import PreferenceRelevanceGate
+
+        gate = PreferenceRelevanceGate.load(gate_path)
+        if gate.encoder_model != str(spec["intent"].get("encoder_model", "")):
+            raise ValueError("preference relevance gate encoder model differs from study")
+        if gate.encoder_revision != str(spec["intent"].get("encoder_revision", "")):
+            raise ValueError("preference relevance gate encoder revision differs from study")
+        if level == "paper" and not bool(gate.metadata.get("final_blind_test", False)):
+            raise ValueError(
+                "paper studies cannot use a development-only preference relevance gate"
+            )
     if "ablation_contract" in spec:
         from research_ablation import validate_ablation_contract
 
@@ -208,6 +265,7 @@ RESUME_PROTOCOL_KEYS = (
     "evaluation",
     "generalization",
     "ablation_contract",
+    "reporting",
 )
 
 
@@ -335,6 +393,7 @@ def write_result_card(
     spec: Dict[str, object],
     summaries: Dict[str, object],
 ) -> None:
+    metric_contract = resolve_metric_contract(spec)
     lines = [
         f"# Result Card: {spec['study_id']}",
         "",
@@ -342,6 +401,8 @@ def write_result_card(
         f"- Seeds: `{', '.join(str(seed) for seed in spec['seeds'])}`",
         f"- Evaluation episodes per seed/tier: `{spec['evaluation']['episodes']}`",
         f"- Primary objective: {spec.get('objective', 'Not specified')}",
+        f"- Valid scope: `{metric_contract['valid_scope']}`",
+        f"- Registered primary metrics: `{', '.join(metric_contract['primary_metrics'])}`",
         "",
         "## Variants",
         "",
@@ -350,7 +411,7 @@ def write_result_card(
         key = str(variant["key"])
         algorithm = str(variant.get("algorithm", "imappo"))
         representation = (
-            "none" if algorithm in {"mappo", "ippo", "matd3"}
+            "none" if algorithm in {"mappo", "ippo", "happo", "matd3"}
             else "structured_rule_context" if algorithm == "rule_planner"
             else str(variant.get("intent_source", "onehot"))
         )
@@ -375,17 +436,27 @@ def write_result_card(
                 "- Random-dense and one-hot paraphrase queries receive canonical-label identity as an oracle control.",
             ]
         )
-    lines.extend(
-        [
+    guardrails = [
             "",
             "## Interpretation guardrails",
             "",
             "- `legacy_hash` and `random_dense` are representation controls and must not be described as semantic embeddings.",
             "- Paired confidence intervals that include zero do not support a stable directional advantage.",
-            "- Safety improvements must be reported together with task completion and resource costs.",
             "- Representation retrieval metrics diagnose geometry and are not behavioral performance evidence.",
             "- Paired variants use the same deterministic environment-reset seed schedule.",
             "- This automatically generated card records protocol facts; paper claims require researcher review.",
+    ]
+    if metric_contract["valid_scope"] == "architecture_only":
+        guardrails.extend([
+            "- This study aggregates only the environment-native episode return.",
+            "- It cannot support language, preference, UAV safety, or UAV task-completion claims.",
+        ])
+    else:
+        guardrails.append(
+            "- Safety improvements must be reported together with task completion and resource costs."
+        )
+    lines.extend(
+        guardrails + [
             "",
             "## Artifact status",
             "",
@@ -477,7 +548,7 @@ def build_config(spec: Dict[str, object], variant: Dict[str, object], seed: int)
         raise ValueError("the UAV rule planner cannot be registered on VMAS scenarios")
     eta = float(training.get("eta", 0.5))
     eta_end = float(training.get("eta_end", 0.1))
-    if variant.get("disable_intent_reward", False) or algorithm in {"mappo", "ippo", "matd3", "rule_planner"}:
+    if variant.get("disable_intent_reward", False) or algorithm in {"mappo", "ippo", "happo", "matd3", "rule_planner"}:
         eta = 0.0
         eta_end = 0.0
     critic_mode = str(variant.get("critic_mode", "attention"))
@@ -486,7 +557,7 @@ def build_config(spec: Dict[str, object], variant: Dict[str, object], seed: int)
     cfg = IMAPPOConfig(
         algorithm=algorithm,
         critic_mode=critic_mode,
-        use_action_mask=bool(variant.get("use_action_mask", algorithm not in {"mappo", "ippo"})),
+        use_action_mask=bool(variant.get("use_action_mask", algorithm not in {"mappo", "ippo", "happo"})),
         intent_source=str(variant.get("intent_source", "pretrained_semantic")),
         policy_mode=policy_mode,
         residual_action_scale=float(variant.get("residual_action_scale", 0.25)),
@@ -516,6 +587,10 @@ def build_config(spec: Dict[str, object], variant: Dict[str, object], seed: int)
         intent_profile_decoder=str(variant.get(
             "intent_profile_decoder", intent.get("profile_decoder", "dual_ridge")
         )),
+        intent_preference_relevance_gate_path=str(variant.get(
+            "preference_relevance_gate_path",
+            intent.get("preference_relevance_gate_path", ""),
+        )),
         intent_nli_model=str(intent.get(
             "nli_model", "cross-encoder/nli-deberta-v3-small"
         )),
@@ -540,7 +615,7 @@ def build_config(spec: Dict[str, object], variant: Dict[str, object], seed: int)
         eta=eta,
         eta_end=eta_end,
         potential_update_mode=(
-            "frozen" if algorithm in {"mappo", "ippo", "matd3", "rule_planner"}
+            "frozen" if algorithm in {"mappo", "ippo", "happo", "matd3", "rule_planner"}
             else str(training.get("potential_update_mode", "normal"))
         ),
         safety_reward_coef=float(env.get("safety_reward_coef", 1.0)),
@@ -564,6 +639,7 @@ def build_config(spec: Dict[str, object], variant: Dict[str, object], seed: int)
 
 def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> Dict[str, object]:
     started = time.perf_counter()
+    cpu_started = time.process_time()
     import torch
 
     cuda_active = str(spec["training"].get("device", "cpu")).startswith("cuda") and torch.cuda.is_available()
@@ -629,6 +705,11 @@ def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> 
         "variant": variant,
         "config": cfg.__dict__,
         "intent_representation": algo.intent_representation_metadata(),
+        "algorithm_implementation": (
+            algo.algorithm_metadata()
+            if hasattr(algo, "algorithm_metadata")
+            else {"algorithm": cfg.algorithm}
+        ),
         "tier_metrics": tier_results,
         "logs": logs,
     }
@@ -791,6 +872,7 @@ def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> 
         text_cache = frozen_model_cache_info()
     result["resource_audit"] = {
         "wall_time_seconds": float(time.perf_counter() - started),
+        "process_cpu_time_seconds": float(time.process_time() - cpu_started),
         "device": str(cfg.device),
         "cuda_peak_allocated_mb": (
             float(torch.cuda.max_memory_allocated() / (1024.0 ** 2))
@@ -802,14 +884,18 @@ def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> 
     return result
 
 
-def summarize_variant(results: List[Dict[str, object]], bootstrap_seed: int) -> Dict[str, object]:
+def summarize_variant(
+    results: List[Dict[str, object]],
+    bootstrap_seed: int,
+    metric_directions=EVALUATION_METRIC_DIRECTIONS,
+) -> Dict[str, object]:
     from research_statistics import summarize_sample
 
     summary = {"seed_count": len(results), "risk_tiers": {}}
     tier_names = results[0]["tier_metrics"].keys()
     for tier in tier_names:
         tier_summary = {}
-        for metric, _ in EVALUATION_METRIC_DIRECTIONS:
+        for metric, _ in metric_directions:
             key = f"{tier}_{metric}"
             if not all(key in result["tier_metrics"][tier] for result in results):
                 continue
@@ -836,7 +922,7 @@ def summarize_variant(results: List[Dict[str, object]], bootstrap_seed: int) -> 
             ]
             for tier in behavior[query_keys[0]]["risk_tiers"]:
                 tier_summary = {}
-                for metric, _ in EVALUATION_METRIC_DIRECTIONS:
+                for metric, _ in metric_directions:
                     if not all(
                         metric in generalization["behavior"][key]["risk_tiers"][tier]
                         for generalization in generalization_results
@@ -864,13 +950,11 @@ def summarize_variant(results: List[Dict[str, object]], bootstrap_seed: int) -> 
                     scope_summary = {"n_queries": int(metrics["n_queries"])}
                     for metric in (
                         "safety_tradeoff_spearman",
-                        "collision_preference_spearman",
                         "task_preference_spearman",
                         "energy_preference_spearman",
                         "distance_preference_spearman",
                         "time_preference_spearman",
                         "safety_distance_spearman",
-                        "collision_distance_spearman",
                         "threat_preference_spearman",
                         "collision_rate_range",
                         "task_completion_range",
@@ -936,6 +1020,7 @@ def summarize_comparisons(
     treatment_key: str,
     bootstrap_seed: int,
     baseline_keys: Optional[Iterable[str]] = None,
+    metric_directions=EVALUATION_METRIC_DIRECTIONS,
 ) -> Dict[str, object]:
     from research_statistics import paired_difference_summary
 
@@ -957,7 +1042,7 @@ def summarize_comparisons(
         comparison = {"risk_tiers": {}}
         for tier in treatment[0]["tier_metrics"]:
             tier_comparison = {}
-            for metric, lower_is_better in EVALUATION_METRIC_DIRECTIONS:
+            for metric, lower_is_better in metric_directions:
                 key = f"{tier}_{metric}"
                 if not all(
                     key in item["tier_metrics"][tier]
@@ -998,7 +1083,7 @@ def summarize_comparisons(
                 split_comparison = {}
                 for tier in treatment_behavior[treatment_query_keys[0]]["risk_tiers"]:
                     tier_comparison = {}
-                    for metric, lower_is_better in EVALUATION_METRIC_DIRECTIONS:
+                    for metric, lower_is_better in metric_directions:
                         if not all(
                             metric in item["intent_generalization"]["behavior"][key]
                             ["risk_tiers"][tier]
@@ -1043,13 +1128,11 @@ def summarize_comparisons(
                         scope_comparison = {}
                         for metric in (
                             "safety_tradeoff_spearman",
-                            "collision_preference_spearman",
                             "task_preference_spearman",
                             "energy_preference_spearman",
                             "distance_preference_spearman",
                             "time_preference_spearman",
                             "safety_distance_spearman",
-                            "collision_distance_spearman",
                             "threat_preference_spearman",
                         ):
                             if metric not in scopes[scope]:
@@ -1085,6 +1168,7 @@ def summarize_ablation_comparisons(
     results_by_variant: Dict[str, List[Dict[str, object]]],
     contract_audit: Mapping[str, object],
     bootstrap_seed: int,
+    metric_directions=EVALUATION_METRIC_DIRECTIONS,
 ) -> Dict[str, object]:
     """Build the exact chained contrasts registered by an ablation contract."""
 
@@ -1097,6 +1181,7 @@ def summarize_ablation_comparisons(
             treatment_key=variant,
             bootstrap_seed=bootstrap_seed + index * 10_000,
             baseline_keys=[reference],
+            metric_directions=metric_directions,
         )[reference]
         selected.update(
             {
@@ -1117,6 +1202,7 @@ def summarize_ablation_comparisons(
 def annotate_primary_holm(
     comparisons: Dict[str, object],
     contract_audit: Optional[Mapping[str, object]] = None,
+    primary_metrics: Iterable[str] = ("collision_rate", "task_completion"),
 ) -> Dict[str, object]:
     """Correct the predeclared safety/task comparison family across baselines/tiers."""
 
@@ -1136,7 +1222,7 @@ def annotate_primary_holm(
         metrics = (
             registered[baseline]["primary_metrics"]
             if baseline in registered
-            else ("collision_rate", "task_completion")
+            else tuple(primary_metrics)
         )
         for tier in tier_names:
             tier_metrics = comparison.get("risk_tiers", {}).get(tier, {})
@@ -1154,12 +1240,12 @@ def annotate_primary_holm(
         record["multiplicity_family"] = (
             "predeclared ablation contrasts"
             if contract_audit
-            else "all baselines × tiers × {collision, task}"
+            else "all baselines × tiers × registered primary_metrics"
         )
     family["family_definition"] = (
         "ablation_contract primary_metrics × primary_tiers"
         if contract_audit
-        else "all baselines × tiers × {collision, task}"
+        else "all baselines × tiers × registered primary_metrics"
     )
     return family
 
@@ -1184,12 +1270,18 @@ def main() -> None:
     if args.resume and existing_config_path.is_file():
         spec = merge_resume_specs(read_json(existing_config_path), incoming_spec)
         validate_spec(spec, args.allow_dirty)
+    selected_variants, selected_seeds = resolve_run_selection(
+        spec, args.only_variants, args.only_seeds
+    )
     plan = {
         "output_dir": str(output_dir),
         "level": spec["level"],
         "seeds": spec["seeds"],
         "variants": [item["key"] for item in spec["variants"]],
         "total_training_runs": len(spec["seeds"]) * len(spec["variants"]),
+        "selected_variants": sorted(selected_variants),
+        "selected_seeds": sorted(selected_seeds),
+        "selected_training_runs": len(selected_variants) * len(selected_seeds),
     }
     if args.dry_run:
         print(json.dumps(plan, ensure_ascii=False, indent=2))
@@ -1207,22 +1299,68 @@ def main() -> None:
     write_json(output_dir / "manifest.json", manifest)
     write_json(output_dir / "config.json", spec)
 
-    summaries = {}
-    results_by_variant = {}
+    # Run only this invocation's chunk while retaining the complete registered
+    # config. Later --resume calls can fill other variant/seed pairs safely.
     for variant in spec["variants"]:
-        variant_results = []
+        variant_key = str(variant["key"])
+        if variant_key not in selected_variants:
+            continue
         for seed in spec["seeds"]:
-            result_path = output_dir / str(variant["key"]) / f"seed_{seed}" / "result.json"
+            if int(seed) not in selected_seeds:
+                continue
+            result_path = expected_result_path(output_dir, variant_key, int(seed))
             if args.resume and result_path.exists():
                 result = read_json(result_path)
                 validate_result_identity(result, variant, int(seed))
             else:
                 result = run_seed(spec, variant, int(seed))
                 write_json(result_path, result)
+
+    missing = []
+    for variant in spec["variants"]:
+        for seed in spec["seeds"]:
+            path = expected_result_path(
+                output_dir, str(variant["key"]), int(seed)
+            )
+            if not path.is_file():
+                missing.append({"variant": str(variant["key"]), "seed": int(seed)})
+    if missing:
+        manifest["status"] = "partial"
+        manifest["completed_training_runs"] = (
+            plan["total_training_runs"] - len(missing)
+        )
+        manifest["missing_training_runs"] = missing
+        if manifest.get("run_history"):
+            manifest["run_history"][-1]["status"] = "partial"
+        write_json(output_dir / "manifest.json", manifest)
+        write_checksums(output_dir)
+        print(json.dumps({
+            **plan,
+            "status": "partial",
+            "completed_training_runs": manifest["completed_training_runs"],
+            "remaining_training_runs": len(missing),
+        }, ensure_ascii=False, indent=2))
+        return
+
+    # Reload every registered pair before final aggregation; statistics therefore
+    # cannot depend on which invocation completed the final chunk.
+    metric_contract = resolve_metric_contract(spec)
+    metric_directions = metric_contract["summary_metric_directions"]
+    summaries = {}
+    results_by_variant = {}
+    for variant in spec["variants"]:
+        variant_results = []
+        for seed in spec["seeds"]:
+            result_path = expected_result_path(
+                output_dir, str(variant["key"]), int(seed)
+            )
+            result = read_json(result_path)
+            validate_result_identity(result, variant, int(seed))
             variant_results.append(result)
         summaries[str(variant["key"])] = summarize_variant(
             variant_results,
             bootstrap_seed=int(spec.get("bootstrap_seed", 20260801)),
+            metric_directions=metric_directions,
         )
         results_by_variant[str(variant["key"])] = variant_results
     contract_audit = None
@@ -1234,18 +1372,25 @@ def main() -> None:
             results_by_variant,
             contract_audit=contract_audit,
             bootstrap_seed=int(spec.get("bootstrap_seed", 20260801)) + 1000,
+            metric_directions=metric_directions,
         )
     else:
         paired_comparisons = summarize_comparisons(
             results_by_variant,
             treatment_key=str(spec.get("treatment_key", "pretrained_semantic")),
             bootstrap_seed=int(spec.get("bootstrap_seed", 20260801)) + 1000,
+            metric_directions=metric_directions,
         )
-    multiplicity = annotate_primary_holm(paired_comparisons, contract_audit)
+    multiplicity = annotate_primary_holm(
+        paired_comparisons,
+        contract_audit,
+        primary_metrics=metric_contract["primary_metrics"],
+    )
     summary_payload = {
         "variants": summaries,
         "paired_comparisons": paired_comparisons,
         "primary_multiplicity": multiplicity,
+        "metric_contract": metric_contract,
     }
     if contract_audit is not None:
         summary_payload["ablation_contract_audit"] = contract_audit

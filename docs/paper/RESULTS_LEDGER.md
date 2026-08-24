@@ -1,6 +1,54 @@
 # 正式结果台账
 
+## 2026-08-20 CityNav 预注册一次性外部 OOD 终测
+
+- 范围：四个 canonical split，共 32,637 条；31,751 条规范化唯一文本。
+- 冻结 gate：SHA-256 `8518d9be...87fd`，threshold `0.0244081132`。
+- 总体 accepted 31,381；FAR **0.961516**，Wilson 95% CI **[0.959374, 0.963549]**。
+- 四个 split FAR 为 0.9564–0.9699；预注册判定 **fail**。
+- 证据级别：真正未查看文本的一次性外部 OOD，但只有 navigation-negative ground truth；不能估计偏好准确率。
+- 约束：结果不可删除，CityNav 不得再用于调 gate/threshold。
+
+## 2026-08-20 VMAS architecture-only smoke v1
+
+- navigation 与 dispersion：各 5 algorithms × 1 seed × 3 eval episodes，artifact valid，dirty-worktree warning。
+- navigation episode-return 点值：attention PPO 0.4047、MAPPO 0.3730、IPPO 0.3939、HAPPO -0.1106、MATD3 -1.6318。
+- dispersion 点值：attention PPO/MAPPO/IPPO/MATD3 均 0.1111，HAPPO 0.2222。
+- 解释：极短单 seed pipeline smoke；严禁排序、显著性或等效性主张。task completion 使用 UAV schema 时为 0，故明确排除；只保留原生 return。
+
 当前没有满足 `paper` 或 `frozen` 协议的结果。
+
+## 2026-08-20 AerialVLN OOD 语言 smoke 与合同迁移
+
+AerialVLN v8 `val_unseen` 导出 2,310 条无偏好标签的人类 UAV 导航指令；原包、派生 JSONL 和 128 条确定性抽样均有 SHA-256。六轴 NLI prototype decoder 在该抽样上的最大 profile 偏移 median/p95 为 0.0829/0.4972；未校准 0.05/0.10/0.20 阈值的激活率为 58.59%/46.88%/39.06%。这是 OOD 风险 smoke，不是分类结果，不能据此选阈值；它暴露出纯导航语言被误判为 `distance:low` 的主要失败模式。
+
+同轮审计发现旧 decoder/reward 仍允许语言改变 collision weight，现已迁移为六轴 preference + 固定 collision safety contract。下列架构 v3 与消融 smoke 文件仍是其旧 snapshot 的有效 pipeline artifact，但已被新合同 supersede；必须 clean 重跑后才可继续 calibration/pilot。
+
+## 2026-08-20 架构 v3 HAPPO smoke
+
+`uav_marl_architecture_v3_smoke` 在 v2 的 I-MAPPO/no-mask、MAPPO、IPPO、MATD3 上加入 HAPPO。HAPPO 使用 8 个独立 actor、随机顺序更新、前序 likelihood-ratio factor 和 centralized MLP critic；result metadata 与 validator 均核验这些身份。artifact 为 `valid`：6 variants、1 seed、6 results、10 checksums、0 errors，保留 dirty warning。
+
+自动报告：`docs/paper/generated/uav_marl_architecture_v3_smoke/SMOKE_STATISTICAL_REPORT.md`。报告生成器已按 `level=smoke` 明确禁止效果推断。HAPPO hard-tier 点估计 collision/task/return 为 0.9867/0.5590/−41.33，但只有 1 seed、3 eval episodes，**不得**与其它方法排序或写入摘要。该点只用于确认连续动作、独立 actor 和顺序更新端到端连通。
+
+## 2026-08-20 增强链式消融 smoke v2
+
+`experiments/smoke/uav_imappo_ablation_smoke_v2/` 已从头完成 10 个变体 × 1 seed × 10 episodes。artifact 审计为 `valid`：10/10 result files、14 checksum entries、9 条预注册链式 comparison、0 errors；dirty-worktree warning 被保留。生成报告位于 `docs/paper/generated/uav_imappo_ablation_smoke_v2/`。
+
+本实验只验证 full、mask、attention、intent shaping、CBF、NLI gate、learned residual、semantic rule prior、identity oracle 和 no-intent 的执行路径及统计契约。由于只有一个 seed，bootstrap CI 退化为点、exact/Holm p 均为 1；下表只记录管线点估计，不进入论文效果台账：
+
+| 注册比较（variant − reference） | hard collision Δ | hard task Δ |
+|---|---:|---:|
+| no-mask − full | 0.0000 | +0.0519 |
+| no-attention − full | 0.0000 | +0.0000 |
+| no-intent-reward − full | 0.0000 | +0.0000 |
+| no-CBF − full | +0.0133 | +0.0006 |
+| no-NLI-gate − full | 0.0000 | −0.0046 |
+| prior-only − full | 0.0000 | −0.0000 |
+| no-profile-prior − full | 0.0000 | +0.0116 |
+| identity-oracle − no-profile-prior | 0.0000 | +0.0000 |
+| no-intent − identity-oracle | 0.0000 | −0.0000 |
+
+这些值不能证明任何机制有效或无效；尤其不能把零差异解释为等效。`no_intent` 仍保留 posture-derived action mask 侧信道，`identity_oracle` 也不是自然语言理解基线。
 
 ## 2026-08-20 架构 pilot 解释撤回与修正 smoke
 

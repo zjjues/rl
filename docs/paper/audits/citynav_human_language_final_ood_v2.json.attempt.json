@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "registration_id": "citynav-human-language-final-ood-v2",
+  "status": "completed",
+  "started_at_utc": "2026-08-20T08:02:44Z",
+  "registration_sha256": "304d79cae1e4be552020c3a772e74d2197ce907262223f22e4b2374278f08e4d",
+  "gate_sha256": "8518d9be5f73ab83be87c160065a93d2c75678038f8223fef7705d52a9b787fd",
+  "source_archive_sha256": "121d052e81a4d3f58fb9c6a45ceac3c616bb191dd5ae39cf5ac2dbd636af65bd",
+  "source_file_sha256": {
+    "data/citynav/citynav_train_seen.json": "bfaabed32d56aad723dfeedf9a95a0db47b35d64264b4432c5cc37b8ad1cb245",
+    "data/citynav/citynav_val_seen.json": "2e883c53f97ac60ffcdfb3db4a88ad02717088592efff37475faf27c465dc894",
+    "data/citynav/citynav_val_unseen.json": "721ddd3fbeb28cd741ddbce5f925addbaf8dd43b48fe439ccee77bb3fae004ad",
+    "data/citynav/citynav_test_unseen.json": "deabcd13164492b5c6aecdbb72490fd864c25d4169b3975c3cf8f90e3e73d66d"
+  },
+  "completed_at_utc": "2026-08-20T08:03:27Z",
+  "output_sha256": "13ea4556172fb917f8c3f08ed22f066fcc3a6541cfdd6ece7309049e89df8f6f"
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-08-20",
+  "status": "protocol_cross_checked",
+  "paper": {
+    "title": "Trust Region Policy Optimisation in Multi-Agent Reinforcement Learning",
+    "venue": "ICLR 2022",
+    "url": "https://arxiv.org/abs/2109.11251"
+  },
+  "official_reference": {
+    "repository": "https://github.com/PKU-MARL/HARL",
+    "commit": "b1af98b0dbab72a2eee9d160751cd09aedbb8ce2",
+    "runner": "harl/runners/on_policy_ha_runner.py",
+    "actor": "harl/algorithms/actors/happo.py"
+  },
+  "verified_invariants": [
+    "independent per-agent actors",
+    "random agent update order",
+    "factor initialized to one for each rollout update",
+    "current surrogate multiplied by predecessor likelihood-ratio factor",
+    "factor updated after each agent completes its policy update",
+    "centralized critic updated after all actors"
+  ],
+  "local_implementation": "src/happo_baseline.py",
+  "limitations": [
+    "protocol-level reimplementation, not vendored official code",
+    "no official-runner numerical trajectory cross-check yet",
+    "only one-seed local smoke evidence"
+  ]
+}

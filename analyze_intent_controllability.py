@@ -22,12 +22,11 @@ from research_statistics import paired_difference_summary, summarize_sample
 
 METRICS = (
     "safety_tradeoff_spearman",
-    "collision_preference_spearman",
     "task_preference_spearman",
     "collision_rate_range",
     "task_completion_range",
 )
-ALIGNMENT_METRICS = METRICS[:3]
+ALIGNMENT_METRICS = METRICS[:2]
 
 
 def parse_args() -> argparse.Namespace:

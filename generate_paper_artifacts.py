@@ -1,4 +1,4 @@
-"""Generate audited pilot tables and figures from a research study artifact."""
+"""Generate evidence-level-aware tables and figures from a research artifact."""
 
 from __future__ import annotations
 
@@ -85,7 +85,14 @@ def write_csv(path: Path, rows: list[dict]) -> None:
 
 
 def plot_main_metrics(
-    path: Path, rows: list[dict], variants: list[str], tiers: list[str]
+    path: Path,
+    rows: list[dict],
+    variants: list[str],
+    tiers: list[str],
+    *,
+    level: str,
+    seed_count: int,
+    evaluation_episodes: int,
 ) -> None:
     colors = dict(zip(variants, plt.cm.tab10(np.linspace(0.0, 0.75, len(variants)))))
     figure, axes = plt.subplots(1, 2, figsize=(12, 4.8), constrained_layout=True)
@@ -129,12 +136,17 @@ def plot_main_metrics(
         axis.set_ylabel("Mean with bootstrap 95% CI")
         axis.grid(axis="y", alpha=0.25)
     axes[0].legend(ncol=2, frameon=False)
-    figure.suptitle("UAV MARL architecture pilot: 10 paired seeds, 50 eval episodes/tier/seed")
+    figure.suptitle(
+        f"UAV MARL architecture {level}: {seed_count} paired seed(s), "
+        f"{evaluation_episodes} eval episodes/tier/seed"
+    )
     figure.savefig(path, dpi=220)
     plt.close(figure)
 
 
-def plot_paired_effects(path: Path, rows: list[dict], tiers: list[str]) -> None:
+def plot_paired_effects(
+    path: Path, rows: list[dict], tiers: list[str], *, level: str
+) -> None:
     figure, axes = plt.subplots(1, 2, figsize=(12, 6.2), constrained_layout=True)
     for axis, metric, title in zip(
         axes,
@@ -173,7 +185,9 @@ def plot_paired_effects(path: Path, rows: list[dict], tiers: list[str]) -> None:
         axis.set_xlabel("I-MAPPO minus baseline (bootstrap 95% CI)")
         axis.set_title(title)
         axis.grid(axis="x", alpha=0.25)
-    figure.suptitle("Paired primary effects; green denotes Holm FWER rejection at 0.05")
+    figure.suptitle(
+        f"Paired primary effects ({level}); green denotes Holm FWER rejection at 0.05"
+    )
     figure.savefig(path, dpi=220)
     plt.close(figure)
 
@@ -185,10 +199,26 @@ def write_report(
     main: list[dict],
     paired: list[dict],
 ) -> None:
+    level = str(config.get("level", "unknown"))
+    seed_count = len(config.get("seeds", []))
+    evaluation_episodes = int(config.get("evaluation", {}).get("episodes", 0))
+    if level == "smoke":
+        report_title = "# UAV I-MAPPO 架构 smoke 统计报告"
+        evidence_notice = (
+            "> 自动生成；证据等级为 smoke，仅验证执行与统计管线，禁止效果推断。"
+        )
+    elif level == "pilot":
+        report_title = "# UAV I-MAPPO 架构先导实验统计报告"
+        evidence_notice = "> 自动生成；证据等级为 pilot，不是 frozen paper result。"
+    else:
+        report_title = "# UAV I-MAPPO 架构正式实验统计报告"
+        evidence_notice = (
+            f"> 自动生成；证据等级为 `{level}`，结论以 artifact 审计和预注册主比较为准。"
+        )
     lines = [
-        "# UAV I-MAPPO 架构先导实验统计报告",
+        report_title,
         "",
-        "> 自动生成；证据等级为 pilot，不是 frozen paper result。",
+        evidence_notice,
         "",
         "## Artifact 审计",
         "",
@@ -234,22 +264,36 @@ def write_report(
             f"{row['exact_p']:.6f} | {row['holm_p']:.6f} | "
             f"{'yes' if row['holm_reject_0_05'] else 'no'} |"
         )
-    lines.extend([
-        "",
-        "## 可支持的结论",
-        "",
-        "- I-MAPPO 相对 MAPPO 的 collision/task 主比较在 Holm 校正后均不显著，不能主张 attention critic + action mask 优于 MAPPO。",
-        "- I-MAPPO 相对 IPPO 在 easy/medium 碰撞率更低，但任务完成率也稳定更低，属于安全—任务权衡。",
-        "- I-MAPPO 相对 MATD3 在 easy/medium 碰撞率更低，但任务完成率更低；hard 碰撞差异不稳定。",
-        "- 本实验所有方法使用 one-hot intent 且关闭 intent reward，只能回答架构问题，不能证明自然语言/语义意图带来优势。",
-        "",
-        "## 投稿限制",
-        "",
-        "- 历史训练运行来自 dirty Git worktree；当前 artifact 可验证但不能升级为 frozen paper evidence。",
-        "- 每 seed/tier 仅 50 个评估回合，低于工程规定的 paper 门槛 100。",
-        "- 尚缺语义方法的因果消融、独立语言数据、跨场景部署和 HIL/实机证据。",
-        "",
-    ])
+    significant = [row for row in paired if row["holm_reject_0_05"]]
+    lines.extend(["", "## 解释边界", ""])
+    if level == "smoke":
+        lines.extend(
+            [
+                f"- 只有 {seed_count} 个 seed；bootstrap CI 退化且随机化检验没有足够信息，任何点估计都不能解释为机制效果或等效性。",
+                "- 本报告只证明注册变体、配对统计、Holm family、图表和 checksum 管线可执行。",
+            ]
+        )
+    elif significant:
+        lines.append(
+            f"- Holm FWER 0.05 下有 {len(significant)} 条预注册主比较被拒绝；具体方向和区间只按上表逐条解释。"
+        )
+        lines.append("- 未拒绝的比较不能解释为算法等效。")
+    else:
+        lines.append(
+            "- Holm FWER 0.05 下没有主比较被拒绝；不能主张架构优势，也不能据此主张等效。"
+        )
+    lines.extend(
+        [
+            "- 该架构协议不使用自然语言查询，不能证明自然语言或语义意图带来优势。",
+            "",
+            "## 投稿限制",
+            "",
+            f"- 当前协议为 `{level}`，包含 {seed_count} seed(s)、每 seed/tier {evaluation_episodes} 个评估回合。",
+            "- dirty-worktree 警告、低 seed 数或低评估回合数存在时，不得升级为 frozen paper evidence。",
+            "- 尚缺独立语言数据、跨场景部署和 HIL/实机证据。",
+            "",
+        ]
+    )
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -288,10 +332,28 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     write_csv(args.output_dir / "main_results.csv", main_table)
     write_csv(args.output_dir / "paired_primary_results.csv", paired_table)
-    plot_main_metrics(args.output_dir / "figure_main_metrics.png", main_table, variants, tiers)
-    plot_paired_effects(args.output_dir / "figure_paired_primary.png", paired_table, tiers)
+    plot_main_metrics(
+        args.output_dir / "figure_main_metrics.png",
+        main_table,
+        variants,
+        tiers,
+        level=str(config.get("level", "unknown")),
+        seed_count=len(config.get("seeds", [])),
+        evaluation_episodes=int(config.get("evaluation", {}).get("episodes", 0)),
+    )
+    plot_paired_effects(
+        args.output_dir / "figure_paired_primary.png",
+        paired_table,
+        tiers,
+        level=str(config.get("level", "unknown")),
+    )
+    report_filename = {
+        "smoke": "SMOKE_STATISTICAL_REPORT.md",
+        "pilot": "PILOT_STATISTICAL_REPORT.md",
+        "paper": "PAPER_STATISTICAL_REPORT.md",
+    }.get(str(config.get("level", "unknown")), "STATISTICAL_REPORT.md")
     write_report(
-        args.output_dir / "PILOT_STATISTICAL_REPORT.md",
+        args.output_dir / report_filename,
         audit,
         config,
         main_table,

@@ -136,6 +136,43 @@ class ResearchArtifactTests(unittest.TestCase):
                 any("lacks resource_audit" in item for item in report["errors"])
             )
 
+    def test_happo_artifact_requires_and_accepts_independent_actor_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = self.make_artifact(root)
+            happo_variant = {
+                "key": "a",
+                "algorithm": "happo",
+                "critic_mode": "mlp",
+                "intent_source": "none",
+                "use_action_mask": False,
+                "policy_mode": "direct",
+                "safety_filter_mode": "none",
+                "actor_parameter_sharing": "independent",
+                "update_scheme": "random_sequential_likelihood_factor",
+            }
+            config["environment"]["n_agents"] = 8
+            config["variants"] = [happo_variant]
+            write_json(root / "config.json", config)
+            for seed in config["seeds"]:
+                result_path = root / "a" / f"seed_{seed}" / "result.json"
+                result = json.loads(result_path.read_text())
+                result["variant"] = happo_variant
+                result["algorithm_implementation"] = {
+                    "algorithm": "happo",
+                    "actor_parameter_sharing": "independent",
+                    "actor_count": 8,
+                    "update_scheme": "random_sequential_likelihood_factor",
+                    "critic": "centralized_mlp",
+                }
+                write_json(result_path, result)
+            manifest = json.loads((root / "manifest.json").read_text())
+            manifest["config"] = config
+            write_json(root / "manifest.json", manifest)
+            write_checksums(root)
+            report = validate_study_artifact(root, config)
+            self.assertEqual(report["status"], "valid", report["errors"])
+
 
 if __name__ == "__main__":
     unittest.main()

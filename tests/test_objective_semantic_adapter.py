@@ -17,6 +17,7 @@ from objective_semantic_adapter import (  # noqa: E402
     frozen_model_cache_info,
 )
 from intent_objectives import OBJECTIVE_KEYS  # noqa: E402
+from preference_relevance_gate import PreferenceRelevanceGate  # noqa: E402
 
 
 class ObjectiveSemanticAdapterTests(unittest.TestCase):
@@ -79,9 +80,9 @@ class ObjectiveSemanticAdapterTests(unittest.TestCase):
 
         adapter = ObjectiveSemanticAdapter(
             FakeModel(),
-            coefficients=np.ones((4, 7), dtype=np.float32),
-            target_mean=np.zeros(7, dtype=np.float32),
-            target_scale=np.ones(7, dtype=np.float32),
+            coefficients=np.ones((4, len(OBJECTIVE_KEYS)), dtype=np.float32),
+            target_mean=np.zeros(len(OBJECTIVE_KEYS), dtype=np.float32),
+            target_scale=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
             intent_dim=16,
             projection_seed=17,
             semantic_weight=0.0,
@@ -111,9 +112,9 @@ class ObjectiveSemanticAdapterTests(unittest.TestCase):
 
         adapter = ObjectiveSemanticAdapter(
             FakeModel(),
-            coefficients=np.zeros((2, 7), dtype=np.float32),
-            target_mean=np.ones(7, dtype=np.float32),
-            target_scale=np.ones(7, dtype=np.float32),
+            coefficients=np.zeros((2, len(OBJECTIVE_KEYS)), dtype=np.float32),
+            target_mean=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
+            target_scale=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
             intent_dim=16,
             projection_seed=17,
             semantic_weight=0.0,
@@ -122,9 +123,12 @@ class ObjectiveSemanticAdapterTests(unittest.TestCase):
             model_revision="test",
             ridge=0.01,
             profile_decoder="concept_anchor",
-            anchor_directions=np.tile(np.asarray([[1.0, -1.0]], dtype=np.float32), (7, 1)),
-            anchor_slopes=np.ones(7, dtype=np.float32),
-            anchor_intercepts=np.ones(7, dtype=np.float32),
+            anchor_directions=np.tile(
+                np.asarray([[1.0, -1.0]], dtype=np.float32),
+                (len(OBJECTIVE_KEYS), 1),
+            ),
+            anchor_slopes=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
+            anchor_intercepts=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
         )
         profiles = adapter.predict_profiles([("high", "conserve energy"), ("low", "energy unimportant")])
         self.assertTrue(np.all(profiles[0] > profiles[1]))
@@ -142,9 +146,9 @@ class ObjectiveSemanticAdapterTests(unittest.TestCase):
 
         adapter = ObjectiveSemanticAdapter(
             FakeModel(),
-            coefficients=np.zeros((2, 7), dtype=np.float32),
-            target_mean=np.ones(7, dtype=np.float32),
-            target_scale=np.ones(7, dtype=np.float32),
+            coefficients=np.zeros((2, len(OBJECTIVE_KEYS)), dtype=np.float32),
+            target_mean=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
+            target_scale=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
             intent_dim=16,
             projection_seed=17,
             semantic_weight=0.0,
@@ -153,13 +157,62 @@ class ObjectiveSemanticAdapterTests(unittest.TestCase):
             model_revision="test",
             ridge=0.01,
             profile_decoder="contrastive_anchor",
-            anchor_directions=np.tile(np.asarray([[1.0, 0.0]], dtype=np.float32), (7, 1)),
-            anchor_midpoints=np.zeros(7, dtype=np.float32),
-            anchor_half_ranges=np.ones(7, dtype=np.float32),
+            anchor_directions=np.tile(
+                np.asarray([[1.0, 0.0]], dtype=np.float32),
+                (len(OBJECTIVE_KEYS), 1),
+            ),
+            anchor_midpoints=np.zeros(len(OBJECTIVE_KEYS), dtype=np.float32),
+            anchor_half_ranges=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
         )
         profiles = adapter.predict_profiles([("high", "high"), ("low", "low")])
         np.testing.assert_allclose(profiles[0], 1.7, atol=1e-6)
         np.testing.assert_allclose(profiles[1], 0.5, atol=1e-6)
+
+    def test_preference_relevance_gate_neutralizes_rejected_text(self):
+        class FakeModel:
+            def encode(self, descriptions, **kwargs):
+                del kwargs
+                return np.asarray([
+                    [1.0, 0.0] if "preference" in str(text) else [-1.0, 0.0]
+                    for text in descriptions
+                ], dtype=np.float32)
+
+        gate = PreferenceRelevanceGate(
+            coefficients=np.asarray([10.0, 0.0]),
+            intercept=0.0,
+            threshold=0.5,
+            encoder_model="fake",
+            encoder_revision="test",
+            metadata={},
+        )
+        adapter = ObjectiveSemanticAdapter(
+            FakeModel(),
+            coefficients=np.zeros((2, len(OBJECTIVE_KEYS)), dtype=np.float32),
+            target_mean=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
+            target_scale=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
+            intent_dim=16,
+            projection_seed=17,
+            semantic_weight=0.0,
+            objective_weight=1.0,
+            model_name="fake",
+            model_revision="test",
+            ridge=0.01,
+            profile_decoder="contrastive_anchor",
+            anchor_directions=np.tile(
+                np.asarray([[1.0, 0.0]], dtype=np.float32),
+                (len(OBJECTIVE_KEYS), 1),
+            ),
+            anchor_midpoints=np.zeros(len(OBJECTIVE_KEYS), dtype=np.float32),
+            anchor_half_ranges=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
+            preference_relevance_gate=gate,
+        )
+        profiles = adapter.predict_profiles([
+            ("accepted", "explicit preference"),
+            ("rejected", "fly to the roof"),
+        ])
+        self.assertTrue(np.all(profiles[0] > 1.0))
+        np.testing.assert_allclose(profiles[1], 1.0)
+        self.assertTrue(adapter.metadata([])["preference_relevance_gate"]["enabled"])
 
     def test_nli_decoder_uses_entailment_difference_and_caches_text(self):
         class Config:
@@ -190,9 +243,9 @@ class ObjectiveSemanticAdapterTests(unittest.TestCase):
         nli = FakeCrossEncoder()
         adapter = ObjectiveSemanticAdapter(
             model=None,
-            coefficients=np.zeros((2, 7), dtype=np.float32),
-            target_mean=np.ones(7, dtype=np.float32),
-            target_scale=np.ones(7, dtype=np.float32),
+            coefficients=np.zeros((2, len(OBJECTIVE_KEYS)), dtype=np.float32),
+            target_mean=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
+            target_scale=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
             intent_dim=16,
             projection_seed=17,
             semantic_weight=0.0,
@@ -258,14 +311,14 @@ class ObjectiveSemanticAdapterTests(unittest.TestCase):
                 del pairs, kwargs
                 return np.tile(
                     np.asarray([[0.0, 5.0, 0.0]], dtype=np.float32),
-                    (7, 1),
+                    (len(OBJECTIVE_KEYS), 1),
                 )
 
         adapter = ObjectiveSemanticAdapter(
             model=FakeEmbeddingModel(),
-            coefficients=np.zeros((15, 7), dtype=np.float32),
-            target_mean=np.ones(7, dtype=np.float32),
-            target_scale=np.ones(7, dtype=np.float32),
+            coefficients=np.zeros((15, len(OBJECTIVE_KEYS)), dtype=np.float32),
+            target_mean=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
+            target_scale=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
             intent_dim=16,
             projection_seed=17,
             semantic_weight=0.0,
@@ -287,9 +340,9 @@ class ObjectiveSemanticAdapterTests(unittest.TestCase):
 
         polarity_adapter = ObjectiveSemanticAdapter(
             model=FakeEmbeddingModel(),
-            coefficients=np.zeros((15, 7), dtype=np.float32),
-            target_mean=np.ones(7, dtype=np.float32),
-            target_scale=np.ones(7, dtype=np.float32),
+            coefficients=np.zeros((15, len(OBJECTIVE_KEYS)), dtype=np.float32),
+            target_mean=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
+            target_scale=np.ones(len(OBJECTIVE_KEYS), dtype=np.float32),
             intent_dim=16,
             projection_seed=17,
             semantic_weight=0.0,

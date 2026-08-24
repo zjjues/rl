@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "source_study": "D:\\seu\\p\\rl\\experiments\\smoke\\vmas_navigation_architecture_v1_smoke",
+  "source_config": "D:\\seu\\p\\rl\\configs\\research\\vmas_navigation_architecture_v1.smoke.json",
+  "files": {
+    "episode_return.csv": "7317070aa11c75de8bd8c7c95d1a6314e7b9b642715e1d9fd9293d14c11f029b",
+    "episode_return.png": "8c0ff415aef95a956483844ebf07e27b3e4b5c967655e9390da758b37c06ab44",
+    "paired_comparisons.csv": "e9c2133f2e0598fd6576c4de4f19b7c7451968cf02d030cdf907a80eebc2e9c1",
+    "REPORT.md": "4bf9fcc42607647093bc2beec5993b94a7119b226c2794471e914f3a4b923217"
+  }
+}

@@ -109,6 +109,7 @@ class VMASAdapter(gym.Env):
         self.current_tactical_posture: float = 1.0
 
         self._seed = seed
+        self._step_count = 0
 
     # ── Gymnasium Env API ─────────────────────────────────────────────────
 
@@ -116,8 +117,9 @@ class VMASAdapter(gym.Env):
         if seed is not None:
             self._seed = seed
         obs, info = self._env.reset(seed=self._seed, options=options)
+        self._step_count = 0
         # VMAS returns list/tuple of arrays — this is what the adapter expects
-        return tuple(obs), self._flatten_info(info)
+        return tuple(obs), self._normalise_info(info)
 
     def step(self, actions):
         """Accept list of arrays (one per agent), return (obs, rewards, done, truncated, info).
@@ -125,7 +127,12 @@ class VMASAdapter(gym.Env):
         actions: list of np.ndarray, each shape (action_dim,)
         """
         obs, rews, done, truncated, info = self._env.step(actions)
-        return tuple(obs), list(rews), bool(done), bool(truncated), self._flatten_info(info)
+        self._step_count += 1
+        truncated = bool(truncated) or self._step_count >= self.max_steps_val
+        return (
+            tuple(obs), list(rews), bool(done), truncated,
+            self._normalise_info(info),
+        )
 
     def render(self, mode="human"):
         return self._env.render(mode=mode)
@@ -152,18 +159,32 @@ class VMASAdapter(gym.Env):
         return self
 
     @staticmethod
-    def _flatten_info(info: dict) -> dict:
-        """Flatten nested info dicts into a flat dict keyed by 'agent_idx_key'."""
+    def _normalise_info(info: dict) -> dict:
+        """Map VMAS per-agent info to the training loop's neutral schema.
+
+        Only environment reward and explicit collision diagnostics are mapped.
+        VMAS position rewards are deliberately not relabelled as UAV task or
+        preference objectives.
+        """
         if not info:
             return {}
-        flat = {}
-        for key, value in info.items():
-            if isinstance(value, dict):
-                for subkey, subvalue in value.items():
-                    flat[f"{key}_{subkey}"] = subvalue
-            else:
-                flat[key] = value
-        return flat
+        normalised = {}
+        any_collision = False
+        for index, (_, value) in enumerate(sorted(info.items())):
+            if not isinstance(value, dict):
+                continue
+            agent_info = {}
+            if "final_rew" in value:
+                agent_info["reward_env"] = float(np.asarray(value["final_rew"]).item())
+            if "agent_collisions" in value:
+                collision_count = float(
+                    np.asarray(value["agent_collisions"]).item()
+                )
+                agent_info["collision"] = float(collision_count > 0.0)
+                any_collision = any_collision or collision_count > 0.0
+            normalised[f"uav_{index}"] = agent_info
+        normalised["collision"] = any_collision
+        return normalised
 
 
 # ── Helpers for ipappo.py adapter functions ────────────────────────────────────

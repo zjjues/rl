@@ -193,6 +193,12 @@ class UAVSchedulingEnv(gym.Env):
             return
         resolved = resolve_intent_reward_profile("")
         for key, value in dict(profile).items():
+            if key == "collision":
+                if abs(float(value) - resolved["collision"]) > 1e-12:
+                    raise ValueError(
+                        "collision weight is a non-negotiable safety contract"
+                    )
+                continue
             if key in resolved:
                 resolved[key] = float(value)
         self.current_intent_reward_profile = resolved

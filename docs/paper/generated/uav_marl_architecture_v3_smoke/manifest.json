@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "source_study": "D:\\seu\\p\\rl\\experiments\\smoke\\uav_marl_architecture_v3_smoke",
+  "source_config": "D:\\seu\\p\\rl\\configs\\research\\uav_marl_architecture_v3.smoke.json",
+  "files": {
+    "figure_main_metrics.png": "f0dd3f163207e73b25aa04ef7b577811215fbeaa34ed0e99b35e40a49faa0789",
+    "figure_paired_primary.png": "f57aadfdb8a792f63d07904ea5b2673a5e93902a8812ab53a56fce682bf74ee5",
+    "main_results.csv": "283c6996890c55d0f5f537476cb3ff32efdaa2638ad4f2b4a5db72dec2157fab",
+    "paired_primary_results.csv": "5a9064a1581666a22bc8c8a5af96a41e839c028be9ea64f5ebc9490d9fd7db6a",
+    "SMOKE_STATISTICAL_REPORT.md": "d17479f2d0379e383fb1a5c12deec6ef4386c8c5a36d5a335e872510f36cf08e"
+  }
+}

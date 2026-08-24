@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "audit_id": "citynav_human_language_final_ood_v2",
+  "evidence_level": "preregistered_one_shot_external_ood",
+  "registration_id": "citynav-human-language-final-ood-v2",
+  "registration_sha256": "304d79cae1e4be552020c3a772e74d2197ce907262223f22e4b2374278f08e4d",
+  "started_at_utc": "2026-08-20T08:02:44Z",
+  "completed_at_utc": "2026-08-20T08:03:27Z",
+  "source": {
+    "dataset_id": "citynav-iccv2025",
+    "source_revision": "372ecbd1df58b46ffaad91c118c4838b88b87710",
+    "archive_sha256": "121d052e81a4d3f58fb9c6a45ceac3c616bb191dd5ae39cf5ac2dbd636af65bd",
+    "archive_bytes": 190078685,
+    "source_file_sha256": {
+      "data/citynav/citynav_train_seen.json": "bfaabed32d56aad723dfeedf9a95a0db47b35d64264b4432c5cc37b8ad1cb245",
+      "data/citynav/citynav_val_seen.json": "2e883c53f97ac60ffcdfb3db4a88ad02717088592efff37475faf27c465dc894",
+      "data/citynav/citynav_val_unseen.json": "721ddd3fbeb28cd741ddbce5f925addbaf8dd43b48fe439ccee77bb3fae004ad",
+      "data/citynav/citynav_test_unseen.json": "deabcd13164492b5c6aecdbb72490fd864c25d4169b3975c3cf8f90e3e73d66d"
+    },
+    "split_counts": {
+      "test_unseen": 5311,
+      "train_seen": 22002,
+      "val_seen": 2498,
+      "val_unseen": 2826
+    },
+    "record_count": 32637,
+    "normalized_unique_text_count": 31751,
+    "normalized_texts_present_in_multiple_splits": 17
+  },
+  "frozen_gate": {
+    "sha256": "8518d9be5f73ab83be87c160065a93d2c75678038f8223fef7705d52a9b787fd",
+    "threshold": 0.024408113173431428,
+    "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "gate_evidence_level": "development"
+  },
+  "metrics": {
+    "overall": {
+      "record_count": 32637,
+      "accepted_count": 31381,
+      "false_accept_rate_at_frozen_threshold": 0.9615160707172841,
+      "wilson_95_percent": [
+        0.9593742268030089,
+        0.9635492841611722
+      ],
+      "score_quantiles": {
+        "p05": 0.026404280069561883,
+        "median": 0.08372692803949384,
+        "p95": 0.25876924516197286
+      }
+    },
+    "by_split": {
+      "test_unseen": {
+        "record_count": 5311,
+        "accepted_count": 5102,
+        "false_accept_rate_at_frozen_threshold": 0.9606477122952363,
+        "wilson_95_percent": [
+          0.9550769621055826,
+          0.9655525689746736
+        ],
+        "score_quantiles": {
+          "p05": 0.026289750253902174,
+          "median": 0.0811165531770151,
+          "p95": 0.235314500728334
+        }
+      },
+      "train_seen": {
+        "record_count": 22002,
+        "accepted_count": 21149,
+        "false_accept_rate_at_frozen_threshold": 0.9612307972002545,
+        "wilson_95_percent": [
+          0.9585984468664297,
+          0.9637021176441205
+        ],
+        "score_quantiles": {
+          "p05": 0.026579382071549328,
+          "median": 0.08526071540270687,
+          "p95": 0.26761882229451106
+        }
+      },
+      "val_seen": {
+        "record_count": 2498,
+        "accepted_count": 2389,
+        "false_accept_rate_at_frozen_threshold": 0.9563650920736589,
+        "wilson_95_percent": [
+          0.9476290158067237,
+          0.9636997144617144
+        ],
+        "score_quantiles": {
+          "p05": 0.02502370831945906,
+          "median": 0.08129713852088791,
+          "p95": 0.25639606100178813
+        }
+      },
+      "val_unseen": {
+        "record_count": 2826,
+        "accepted_count": 2741,
+        "false_accept_rate_at_frozen_threshold": 0.9699221514508138,
+        "wilson_95_percent": [
+          0.9629589749595449,
+          0.975609506225567
+        ],
+        "score_quantiles": {
+          "p05": 0.02773432253726747,
+          "median": 0.08022533807429746,
+          "p95": 0.23907077142484104
+        }
+      }
+    }
+  },
+  "decision": {
+    "outcome": "fail",
+    "registered_rule": {
+      "pass_if_far_at_most": 0.05,
+      "caution_if_far_at_most": 0.1,
+      "fail_if_far_above": 0.1,
+      "interpretation": "Pass supports navigation-language abstention only; caution requires limitation language; fail blocks a robustness claim and cannot trigger retuning on this corpus."
+    }
+  },
+  "claim_boundary": "CityNav descriptions are navigation goals, not six-axis UAV operator preference labels. The final test estimates only false activation/abstention under a real-city language shift; it cannot estimate preference classification accuracy or make this development gate paper-ready.",
+  "no_retuning_declaration": "This result was computed with the preregistered gate and threshold. CityNav may not be used to alter this gate or threshold."
+}

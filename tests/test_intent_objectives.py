@@ -10,7 +10,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from envs.uav_scheduling_env import UAVSchedulingEnv  # noqa: E402
-from intent_objectives import UAV_INTENT_REWARD_PROFILES  # noqa: E402
+from intent_objectives import (  # noqa: E402
+    OBJECTIVE_KEYS,
+    UAV_INTENT_REWARD_PROFILES,
+    resolve_intent_reward_profile,
+)
 from intent_semantic_encoder import DEFAULT_INTENT_DESCRIPTIONS  # noqa: E402
 
 
@@ -18,6 +22,18 @@ class IntentObjectiveTests(unittest.TestCase):
     def test_every_uav_catalog_intent_has_an_explicit_reward_profile(self):
         catalog_labels = {label for label, _ in DEFAULT_INTENT_DESCRIPTIONS}
         self.assertEqual(catalog_labels, set(UAV_INTENT_REWARD_PROFILES))
+
+    def test_collision_weight_is_not_a_language_preference(self):
+        self.assertNotIn("collision", OBJECTIVE_KEYS)
+        self.assertEqual({
+            resolve_intent_reward_profile(label)["collision"]
+            for label in UAV_INTENT_REWARD_PROFILES
+        }, {1.0})
+
+    def test_environment_rejects_collision_profile_relaxation(self):
+        env = UAVSchedulingEnv(n_agents=4)
+        with self.assertRaisesRegex(ValueError, "non-negotiable safety contract"):
+            env.set_objective_profile({"collision": 0.5})
 
     def _reward_for(self, env: UAVSchedulingEnv, label: str) -> np.ndarray:
         env.set_intent(np.zeros(8, dtype=np.float32), label)

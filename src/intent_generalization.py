@@ -320,10 +320,9 @@ def intent_behavior_controllability(
                 resolve_query_objective_profile(query_by_key[key])
                 for key in keys
             ]
-            collision_preference = [profile["collision"] for profile in profiles]
             task_preference = [profile["task"] for profile in profiles]
             safety_tradeoff_preference = [
-                0.5 * (profile["collision"] + profile["safety"])
+                profile["safety"]
                 - 0.5 * (profile["task"] + profile["time"])
                 for profile in profiles
             ]
@@ -349,9 +348,6 @@ def intent_behavior_controllability(
                 "safety_tradeoff_spearman": spearman_correlation(
                     safety_tradeoff_preference, observed_safety_tradeoff
                 ),
-                "collision_preference_spearman": spearman_correlation(
-                    collision_preference, -collision_array
-                ),
                 "task_preference_spearman": spearman_correlation(
                     task_preference, completion_array
                 ),
@@ -368,9 +364,6 @@ def intent_behavior_controllability(
                 "time_preference_spearman": ("time", "speed", False),
                 "safety_distance_spearman": (
                     "safety", "min_neighbor_distance", False
-                ),
-                "collision_distance_spearman": (
-                    "collision", "min_neighbor_distance", False
                 ),
                 "threat_preference_spearman": (
                     "threat", "distance_to_threat", False

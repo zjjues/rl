@@ -1,0 +1,1035 @@
+{
+  "variants": {
+    "imappo_attention": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "canonical": {
+          "collision_rate": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260820
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260821
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "task_completion": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260822
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260823
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "episode_return": {
+            "n": 1,
+            "mean": 0.11111111442248027,
+            "std": 0.0,
+            "median": 0.11111111442248027,
+            "iqm": 0.11111111442248027,
+            "min": 0.11111111442248027,
+            "max": 0.11111111442248027,
+            "mean_ci": {
+              "low": 0.11111111442248027,
+              "high": 0.11111111442248027,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260824
+            },
+            "iqm_ci": {
+              "low": 0.11111111442248027,
+              "high": 0.11111111442248027,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260825
+            },
+            "raw": [
+              0.11111111442248027
+            ]
+          },
+          "episode_collisions": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260826
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260827
+            },
+            "raw": [
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "mappo": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "canonical": {
+          "collision_rate": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260820
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260821
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "task_completion": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260822
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260823
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "episode_return": {
+            "n": 1,
+            "mean": 0.11111111442248027,
+            "std": 0.0,
+            "median": 0.11111111442248027,
+            "iqm": 0.11111111442248027,
+            "min": 0.11111111442248027,
+            "max": 0.11111111442248027,
+            "mean_ci": {
+              "low": 0.11111111442248027,
+              "high": 0.11111111442248027,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260824
+            },
+            "iqm_ci": {
+              "low": 0.11111111442248027,
+              "high": 0.11111111442248027,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260825
+            },
+            "raw": [
+              0.11111111442248027
+            ]
+          },
+          "episode_collisions": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260826
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260827
+            },
+            "raw": [
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "ippo": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "canonical": {
+          "collision_rate": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260820
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260821
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "task_completion": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260822
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260823
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "episode_return": {
+            "n": 1,
+            "mean": 0.11111111442248027,
+            "std": 0.0,
+            "median": 0.11111111442248027,
+            "iqm": 0.11111111442248027,
+            "min": 0.11111111442248027,
+            "max": 0.11111111442248027,
+            "mean_ci": {
+              "low": 0.11111111442248027,
+              "high": 0.11111111442248027,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260824
+            },
+            "iqm_ci": {
+              "low": 0.11111111442248027,
+              "high": 0.11111111442248027,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260825
+            },
+            "raw": [
+              0.11111111442248027
+            ]
+          },
+          "episode_collisions": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260826
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260827
+            },
+            "raw": [
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "happo": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "canonical": {
+          "collision_rate": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260820
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260821
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "task_completion": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260822
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260823
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "episode_return": {
+            "n": 1,
+            "mean": 0.22222222884496054,
+            "std": 0.0,
+            "median": 0.22222222884496054,
+            "iqm": 0.22222222884496054,
+            "min": 0.22222222884496054,
+            "max": 0.22222222884496054,
+            "mean_ci": {
+              "low": 0.22222222884496054,
+              "high": 0.22222222884496054,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260824
+            },
+            "iqm_ci": {
+              "low": 0.22222222884496054,
+              "high": 0.22222222884496054,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260825
+            },
+            "raw": [
+              0.22222222884496054
+            ]
+          },
+          "episode_collisions": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260826
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260827
+            },
+            "raw": [
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "matd3": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "canonical": {
+          "collision_rate": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260820
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260821
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "task_completion": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260822
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260823
+            },
+            "raw": [
+              0.0
+            ]
+          },
+          "episode_return": {
+            "n": 1,
+            "mean": 0.11111111442248027,
+            "std": 0.0,
+            "median": 0.11111111442248027,
+            "iqm": 0.11111111442248027,
+            "min": 0.11111111442248027,
+            "max": 0.11111111442248027,
+            "mean_ci": {
+              "low": 0.11111111442248027,
+              "high": 0.11111111442248027,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260824
+            },
+            "iqm_ci": {
+              "low": 0.11111111442248027,
+              "high": 0.11111111442248027,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260825
+            },
+            "raw": [
+              0.11111111442248027
+            ]
+          },
+          "episode_collisions": {
+            "n": 1,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0,
+            "iqm": 0.0,
+            "min": 0.0,
+            "max": 0.0,
+            "mean_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260826
+            },
+            "iqm_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260827
+            },
+            "raw": [
+              0.0
+            ]
+          }
+        }
+      }
+    }
+  },
+  "paired_comparisons": {
+    "mappo": {
+      "risk_tiers": {
+        "canonical": {
+          "collision_rate": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": true,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261820
+            },
+            "raw_differences": [
+              0.0
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × {collision, task}"
+          },
+          "task_completion": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261821
+            },
+            "raw_differences": [
+              0.0
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × {collision, task}"
+          },
+          "episode_return": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261822
+            },
+            "raw_differences": [
+              0.0
+            ]
+          },
+          "episode_collisions": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": true,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261823
+            },
+            "raw_differences": [
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "ippo": {
+      "risk_tiers": {
+        "canonical": {
+          "collision_rate": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": true,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261824
+            },
+            "raw_differences": [
+              0.0
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × {collision, task}"
+          },
+          "task_completion": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261825
+            },
+            "raw_differences": [
+              0.0
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × {collision, task}"
+          },
+          "episode_return": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261826
+            },
+            "raw_differences": [
+              0.0
+            ]
+          },
+          "episode_collisions": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": true,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261827
+            },
+            "raw_differences": [
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "happo": {
+      "risk_tiers": {
+        "canonical": {
+          "collision_rate": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": true,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261828
+            },
+            "raw_differences": [
+              0.0
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × {collision, task}"
+          },
+          "task_completion": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261829
+            },
+            "raw_differences": [
+              0.0
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × {collision, task}"
+          },
+          "episode_return": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": -0.11111111442248027,
+            "median_difference": -0.11111111442248027,
+            "win_rate": 0.0,
+            "tie_rate": 0.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": -0.11111111442248027,
+              "high": -0.11111111442248027,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261830
+            },
+            "raw_differences": [
+              -0.11111111442248027
+            ]
+          },
+          "episode_collisions": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": true,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261831
+            },
+            "raw_differences": [
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "matd3": {
+      "risk_tiers": {
+        "canonical": {
+          "collision_rate": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": true,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261832
+            },
+            "raw_differences": [
+              0.0
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × {collision, task}"
+          },
+          "task_completion": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261833
+            },
+            "raw_differences": [
+              0.0
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × {collision, task}"
+          },
+          "episode_return": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261834
+            },
+            "raw_differences": [
+              0.0
+            ]
+          },
+          "episode_collisions": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": true,
+            "mean_difference": 0.0,
+            "median_difference": 0.0,
+            "win_rate": 0.0,
+            "tie_rate": 1.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.0,
+              "high": 0.0,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261835
+            },
+            "raw_differences": [
+              0.0
+            ]
+          }
+        }
+      }
+    }
+  },
+  "primary_multiplicity": {
+    "method": "holm",
+    "alpha": 0.05,
+    "family_size": 8,
+    "adjusted_p_values": {
+      "mappo/canonical/collision_rate": 1.0,
+      "mappo/canonical/task_completion": 1.0,
+      "ippo/canonical/collision_rate": 1.0,
+      "ippo/canonical/task_completion": 1.0,
+      "happo/canonical/collision_rate": 1.0,
+      "happo/canonical/task_completion": 1.0,
+      "matd3/canonical/collision_rate": 1.0,
+      "matd3/canonical/task_completion": 1.0
+    },
+    "reject": {
+      "mappo/canonical/collision_rate": false,
+      "mappo/canonical/task_completion": false,
+      "ippo/canonical/collision_rate": false,
+      "ippo/canonical/task_completion": false,
+      "happo/canonical/collision_rate": false,
+      "happo/canonical/task_completion": false,
+      "matd3/canonical/collision_rate": false,
+      "matd3/canonical/task_completion": false
+    },
+    "family_definition": "all baselines × tiers × {collision, task}"
+  }
+}

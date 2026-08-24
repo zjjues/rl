@@ -11,7 +11,9 @@ sys.path.insert(0, str(ROOT))
 
 from run_research_study import (  # noqa: E402
     build_resume_manifest,
+    expected_result_path,
     merge_resume_specs,
+    resolve_run_selection,
     validate_result_identity,
 )
 
@@ -32,6 +34,23 @@ def study_spec(*variants: dict) -> dict:
 
 
 class ResearchResumeTests(unittest.TestCase):
+    def test_run_selection_supports_safe_chunks(self):
+        spec = study_spec(
+            {"key": "full", "algorithm": "imappo"},
+            {"key": "baseline", "algorithm": "ippo"},
+        )
+        variants, seeds = resolve_run_selection(spec, "baseline", "11")
+        self.assertEqual(variants, {"baseline"})
+        self.assertEqual(seeds, {11})
+        with self.assertRaisesRegex(ValueError, "unknown selected variants"):
+            resolve_run_selection(spec, "missing", None)
+        with self.assertRaisesRegex(ValueError, "unknown selected seeds"):
+            resolve_run_selection(spec, None, "23")
+
+    def test_expected_result_path_is_stable(self):
+        path = expected_result_path(Path("study"), "full", 7)
+        self.assertEqual(path.as_posix(), "study/full/seed_7/result.json")
+
     def test_resume_adds_variants_without_changing_protocol(self):
         first = study_spec({"key": "a", "algorithm": "imappo"})
         second = study_spec(

@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "study_id": "vmas_dispersion_architecture_v1_paper",
+  "method": "linear environment-step extrapolation from measured smoke wall time",
+  "uncertainty": "high; run a 100-training-episode calibration before final reservation",
+  "smoke_workload_units": {
+    "training": 250,
+    "evaluation": 150,
+    "total": 400
+  },
+  "paper_workload_units": {
+    "training": 200000,
+    "evaluation": 10000,
+    "total": 210000
+  },
+  "blended_scale": 525.0,
+  "conservative_scale": 800.0,
+  "fixed_cold_start_seconds": 0.0,
+  "seed_count": 10,
+  "run_count": 50,
+  "estimated_gpu_hours_low": 32.1511090833034,
+  "estimated_gpu_hours_high": 48.99216622217662,
+  "per_variant": {
+    "imappo_attention": {
+      "smoke_wall_seconds": 6.817802200093865,
+      "recurring_smoke_seconds": 6.817802200093865,
+      "estimated_seconds_per_seed_low": 3579.3461550492793,
+      "estimated_seconds_per_seed_high": 5454.241760075092,
+      "estimated_gpu_hours_all_seeds_low": 9.94262820847022,
+      "estimated_gpu_hours_all_seeds_high": 15.150671555764145
+    },
+    "mappo": {
+      "smoke_wall_seconds": 3.3626898999791592,
+      "recurring_smoke_seconds": 3.3626898999791592,
+      "estimated_seconds_per_seed_low": 1765.4121974890586,
+      "estimated_seconds_per_seed_high": 2690.1519199833274,
+      "estimated_gpu_hours_all_seeds_low": 4.90392277080294,
+      "estimated_gpu_hours_all_seeds_high": 7.4726442221759095
+    },
+    "ippo": {
+      "smoke_wall_seconds": 3.3887549999635667,
+      "recurring_smoke_seconds": 3.3887549999635667,
+      "estimated_seconds_per_seed_low": 1779.0963749808725,
+      "estimated_seconds_per_seed_high": 2711.0039999708533,
+      "estimated_gpu_hours_all_seeds_low": 4.941934374946868,
+      "estimated_gpu_hours_all_seeds_high": 7.530566666585703
+    },
+    "happo": {
+      "smoke_wall_seconds": 5.419125000014901,
+      "recurring_smoke_seconds": 5.419125000014901,
+      "estimated_seconds_per_seed_low": 2845.040625007823,
+      "estimated_seconds_per_seed_high": 4335.300000011921,
+      "estimated_gpu_hours_all_seeds_low": 7.902890625021731,
+      "estimated_gpu_hours_all_seeds_high": 12.042500000033113
+    },
+    "matd3": {
+      "smoke_wall_seconds": 3.0581026999279857,
+      "recurring_smoke_seconds": 3.0581026999279857,
+      "estimated_seconds_per_seed_low": 1605.5039174621925,
+      "estimated_seconds_per_seed_high": 2446.4821599423885,
+      "estimated_gpu_hours_all_seeds_low": 4.4597331040616455,
+      "estimated_gpu_hours_all_seeds_high": 6.795783777617746
+    }
+  },
+  "max_chunk_hours": 8.0,
+  "chunks": [
+    {
+      "index": 1,
+      "variant": "imappo_attention",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503
+      ],
+      "estimated_hours_high": 7.5753357778820725,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_dispersion_architecture_v1.paper.json",
+        "--only-variants",
+        "imappo_attention",
+        "--only-seeds",
+        "101,203,307,401,503"
+      ]
+    },
+    {
+      "index": 2,
+      "variant": "imappo_attention",
+      "seeds": [
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 7.5753357778820725,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_dispersion_architecture_v1.paper.json",
+        "--only-variants",
+        "imappo_attention",
+        "--only-seeds",
+        "607,701,809,907,1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 3,
+      "variant": "mappo",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 7.4726442221759095,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_dispersion_architecture_v1.paper.json",
+        "--only-variants",
+        "mappo",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809,907,1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 4,
+      "variant": "ippo",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 7.530566666585704,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_dispersion_architecture_v1.paper.json",
+        "--only-variants",
+        "ippo",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809,907,1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 5,
+      "variant": "happo",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607
+      ],
+      "estimated_hours_high": 7.225500000019869,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_dispersion_architecture_v1.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "101,203,307,401,503,607",
+        "--resume"
+      ]
+    },
+    {
+      "index": 6,
+      "variant": "happo",
+      "seeds": [
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 4.817000000013246,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_dispersion_architecture_v1.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "701,809,907,1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 7,
+      "variant": "matd3",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 6.795783777617745,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_dispersion_architecture_v1.paper.json",
+        "--only-variants",
+        "matd3",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809,907,1009",
+        "--resume"
+      ]
+    }
+  ],
+  "safety_contract": {
+    "protocol_reduction_allowed": false,
+    "resume_required_after_first_chunk": true,
+    "final_summary_written_only_when_all_registered_pairs_exist": true
+  }
+}

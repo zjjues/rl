@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "audit_id": "aerialvln_v8_val_unseen_ood_smoke",
+  "evidence_level": "smoke",
+  "source_usage": "ood_negative_control",
+  "source_archive_sha256": "d8f5d47f7409f3d254b90063e1f0eb693cc581a8af828fc37375cb055c1932d2",
+  "records_sha256": "758761ecf82d5908edf4f34577bfa541381ad8a6c7e6202940ad8af0dc0c1119",
+  "source_record_count": 2310,
+  "sample_count": 128,
+  "sample_seed": 20260820,
+  "sample_ids_sha256": "1b8e8efb75ff6346fcfb0bbbaf4e0cd0e243572f00dad13b1c11605ee4290691",
+  "preference_relevance_gate_sha256": "8518d9be5f73ab83be87c160065a93d2c75678038f8223fef7705d52a9b787fd",
+  "model": {
+    "representation_type": "objective_grounded_semantic",
+    "semantic_geometry": true,
+    "objective_grounded": true,
+    "embed_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "model_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "projection_dim": 64,
+    "projection_seed": 17,
+    "adapter": "dual_ridge",
+    "adapter_ridge": 0.01,
+    "profile_decoder": "nli_prototype_gated",
+    "profile_decoder_monotonic": false,
+    "anchor_calibration_slopes": null,
+    "objective_text_anchors": null,
+    "augmented_prototype_count": 0,
+    "nli_model": "cross-encoder/nli-deberta-v3-small",
+    "nli_model_revision": "e9890682d9e4279b7ae6d0fcfb435a43206280ec",
+    "nli_decision_rule": "P(entailment|objective-specific declarative hypothesis)-P(contradiction|objective-specific declarative hypothesis)",
+    "nli_relevance_gate": "nearest centroid among 6 independently templated preference classes and a neutral class",
+    "polarity_prototype_rule": null,
+    "semantic_weight": 0.5,
+    "objective_weight": 1.0,
+    "objective_keys": [
+      "distance",
+      "energy",
+      "safety",
+      "task",
+      "time",
+      "threat"
+    ],
+    "preference_relevance_gate": {
+      "enabled": true,
+      "gate_type": "frozen_embedding_logistic_relevance",
+      "threshold": 0.024408113173431428,
+      "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+      "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+      "metadata": {
+        "evidence_level": "development",
+        "positive_training_source": "canonical catalog + templated prototypes",
+        "positive_development_source": "configs\\research\\uav_intent_generalization_suite.v8.json",
+        "negative_training_source": ".cache\\aerialvln-v8\\train.instructions.jsonl",
+        "negative_calibration_source": ".cache\\aerialvln-v8\\val_seen.instructions.jsonl",
+        "negative_development_eval_source": ".cache\\aerialvln-v8\\val_unseen.instructions.jsonl",
+        "final_blind_test": false,
+        "training_positive_count": 77,
+        "training_negative_count": 4096,
+        "logistic_c": 1.0,
+        "random_state": 20260820,
+        "calibration": {
+          "threshold": 0.024408113173431428,
+          "calibration_negative_count": 1818,
+          "max_false_accept_rate": 0.05,
+          "allowed_false_accept_count": 90,
+          "observed_false_accept_count": 90,
+          "observed_false_accept_rate": 0.04950495049504951,
+          "rule": "strict empirical upper-tail threshold; ties at cutoff rejected"
+        }
+      }
+    },
+    "adapter_train_labels": [
+      "safety_first",
+      "efficiency_first",
+      "balanced",
+      "energy_saving",
+      "aggressive_pursuit",
+      "cautious_exploration",
+      "load_balancing",
+      "formation_keeping",
+      "threat_avoidance",
+      "threat_engagement",
+      "perimeter_patrol",
+      "center_convergence",
+      "decentralized_sweep",
+      "relay_coordination",
+      "minimal_communication",
+      "full_coordination",
+      "altitude_separation",
+      "speed_modulation",
+      "reactive_avoidance",
+      "predictive_planning",
+      "target_priority",
+      "coverage_maximization",
+      "stealth_approach",
+      "rapid_response",
+      "hover_and_observe"
+    ]
+  },
+  "result": {
+    "record_count": 128,
+    "preference_objectives": [
+      "distance",
+      "energy",
+      "safety",
+      "task",
+      "time",
+      "threat"
+    ],
+    "collision_decoded": false,
+    "max_abs_deviation": {
+      "mean": 0.023894308134913445,
+      "median": 0.0,
+      "p95": 0.17153167426586005,
+      "max": 0.49671775102615356
+    },
+    "activation_rate_by_uncalibrated_threshold": {
+      "0.05": 0.0625,
+      "0.1": 0.0546875,
+      "0.2": 0.0546875
+    },
+    "largest_deviation_class_counts": {
+      "distance:high": 112,
+      "distance:low": 12,
+      "task:low": 1,
+      "threat:low": 3
+    },
+    "interpretation": "Diagnostic false-activation proxy only; no threshold is accepted until independent preference dev data are frozen and calibrated."
+  },
+  "claim_boundary": "Navigation instructions have no six-axis preference ground truth. This audit cannot estimate preference accuracy or select an operating threshold."
+}

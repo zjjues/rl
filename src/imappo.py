@@ -63,6 +63,7 @@ class IMAPPOConfig:
     intent_train_labels: Tuple[str, ...] = ()
     intent_adapter_ridge: float = 0.01
     intent_profile_decoder: str = "dual_ridge"
+    intent_preference_relevance_gate_path: str = ""
     intent_nli_model: str = "cross-encoder/nli-deberta-v3-small"
     intent_nli_model_revision: str = ""
     intent_nli_batch_size: int = 32
@@ -501,6 +502,7 @@ class IMAPPO:
         self.device = torch.device(config.device)
         torch.manual_seed(config.seed)
         np.random.seed(config.seed)
+        self.rng = np.random.default_rng(config.seed)
 
         self.intent_library: Optional[IntentLibrary] = None
         self.task_intent_library: Optional[IntentLibrary] = None
@@ -602,6 +604,9 @@ class IMAPPO:
                 nli_model_name=self.config.intent_nli_model,
                 nli_model_revision=self.config.intent_nli_model_revision,
                 nli_batch_size=self.config.intent_nli_batch_size,
+                preference_relevance_gate_path=(
+                    self.config.intent_preference_relevance_gate_path
+                ),
             )
             metadata = self.objective_semantic_adapter.metadata(train_labels)
             metadata.update(
@@ -732,6 +737,24 @@ class IMAPPO:
         else:
             raise ValueError(f"unsupported intent query source: {self.config.intent_source}")
         return torch.as_tensor(vectors, dtype=torch.float32, device=self.device)
+
+    def algorithm_metadata(self) -> Dict[str, object]:
+        return {
+            "algorithm": self.config.algorithm,
+            "actor_parameter_sharing": "shared",
+            "actor_count": 1,
+            "update_scheme": "simultaneous_shared_actor_ppo",
+            "critic": (
+                "local_per_agent"
+                if self.config.critic_mode == "local"
+                else f"centralized_{self.config.critic_mode}"
+            ),
+            "intent_conditioning": bool(
+                self.config.algorithm == "imappo" and self.config.intent_source != "none"
+            ),
+            "action_masking": bool(self.config.use_action_mask),
+            "safety_filter": self.config.safety_filter_mode,
+        }
 
     def intent_representation_metadata(self) -> Dict[str, object]:
         """Return metadata that must accompany every experiment result."""
@@ -880,7 +903,7 @@ class IMAPPO:
         uniform_mask = self._action_mask_for_posture(None)
         if self.config.algorithm in {"mappo", "ippo"}:
             _, labels, _ = self.task_intent_library.sample_with_info(
-                1, posture=tactical_posture
+                1, posture=tactical_posture, rng=self.rng
             )
             return (
                 torch.zeros(self.config.intent_dim, device=self.device),
@@ -889,7 +912,7 @@ class IMAPPO:
             )
         if self.config.intent_source == "none":
             _, labels, _ = self.task_intent_library.sample_with_info(
-                1, posture=tactical_posture
+                1, posture=tactical_posture, rng=self.rng
             )
             label = labels[0]
             posture = self.task_intent_library.posture_for_label(label)
@@ -906,6 +929,7 @@ class IMAPPO:
             vecs, labels, _ = self.intent_library.sample_with_info(
                 1,
                 posture=tactical_posture if self.config.align_intent_posture else None,
+                rng=self.rng,
             )
             intent = torch.from_numpy(vecs[0]).to(self.device)
             label = labels[0] if labels else ""
@@ -923,7 +947,7 @@ class IMAPPO:
             intent_mode = min(1, self.config.intent_dim - 1)
             label = "stealth"
         else:
-            intent_mode = int(np.random.randint(0, min(3, self.config.intent_dim)))
+            intent_mode = int(self.rng.integers(0, min(3, self.config.intent_dim)))
             label = ["attack", "stealth", "frozen"][intent_mode]
         intent[intent_mode] = 1.0
         if self.config.use_action_mask:
@@ -933,7 +957,9 @@ class IMAPPO:
             elif intent_mode == 2:
                 frozen_agents = max(1, self.config.n_agents // 4)
                 selected = torch.as_tensor(
-                    np.random.choice(self.config.n_agents, size=frozen_agents, replace=False),
+                    self.rng.choice(
+                        self.config.n_agents, size=frozen_agents, replace=False
+                    ),
                     device=self.device,
                     dtype=torch.long,
                 )
@@ -1027,13 +1053,16 @@ class IMAPPO:
             "potential_update_step": self.potential_update_step,
             "current_eta": self.current_eta,
             "current_entropy_coef": self.current_entropy_coef,
+            "rng_state": self.rng.bit_generator.state,
             "extra": extra or {},
         }
         torch.save(checkpoint, path)
 
     @classmethod
     def load_checkpoint(cls, path: str, device: Optional[str] = None) -> "IMAPPO":
-        checkpoint = torch.load(path, map_location=device or "cpu")
+        checkpoint = torch.load(
+            path, map_location=device or "cpu", weights_only=False
+        )
         config_dict = dict(checkpoint["config"])
         if device is not None:
             config_dict["device"] = device
@@ -1053,6 +1082,8 @@ class IMAPPO:
         algo.current_entropy_coef = checkpoint.get(
             "current_entropy_coef", config.entropy_coef
         )
+        if "rng_state" in checkpoint:
+            algo.rng.bit_generator.state = checkpoint["rng_state"]
         return algo
 
     def compute_gae(
@@ -1111,7 +1142,7 @@ class IMAPPO:
         last_potential_loss = 0.0
 
         for _ in range(self.config.ppo_epochs):
-            np.random.shuffle(flat_indices)
+            self.rng.shuffle(flat_indices)
             for start in range(0, batch_size, self.config.minibatch_size):
                 end = start + self.config.minibatch_size
                 idx = flat_indices[start:end]
@@ -1274,23 +1305,16 @@ class IMAPPO:
         self._last_safety_solver_diagnostics = {}
         if self.config.safety_filter_mode == "pairwise_cbf":
             from rule_based_baseline import (
-                apply_pairwise_cbf_filter,
-                pairwise_cbf_constraint_diagnostics,
+                apply_pairwise_cbf_filter_with_diagnostics,
             )
 
             filter_start = time.perf_counter()
-            actions = apply_pairwise_cbf_filter(
+            actions, cyclic_audit = apply_pairwise_cbf_filter_with_diagnostics(
                 obs,
                 unfiltered_actions,
                 profile,
                 base_min_distance=self.config.cbf_base_min_distance,
                 iterations=self.config.cbf_iterations,
-            )
-            cyclic_audit = pairwise_cbf_constraint_diagnostics(
-                obs,
-                actions,
-                profile,
-                base_min_distance=self.config.cbf_base_min_distance,
             )
             self._last_safety_solver_diagnostics = {
                 "safety_filter_solver_success": float(
@@ -1675,14 +1699,27 @@ def evaluate_imappo(
             )
             cbf_diagnostics = {}
             if collect_resources:
-                from rule_based_baseline import pairwise_cbf_constraint_diagnostics
-
-                cbf_diagnostics = pairwise_cbf_constraint_diagnostics(
-                    obs_tensor,
-                    actions,
-                    getattr(algo, "_last_safety_filter_profile", None),
-                    base_min_distance=config.cbf_base_min_distance,
+                cached_cbf_diagnostics = getattr(
+                    algo, "_last_safety_solver_diagnostics", {}
                 )
+                if (
+                    config.safety_filter_mode in {"pairwise_cbf", "pairwise_qp"}
+                    and "cbf_constraint_max_violation" in cached_cbf_diagnostics
+                ):
+                    cbf_diagnostics = {
+                        key: float(value)
+                        for key, value in cached_cbf_diagnostics.items()
+                        if key.startswith("cbf_")
+                    }
+                else:
+                    from rule_based_baseline import pairwise_cbf_constraint_diagnostics
+
+                    cbf_diagnostics = pairwise_cbf_constraint_diagnostics(
+                        obs_tensor,
+                        actions,
+                        getattr(algo, "_last_safety_filter_profile", None),
+                        base_min_distance=config.cbf_base_min_distance,
+                    )
             next_obs_data, reward_vec, done_flag, truncated_flag, info = env_step(
                 env, agent_order, actions.detach().cpu().numpy()
             )
@@ -1933,7 +1970,12 @@ def train_imappo(
     checkpoint_callback: Optional[Callable[["IMAPPO", Dict[str, float]], None]] = None,
 ) -> Tuple[IMAPPO, List[Dict[str, float]]]:
     cfg = config or IMAPPOConfig()
-    algo = IMAPPO(cfg)
+    if cfg.algorithm == "happo":
+        from happo_baseline import HAPPOBaseline
+
+        algo = HAPPOBaseline(cfg)
+    else:
+        algo = IMAPPO(cfg)
     buffer = RolloutBuffer()
     logs: List[Dict[str, float]] = []
 

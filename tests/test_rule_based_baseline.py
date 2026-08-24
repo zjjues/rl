@@ -13,6 +13,7 @@ from imappo import IMAPPO, IMAPPOConfig  # noqa: E402
 from rule_based_baseline import (  # noqa: E402
     RuleBasedUAVPolicy,
     apply_pairwise_cbf_filter,
+    apply_pairwise_cbf_filter_with_diagnostics,
     apply_pairwise_qp_filter,
     compute_rule_actions,
     pairwise_cbf_constraint_diagnostics,
@@ -21,6 +22,98 @@ from intent_objectives import resolve_intent_reward_profile  # noqa: E402
 
 
 class RuleBasedBaselineTests(unittest.TestCase):
+    @staticmethod
+    def _legacy_cbf_reference(
+        observations,
+        actions,
+        objective_profile=None,
+        *,
+        dt=0.2,
+        velocity_retention=0.7,
+        action_gain=0.3,
+        base_min_distance=1.0,
+        iterations=4,
+    ):
+        profile = objective_profile or {}
+        safety = max(min(max(profile.get("safety", 1.0), 1.0), 2.2), 1.0)
+        collision = max(min(max(profile.get("collision", 1.0), 1.0), 2.2), 1.0)
+        min_distance = max(
+            0.70 * base_min_distance,
+            min(
+                base_min_distance
+                * (1.0 + 0.25 * (safety - 1.0) + 0.25 * (collision - 1.0)),
+                1.60 * base_min_distance,
+            ),
+        )
+        positions = observations[:, 0:3]
+        velocities = observations[:, 3:6]
+        filtered = actions.clone()
+        for _ in range(iterations):
+            for i in range(len(filtered)):
+                for j in range(i + 1, len(filtered)):
+                    relative_position = positions[i] - positions[j]
+                    distance = torch.linalg.vector_norm(relative_position)
+                    if float(distance.item()) <= 1e-6:
+                        direction = torch.zeros_like(relative_position)
+                        direction[0] = 1.0
+                    else:
+                        direction = relative_position / distance
+                    required = (
+                        min_distance
+                        - float(distance.item())
+                        - dt
+                        * velocity_retention
+                        * torch.dot(direction, velocities[i] - velocities[j])
+                    ) / (dt * action_gain)
+                    violation = required - torch.dot(
+                        direction, filtered[i] - filtered[j]
+                    )
+                    if float(violation.item()) > 0.0:
+                        correction = 0.5 * violation * direction
+                        filtered[i] = filtered[i] + correction
+                        filtered[j] = filtered[j] - correction
+                        filtered = torch.clamp(filtered, -1.0, 1.0)
+        return filtered
+
+    def test_vectorized_cbf_matches_legacy_cyclic_projection(self):
+        devices = [torch.device("cpu")]
+        if torch.cuda.is_available():
+            devices.append(torch.device("cuda"))
+        for device in devices:
+            generator = torch.Generator(device="cpu").manual_seed(20260820)
+            for n_agents in (1, 2, 8):
+                observations = torch.randn(n_agents, 18, generator=generator).to(device)
+                actions = torch.empty(n_agents, 3).uniform_(
+                    -1.0, 1.0, generator=generator
+                ).to(device)
+                if n_agents >= 2:
+                    observations[1, 0:3] = observations[0, 0:3]
+                for profile in (None, {"safety": 1.7, "collision": 1.4}):
+                    expected = self._legacy_cbf_reference(
+                        observations, actions, profile, iterations=4
+                    )
+                    actual = apply_pairwise_cbf_filter(
+                        observations, actions, profile, iterations=4
+                    )
+                    self.assertTrue(
+                        torch.allclose(actual, expected, atol=2e-6, rtol=1e-6),
+                        msg=(device, n_agents, profile, (actual - expected).abs().max()),
+                    )
+
+    def test_fused_cbf_diagnostics_match_independent_audit(self):
+        observations = torch.randn(8, 18, generator=torch.Generator().manual_seed(17))
+        actions = torch.empty(8, 3).uniform_(
+            -1.0, 1.0, generator=torch.Generator().manual_seed(29)
+        )
+        filtered, fused = apply_pairwise_cbf_filter_with_diagnostics(
+            observations, actions, {"safety": 1.5, "collision": 1.2}
+        )
+        independent = pairwise_cbf_constraint_diagnostics(
+            observations, filtered, {"safety": 1.5, "collision": 1.2}
+        )
+        for key in independent:
+            self.assertAlmostEqual(fused[key], independent[key], places=5)
+
     def test_qp_cbf_solves_feasible_box_constrained_projection(self):
         observations = torch.zeros(2, 18)
         observations[1, 0] = 0.9

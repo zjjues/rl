@@ -1,0 +1,342 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_imappo_ablation",
+  "method": "linear environment-step extrapolation from measured smoke wall time",
+  "uncertainty": "high; run a 100-training-episode calibration before final reservation",
+  "smoke_workload_units": {
+    "training": 1000,
+    "evaluation": 300,
+    "total": 1300
+  },
+  "paper_workload_units": {
+    "training": 600000,
+    "evaluation": 10000,
+    "total": 610000
+  },
+  "blended_scale": 469.2307692307692,
+  "conservative_scale": 600.0,
+  "fixed_cold_start_seconds": 55.66496309998911,
+  "seed_count": 5,
+  "run_count": 50,
+  "estimated_gpu_hours_low": 82.15593661345987,
+  "estimated_gpu_hours_high": 105.04754415613311,
+  "per_variant": {
+    "imappo_full": {
+      "smoke_wall_seconds": 68.64876789995469,
+      "recurring_smoke_seconds": 12.983804799965583,
+      "estimated_seconds_per_seed_low": 6092.400713830004,
+      "estimated_seconds_per_seed_high": 7790.28287997935,
+      "estimated_gpu_hours_all_seeds_low": 8.461667658097229,
+      "estimated_gpu_hours_all_seeds_high": 10.819837333304653
+    },
+    "no_mask": {
+      "smoke_wall_seconds": 14.248350200010464,
+      "recurring_smoke_seconds": 14.248350200010464,
+      "estimated_seconds_per_seed_low": 6685.764324620294,
+      "estimated_seconds_per_seed_high": 8549.010120006278,
+      "estimated_gpu_hours_all_seeds_low": 9.285783784194853,
+      "estimated_gpu_hours_all_seeds_high": 11.873625166675387
+    },
+    "no_attention": {
+      "smoke_wall_seconds": 13.042777499882504,
+      "recurring_smoke_seconds": 13.042777499882504,
+      "estimated_seconds_per_seed_low": 6120.072519175636,
+      "estimated_seconds_per_seed_high": 7825.666499929503,
+      "estimated_gpu_hours_all_seeds_low": 8.500100721077272,
+      "estimated_gpu_hours_all_seeds_high": 10.868981249902086
+    },
+    "no_intent_reward": {
+      "smoke_wall_seconds": 12.924832100048661,
+      "recurring_smoke_seconds": 12.924832100048661,
+      "estimated_seconds_per_seed_low": 6064.7289084843715,
+      "estimated_seconds_per_seed_high": 7754.899260029197,
+      "estimated_gpu_hours_all_seeds_low": 8.423234595117183,
+      "estimated_gpu_hours_all_seeds_high": 10.770693416707218
+    },
+    "no_cbf": {
+      "smoke_wall_seconds": 13.141435300000012,
+      "recurring_smoke_seconds": 13.141435300000012,
+      "estimated_seconds_per_seed_low": 6166.36579461539,
+      "estimated_seconds_per_seed_high": 7884.861180000007,
+      "estimated_gpu_hours_all_seeds_low": 8.564396936965819,
+      "estimated_gpu_hours_all_seeds_high": 10.951196083333343
+    },
+    "no_nli_gate": {
+      "smoke_wall_seconds": 12.892315600067377,
+      "recurring_smoke_seconds": 12.892315600067377,
+      "estimated_seconds_per_seed_low": 6049.471166185462,
+      "estimated_seconds_per_seed_high": 7735.389360040426,
+      "estimated_gpu_hours_all_seeds_low": 8.402043286368697,
+      "estimated_gpu_hours_all_seeds_high": 10.743596333389482
+    },
+    "prior_only": {
+      "smoke_wall_seconds": 13.616762999910861,
+      "recurring_smoke_seconds": 13.616762999910861,
+      "estimated_seconds_per_seed_low": 6389.40417688125,
+      "estimated_seconds_per_seed_high": 8170.057799946517,
+      "estimated_gpu_hours_all_seeds_low": 8.874172467890626,
+      "estimated_gpu_hours_all_seeds_high": 11.347302499925718
+    },
+    "no_profile_prior": {
+      "smoke_wall_seconds": 12.57331409980543,
+      "recurring_smoke_seconds": 12.57331409980543,
+      "estimated_seconds_per_seed_low": 5899.785846831778,
+      "estimated_seconds_per_seed_high": 7543.988459883258,
+      "estimated_gpu_hours_all_seeds_low": 8.194147009488582,
+      "estimated_gpu_hours_all_seeds_high": 10.477761749837859
+    },
+    "identity_oracle": {
+      "smoke_wall_seconds": 10.258860899833962,
+      "recurring_smoke_seconds": 10.258860899833962,
+      "estimated_seconds_per_seed_low": 4813.773191460551,
+      "estimated_seconds_per_seed_high": 6155.316539900377,
+      "estimated_gpu_hours_all_seeds_low": 6.685796099250765,
+      "estimated_gpu_hours_all_seeds_high": 8.549050749861635
+    },
+    "no_intent": {
+      "smoke_wall_seconds": 10.356044500134885,
+      "recurring_smoke_seconds": 10.356044500134885,
+      "estimated_seconds_per_seed_low": 4859.374726986369,
+      "estimated_seconds_per_seed_high": 6213.626700080931,
+      "estimated_gpu_hours_all_seeds_low": 6.749131565258845,
+      "estimated_gpu_hours_all_seeds_high": 8.630037083445737
+    }
+  },
+  "max_chunk_hours": 12.0,
+  "chunks": [
+    {
+      "index": 1,
+      "variant": "imappo_full",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 10.819837333304651,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.pilot.json",
+        "--only-variants",
+        "imappo_full",
+        "--only-seeds",
+        "7,11,23,42,100"
+      ]
+    },
+    {
+      "index": 2,
+      "variant": "no_mask",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 11.873625166675385,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.pilot.json",
+        "--only-variants",
+        "no_mask",
+        "--only-seeds",
+        "7,11,23,42,100",
+        "--resume"
+      ]
+    },
+    {
+      "index": 3,
+      "variant": "no_attention",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 10.868981249902088,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.pilot.json",
+        "--only-variants",
+        "no_attention",
+        "--only-seeds",
+        "7,11,23,42,100",
+        "--resume"
+      ]
+    },
+    {
+      "index": 4,
+      "variant": "no_intent_reward",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 10.770693416707218,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.pilot.json",
+        "--only-variants",
+        "no_intent_reward",
+        "--only-seeds",
+        "7,11,23,42,100",
+        "--resume"
+      ]
+    },
+    {
+      "index": 5,
+      "variant": "no_cbf",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 10.951196083333343,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.pilot.json",
+        "--only-variants",
+        "no_cbf",
+        "--only-seeds",
+        "7,11,23,42,100",
+        "--resume"
+      ]
+    },
+    {
+      "index": 6,
+      "variant": "no_nli_gate",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 10.74359633338948,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.pilot.json",
+        "--only-variants",
+        "no_nli_gate",
+        "--only-seeds",
+        "7,11,23,42,100",
+        "--resume"
+      ]
+    },
+    {
+      "index": 7,
+      "variant": "prior_only",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 11.347302499925718,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.pilot.json",
+        "--only-variants",
+        "prior_only",
+        "--only-seeds",
+        "7,11,23,42,100",
+        "--resume"
+      ]
+    },
+    {
+      "index": 8,
+      "variant": "no_profile_prior",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 10.477761749837857,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.pilot.json",
+        "--only-variants",
+        "no_profile_prior",
+        "--only-seeds",
+        "7,11,23,42,100",
+        "--resume"
+      ]
+    },
+    {
+      "index": 9,
+      "variant": "identity_oracle",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 8.549050749861635,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.pilot.json",
+        "--only-variants",
+        "identity_oracle",
+        "--only-seeds",
+        "7,11,23,42,100",
+        "--resume"
+      ]
+    },
+    {
+      "index": 10,
+      "variant": "no_intent",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 8.630037083445737,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.pilot.json",
+        "--only-variants",
+        "no_intent",
+        "--only-seeds",
+        "7,11,23,42,100",
+        "--resume"
+      ]
+    }
+  ],
+  "safety_contract": {
+    "protocol_reduction_allowed": false,
+    "resume_required_after_first_chunk": true,
+    "final_summary_written_only_when_all_registered_pairs_exist": true
+  }
+}

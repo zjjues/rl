@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "benchmark": "pairwise_cbf_filter_plus_diagnostics",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python": "3.10.20",
+  "torch": "2.4.1+cu124",
+  "device": "cpu",
+  "device_name": "CPU",
+  "agents": 8,
+  "pairs": 28,
+  "iterations": 4,
+  "repeats": 100,
+  "seed": 20260820,
+  "legacy_total_seconds": 0.7614941000938416,
+  "optimized_total_seconds": 0.07557290000841022,
+  "legacy_mean_milliseconds": 7.6149410009384155,
+  "optimized_mean_milliseconds": 0.7557290000841022,
+  "speedup": 10.076285282278407,
+  "max_action_absolute_error": 3.7997961044311523e-07,
+  "max_diagnostic_absolute_error": 2.0265579214751028e-08
+}

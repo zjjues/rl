@@ -1,0 +1,80 @@
+{
+  "status": "valid",
+  "study_id": "uav_imappo_ablation_smoke_v2",
+  "level": "smoke",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\smoke\\uav_imappo_ablation_smoke_v2",
+  "variant_count": 10,
+  "seed_count": 1,
+  "expected_result_count": 10,
+  "checksum_entry_count": 14,
+  "variant_protocol_audit": {
+    "status": "valid",
+    "variant_count": 10,
+    "variants": [
+      {
+        "key": "imappo_full",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "no_mask",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "no_attention",
+        "algorithm": "imappo",
+        "critic_mode": "uniform",
+        "critic_mode_effective": "uniform"
+      },
+      {
+        "key": "no_intent_reward",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "no_cbf",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "no_nli_gate",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "prior_only",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "no_profile_prior",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "identity_oracle",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      },
+      {
+        "key": "no_intent",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": [
+    "study invocation used a dirty Git worktree"
+  ]
+}

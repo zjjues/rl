@@ -1,5 +1,85 @@
 # 研究变更日志
 
+## 2026-08-20：CityNav 一次性 OOD 终测失败、VMAS 架构复现与人工数据冻结入口
+
+### 工程变更
+
+- 新增 `final_ood_registration.py`、CityNav v1/v2 预注册、schema-only importer、Wilson FAR 汇总和 one-shot evaluator/attempt marker。v1 在仅查看 archive paths 后发现 difficulty subset 重复，文本未打开即由 v2 透明取代。
+- 固定 CityNav commit `372ecbd...7710`、archive SHA-256 `121d052e...65bd` 及四个 canonical split 文件哈希；32,637 条全部进入唯一一次冻结评估。
+- VMASAdapter 增加 horizon enforcement 和不虚构 UAV objective 的 info 映射；research protocol 强制 VMAS 为 architecture-only。
+- 新增 navigation/dispersion 各 5 算法 smoke、10-seed paper 配置、artifact audit 和 runtime plan。
+- 新增 `audit_formal_preference_dataset` 与 `freeze_preference_dataset.py`，机器执行 13 类覆盖、独立复核、writer-disjoint split、每类/每 split 最小量、consent 版本和 JSONL 哈希冻结。
+
+### 论文影响
+
+- CityNav FAR 为 96.15%（Wilson 95% CI 95.94%–96.35%），预注册 outcome=fail。该结果必须保留并禁止用 CityNav 反调 gate。
+- 当前 gate 不能进入论文主方法；语言门槛退回“需独立人工偏好数据和多来源负例”。
+- VMAS 只能支撑架构复现，不能支撑语言泛化、UAV 安全迁移或偏好准确率。
+
+## 2026-08-20：外部语言数据合同与可恢复实验预算
+
+### 工程变更
+
+- 新增 `external_language_corpus.py` 和 AerialVLN importer。外部 episode 只保留原始来源、版本、split、record id 和文本，不生成研究者推断的六维偏好标签。
+- manifest validator 强制许可、来源版本、用途、标签兼容性和 JSONL SHA-256；导航指令若声明为偏好监督会失败。
+- 人类偏好 schema 新增独立 reviewer、分歧裁决、批次/prompt/语言/consent 来源字段，并输出裁决前 raw agreement 与 Cohen's kappa。
+- 修复 v8 只在 suite 表面删除 collision、而 decoder/reward 仍把它作为第七偏好轴的矛盾。semantic profile 统一为六轴，canonical collision weight 固定 1.0，环境拒绝 collision relaxation；旧 smoke 被标记为 superseded。
+- 固定 AerialVLN v8 压缩包和 2,310 条 `val_unseen` 派生指令哈希。128 条 OOD smoke 在未校准 0.20 偏移阈值下仍有 39.06% 激活，暴露出拒答机制缺口。
+- `run_research_study.py` 新增 `--only-variants`/`--only-seeds`。部分运行保留完整注册配置、manifest 标为 `partial`；只有所有 variant×seed 结果都存在并通过身份检查时才生成统计和 `complete` 状态。
+- 新增基于 smoke 实测墙钟和 environment-step workload 的预算器。架构 v3 60 runs 粗估 60.9–105.2 GPU-hours；5-seed 链式消融 50 runs 粗估 82.2–105.0 GPU-hours，均标记为高不确定性并要求先做 100-episode calibration。
+
+### 论文影响
+
+- AerialVLN 只支持“真实 UAV 域语言 OOD 误接收率”证据，不能支持六维偏好准确率或行为对齐结论。
+- 长实验不再需要靠缩减预注册 episode 数避免中断；分块命令保持同一完整协议和结果身份。
+- 修正此前约 52 GPU-hours 的过度乐观消融估计；在未做 calibration 前不得承诺最终算力成本。
+
+### 后续验证
+
+- 下载并固定 AerialVLN v8 原包/派生 JSONL 哈希，运行解码器 OOD 拒答 smoke；
+- 招募独立 writer/reviewer，冻结人类偏好 test；
+- 在 clean commit 上运行 100-episode calibration，再更新 GPU 预约和分块大小；
+- 为 partial→complete 生命周期增加端到端中断恢复集成测试。
+
+## 2026-08-20：加入独立 actor 的顺序 HAPPO 强基线
+
+### 工程变更
+
+- 依据 Kuba et al. ICLR 2022 原论文和 PKU-MARL/HARL 官方实现（固定 `b1af98b0dbab72a2eee9d160751cd09aedbb8ce2`）加入 `src/happo_baseline.py`。
+- HAPPO 为每个 UAV 建立独立 actor，不共享参数。每次 rollout update 随机排列 agents；一个 agent 完成全部 PPO epochs 后，使用更新前后 likelihood ratio 乘到 factor，再训练下一个 agent；集中式 MLP critic 在所有 actor 之后更新。
+- 协议 validator 强制 `actor_parameter_sharing="independent"`、`update_scheme="random_sequential_likelihood_factor"`、无 intent、无 mask、direct policy、无 safety filter。artifact validator 逐 result 核验 actor count 与实现元数据，阻止共享 MAPPO actor 被重命名为 HAPPO。
+- HAPPO checkpoint 分别保存 8 个 actor/optimizer；单元测试覆盖无参数别名、逐 actor 更新、有限 factor、agent-count 拒绝和完整 checkpoint round-trip。
+- 新增架构 v3 smoke/paper 配置。v3 smoke 已完成 6 variants × 1 seed，artifact 审计为 `valid`：6/6 results、10 checksums、0 errors。
+- 修复 `generate_paper_artifacts.py` 的证据等级硬编码：smoke 图标题、报告文件名、seed/eval 数量全部来自配置，单 seed 报告禁止效果推断；不再输出沿用旧 pilot 的固定结论。
+
+### 论文影响
+
+- 强基线集合推进为 I-MAPPO/no-mask、MAPPO、IPPO、HAPPO、MATD3 六条可区分计算路径。HAPPO smoke 的 8 独立 actors 共 916,528 个可训练 actor 参数，集中式 critic 173,057 个；这些规模必须与性能共同报告。
+- HAPPO smoke 日志中的随机首 agent 为 2/7/5 等，sequential factor 有限但最大值曾达 4.90，提示正式实验需报告 ratio/factor 稳定性。
+- 1-seed/10-episode smoke 只验证实现，不支持 HAPPO 与任何算法的性能排序；正式强基线证据仍需 clean 10-seed v3 paper run，并最好对官方 HARL 环境适配做独立交叉复现。
+
+## 2026-08-20：CBF 等价加速与完整链式消融 smoke
+
+### 工程变更
+
+- 定位到 8 UAV 的 cyclic pairwise CBF 在 CUDA 上对每个 pair 反复调用 `.item()`，每步触发大量 host/device 同步；diagnostics 又重复同类同步。
+- 保持原 Gauss--Seidel pair 顺序、4 轮投影、active-set 判断和全局 action-box clipping，将 28 条小规模约束合并为一次 host-side float32 投影事务，并在同一遍中生成诊断。评估资源统计复用策略刚产生的诊断，不再重复求值。
+- 新增 `benchmark_cbf_runtime.py` 和随机张量旧实现对照测试。RTX 3050 上 filter+diagnostics 从 54.80 ms 降至 0.83 ms（66.24×）；CPU 从 7.61 ms 降至 0.76 ms（10.08×）。动作最大绝对误差 `4.25e-7`，诊断最大误差 `2.03e-8`。
+- 完整重跑 `uav_imappo_ablation_smoke_v2`：10 variants × 1 seed × 10 episodes，manifest `complete`，artifact validator 检查 10/10 results、14 checksums、9 条链式契约和所有有效计算路径，状态 `valid`、0 errors。
+- 自动生成 `docs/paper/generated/uav_imappo_ablation_smoke_v2/`：消融均值、18 条主比较、资源审计、森林图、报告和生成文件 manifest。
+
+### 论文影响
+
+- 优化只改变执行位置和同步次数，不改变注册的 CBF 数学约束；它不是新的安全算法，也不提升形式化保证。host-side 小规模求解假设及数值等价容差必须在实现细节中披露。
+- 冷启动 full 变体耗时 68.65 s；其余缓存变体平均 12.56 s。`no_cbf` 为 13.14 s，说明优化后 CBF 已不再主导该 smoke 的端到端成本。
+- 单 seed smoke 的 CI 退化且 exact/Holm p 均为 1，只证明实验、统计和制图管线连通。所有 effect 点估计禁止写成方法贡献；因果结论仍需 clean 多 seed pilot/paper 运行。
+
+### 后续验证
+
+- 在 clean commit 上重跑 smoke，确认无 dirty warning；
+- 先执行资源预算合适的多 seed 消融 pilot，再运行 10-seed 架构 paper 协议；
+- 继续补齐独立语言语料、跨场景泛化、冲突 SITL、HIL/实机证据。
+
 ## 2026-08-20：撤回伪 MAPPO 解释，加入可机器审计的链式消融
 
 ### 证据更正

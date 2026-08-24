@@ -1,0 +1,60 @@
+{
+  "status": "valid",
+  "study_id": "vmas_dispersion_architecture_v1_smoke",
+  "level": "smoke",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\smoke\\vmas_dispersion_architecture_v1_smoke",
+  "variant_count": 5,
+  "seed_count": 1,
+  "expected_result_count": 5,
+  "checksum_entry_count": 9,
+  "variant_protocol_audit": {
+    "status": "valid",
+    "variant_count": 5,
+    "variants": [
+      {
+        "key": "imappo_attention",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "architecture_only_no_language_claim"
+      },
+      {
+        "key": "mappo",
+        "algorithm": "mappo",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "mlp",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "architecture_only_no_language_claim"
+      },
+      {
+        "key": "ippo",
+        "algorithm": "ippo",
+        "critic_mode": "local",
+        "critic_mode_effective": "local",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "architecture_only_no_language_claim"
+      },
+      {
+        "key": "happo",
+        "algorithm": "happo",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "centralized_mlp_sequential_independent_actors",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "architecture_only_no_language_claim"
+      },
+      {
+        "key": "matd3",
+        "algorithm": "matd3",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "centralized_twin_critics",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "architecture_only_no_language_claim"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": [
+    "study invocation used a dirty Git worktree"
+  ]
+}

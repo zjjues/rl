@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "benchmark": "pairwise_cbf_filter_plus_diagnostics",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python": "3.10.20",
+  "torch": "2.4.1+cu124",
+  "device": "cuda",
+  "device_name": "NVIDIA GeForce RTX 3050 6GB Laptop GPU",
+  "agents": 8,
+  "pairs": 28,
+  "iterations": 4,
+  "repeats": 100,
+  "seed": 20260820,
+  "legacy_total_seconds": 5.4798365999013186,
+  "optimized_total_seconds": 0.08273019990883768,
+  "legacy_mean_milliseconds": 54.798365999013186,
+  "optimized_mean_milliseconds": 0.8273019990883768,
+  "speedup": 66.23743936240548,
+  "max_action_absolute_error": 4.246830940246582e-07,
+  "max_diagnostic_absolute_error": 2.0265579214751028e-08
+}
