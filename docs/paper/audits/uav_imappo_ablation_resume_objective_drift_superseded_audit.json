@@ -1,13 +1,13 @@
 {
-  "status": "valid_partial",
+  "status": "invalid",
   "study_id": "uav_imappo_ablation_paper_v2",
   "level": "paper",
-  "study_dir": "D:\\seu\\p\\rl\\experiments\\paper\\uav_imappo_ablation_paper_v2",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\paper\\uav_imappo_ablation_paper_v2_superseded_resume_objective_drift_20260824",
   "variant_count": 10,
   "seed_count": 10,
   "expected_result_count": 100,
-  "completed_result_count": 1,
-  "checksum_entry_count": 3,
+  "completed_result_count": 2,
+  "checksum_entry_count": 4,
   "variant_protocol_audit": {
     "status": "valid",
     "variant_count": 10,
@@ -94,6 +94,9 @@
       }
     ]
   },
-  "errors": [],
+  "errors": [
+    "paper result provenance mismatch: imappo_full/seed_11/result.json",
+    "paper manifest registered protocol SHA-256 mismatch"
+  ],
   "warnings": []
 }

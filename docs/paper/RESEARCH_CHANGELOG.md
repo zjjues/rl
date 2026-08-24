@@ -13,7 +13,9 @@
 - artifact validator 新增严格 `--allow-partial`：只接受 missing-pair 集合精确、已有结果身份/校验和有效且无 summary 的 `valid_partial`。
 - 首个完成但缺 result 指纹的正式消融单元原样保留并标记 superseded；新 validator 对其反证审计为预期 invalid。
 - 在 clean `317204a` 重跑同一单元并得到 `valid_partial`：result/manifest 双指纹一致、1/100 completed、99 missing、无 summary/checkpoint、0 errors/warnings；非计时轨迹与旧 run 完全一致。
-- 新增中断恢复等价性测试；本批最终全量回归 **182 passed, 14 warnings**。
+- 首次跨 commit seed 11 resume 暴露 `merge_resume_specs` 为不变单目标添加冗余 `objectives`，导致完整协议 hash 漂移；strict validator 正确拒绝。两 seed fragment 保留为 superseded，活动结果回到 0/100。
+- 修复单目标 resume 的字典/hash 幂等性并新增回归测试；不得迁移旧 result 或手工改写 provenance，须从新 implementation hash 重跑。
+- 新增中断恢复等价性测试；本批最终全量回归 **183 passed, 14 warnings**。
 
 ### 论文影响
 

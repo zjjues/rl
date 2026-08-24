@@ -369,5 +369,8 @@
         "hypothesis": "Removing both policy intent input and intent-potential shaping changes hard-tier safety or task completion relative to the identity oracle."
       }
     ]
-  }
+  },
+  "objectives": [
+    "Pre-registered ten-seed chained causal ablation of semantic representation, NLI prototype gating, objective-profile rule prior, learned residual, attention critic, action masking, intent shaping, and pairwise CBF filtering."
+  ]
 }

@@ -18,6 +18,8 @@
 
 每个正式 result 保存两个内容指纹：完整注册 `spec+variant+seed` 的 canonical JSON SHA-256，以及 runner 与全部研究源码的 implementation SHA-256。study manifest 和每次 resume history 同时记录完整 spec hash 与 implementation hash。Git commit 可因新增实验文件变化，但所有 chunk 的 implementation hash 必须一致；否则 resume 在读取缓存结果或开始新训练前拒绝。partial artifact 只在 manifest 的  missing pairs 与文件系统精确一致、已有结果身份/checksum 有效且不存在 summary 时标记 `valid_partial`。默认最终审计仍拒绝 partial。
 
+Resume spec 合并还必须幂等：相同单一 `objective` 不得派生额外 `objectives` 字段，否则即使执行字段相同，完整注册协议 hash 也会漂移。实现以字典相等和 canonical hash 相等双测试固定这一不变量；多目标 composite 只有在确实存在多个不同目标或原协议显式注册 `objectives` 时才生成列表。
+
 ## 18. 偏好相关性拒答与一次性外部终测
 
 自由文本首先经过冻结 MiniLM embedding 上的 logistic relevance gate。gate 只决定“是否允许进入六轴 profile decoder”，拒绝样本的六个目标倍率全部回到 1.0；它不改变不可协商 collision 约束。阈值仅由 AerialVLN `val_seen` 负样本上限校准，开发版 gate SHA-256 为 `8518d9be...87fd`，阈值为 `0.0244081132`。AerialVLN `val_unseen` 已在设计阶段查看，因此只作为 development evaluation，不作为最终盲测。

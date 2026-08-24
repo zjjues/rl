@@ -2,7 +2,7 @@
 
 ## 2026-08-24 长实验可靠性更新
 
-已关闭“单个算法×种子中断会丢失全部训练进度”的工程缺口：IMAPPO/HAPPO/MATD3 现在具备绑定协议与源码指纹的 episode 边界原子恢复，CPU 确定性测试验证连续与中断恢复路径逐 tensor 相等；最近完整回归 **182 passed**。六个 `*.paper.json` 配置已通过 dry-run，遗留 `uav_imappo_main.paper.json` 中伪 `concat` critic、pilot 等级和 50-episode 评估已修正为独立的 `uav_imappo_main_paper_v2`。
+已关闭“单个算法×种子中断会丢失全部训练进度”的工程缺口：IMAPPO/HAPPO/MATD3 现在具备绑定协议与源码指纹的 episode 边界原子恢复，CPU 确定性测试验证连续与中断恢复路径逐 tensor 相等；最近完整回归 **183 passed**。六个 `*.paper.json` 配置已通过 dry-run，遗留 `uav_imappo_main.paper.json` 中伪 `concat` critic、pilot 等级和 50-episode 评估已修正为独立的 `uav_imappo_main_paper_v2`。
 
 这提升的是实验可恢复性与 provenance，不提升论文效果证据等级。navigation/dispersion 五算法 100-episode calibration 已完成；预算器计入训练期监控、UAV collision probe 和算法差异，并将最终评估 100 episodes 与训练监控 20 episodes 解耦。navigation 50-run 预算为 **33.42–44.36 active CPU-hours**。MAPPO 同配置复跑得到完全相同 return，但 CPU time 从异常的 457.98 s 回落至 141.28 s，证明旧单次计时不可直接外推。正式 multi-seed 结果及六个硬缺口仍未关闭，因此总体 paper 证据仍维持 **48%–52%**。
 
@@ -12,7 +12,7 @@ UAV 十变体链式消融现在另有正式 `paper` 注册：10 seeds、100 fina
 
 首个正式消融单元还暴露并关闭了分块 provenance 缺口：旧完成结果没有保存 checkpoint 的实现指纹，故该单元被完整保留但判为 superseded，不能进入统计。新协议把 canonical result-protocol hash 与 implementation hash 同时写入 result、manifest 和 resume history，拒绝跨实现 resume，并可严格审计 `valid_partial` 而不生成提前统计。工程/协议准备度小幅提高，但因正式有效单元仍需重跑，paper 证据比例不增加。
 
-修复后 `imappo_full × seed 7` 已从 clean `317204a` 重跑并通过 `valid_partial`（1/100、0 errors/warnings）；新旧非计时行为与训练日志完全一致。该进度只把消融正式计算从 0 推进到 1%，仍不足以估计 seed 方差或任何注册效应，因此总体 paper 证据比例继续保持 48%–52%。
+修复后 `imappo_full × seed 7` 曾从 clean `317204a` 重跑并通过 `valid_partial`；但第一次跨 commit resume 又揭示相同单目标 spec 被注入冗余 `objectives` 字段，seed 11 被 strict validator 拒绝。两 seed fragment 均已 superseded，merge 幂等性现由字典与 hash 双测试固定。活动正式消融进度因此诚实回到 0/100，总体 paper 证据比例继续保持 48%–52%。
 
 ## 2026-08-24 最新判定（覆盖下文历史比例）
 

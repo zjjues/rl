@@ -35,3 +35,7 @@ Git commit 仍用于追踪实验数据提交历史，但训练实现同一性由
 从 clean commit `317204a` 重跑 `imappo_full × seed 7` 后，partial audit 返回 `valid_partial`：1/100 results、3 checksum entries、99 个声明 missing pairs、0 errors、0 warnings、无 summary、无 checkpoint。result 与 manifest 的 implementation SHA-256 均为 `20d4c3ef29595c8eec18d501078187f03823ae0d4106c15db66bb5a34af4c1ac`，result protocol SHA-256 为 `ddb4f154a4f0564d06f6e8029fe8f14fe7228d3f4c3e96209addb4c7b23a5129`。
 
 新旧 run 的全部非计时 tier metrics 和 logs 逐 JSON 相等；唯一差异是 1 个 final 与 60 个周期 `safety_filter_solver_time_ms` 墙钟测量。修复后 wall/process CPU=1468.89/1314.50 s，hard collision/task/return=0.0042/0.599881/−18.578883。该复跑证明 provenance 写入没有改变确定性行为路径，但仍只是一枚 seed，禁止效果推断。
+
+上述 1-run 状态随后在第一次跨 commit resume 时被第二项严格审计取代，不能继续作为活动 paper fragment。旧 `merge_resume_specs` 对完全相同的单一 `objective` 仍新增冗余的一元素 `objectives` 数组；训练字段和 implementation hash 未变，但完整 spec hash 因此改变。seed 11 数值运行成功，validator 仍正确拒绝其 result 与 manifest protocol hash。两 seed fragment 原样保留在 `experiments/paper/uav_imappo_ablation_paper_v2_superseded_resume_objective_drift_20260824/`，审计为预期 invalid。
+
+修复后的 merge 对相同单目标 spec 是字典级幂等操作，不再注入派生字段；回归测试同时断言 merged spec 相等和 canonical study hash 相等。由于 runner 字节已改变，先前 seed 7/11 的 implementation hash 也不再等于新实现，二者必须从新 clean snapshot 重跑，不能迁移或手工改 hash。

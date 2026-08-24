@@ -461,13 +461,19 @@ def merge_resume_specs(
         objective = source.get("objective")
         if objective is not None and str(objective) not in objectives:
             objectives.append(str(objective))
-    if objectives:
+    has_explicit_objectives = any("objectives" in source for source in (existing, incoming))
+    if len(objectives) > 1 or has_explicit_objectives:
         merged["objectives"] = objectives
         merged["objective"] = (
             objectives[0]
             if len(objectives) == 1
             else "Composite resumed study; see objectives for registered run scopes."
         )
+    elif objectives:
+        # Idempotent resume of a single registered objective must not inject a
+        # derived `objectives` field: the full-spec protocol hash must stay exact.
+        merged["objective"] = objectives[0]
+        merged.pop("objectives", None)
     if "treatment_key" in incoming:
         merged["treatment_key"] = incoming["treatment_key"]
     return merged

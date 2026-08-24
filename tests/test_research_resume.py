@@ -20,6 +20,7 @@ from run_research_study import (  # noqa: E402
     validate_result_identity,
     training_checkpoint_identity,
 )
+from research_provenance import registered_study_protocol_fingerprint  # noqa: E402
 
 
 def study_spec(*variants: dict) -> dict:
@@ -82,6 +83,16 @@ class ResearchResumeTests(unittest.TestCase):
         second = study_spec({"key": "a", "algorithm": "ippo"})
         with self.assertRaisesRegex(ValueError, "redefines"):
             merge_resume_specs(first, second)
+
+    def test_identical_resume_is_spec_and_protocol_hash_idempotent(self):
+        spec = study_spec({"key": "a", "algorithm": "imappo"})
+        spec["objective"] = "one registered objective"
+        merged = merge_resume_specs(spec, deepcopy(spec))
+        self.assertEqual(merged, spec)
+        self.assertEqual(
+            registered_study_protocol_fingerprint(merged),
+            registered_study_protocol_fingerprint(spec),
+        )
 
     def test_checkpoint_interval_must_be_positive(self):
         spec = study_spec({"key": "a", "algorithm": "imappo"})
