@@ -1,5 +1,13 @@
 # 方法章节持续草稿
 
+## 20. Episode 边界精确恢复与实现身份绑定
+
+长实验按注册的 episode 间隔原子保存完整训练态，而非只保存推理权重。IMAPPO/HAPPO 保存未消费 rollout，MATD3 保存 replay、目标网络和 delayed-update 游标；三者均保存优化器、日志、下一 episode、私有与全局 Python/NumPy/Torch RNG。检查点同时绑定完整实验 spec 与全部研究 Python 源码的 SHA-256 指纹，协议或实现变化时拒绝拼接恢复。正式 paper 配置根据 replay I/O calibration 每 50 episode 保存，最终 episode 强制保存，`result.json` 成功替换后才移除 checkpoint。确定性 CPU 中断测试对 IMAPPO、HAPPO、MATD3 得到逐 tensor 相等；该证据不外推为跨 CUDA 驱动的 bitwise 确定性。完整合同见 `EXACT_TRAINING_RESUME_PROTOCOL.md`。
+
+## 21. 训练监控与最终统计样本量解耦
+
+最终 paper evaluation 固定为每 seed、每 risk tier 100 episodes，不因预算调整而缩减。训练期定期监控只用于故障发现和学习曲线，独立注册 `monitor_eval_episodes=20`；UAV on-policy 监控后另执行同样 20 episodes 的 collision-probe，MATD3 没有训练期 evaluator。预算器逐算法计入 training、periodic monitoring、collision probe 与 final tier evaluation，避免把 MAPPO/HAPPO 的评估结构错误套给 MATD3。UAV v3 calibration 的 reference workload 为 on-policy 20,000、MATD3 16,000 最大 environment steps；paper workload 分别为 900,000 与 660,000。
+
 ## 18. 偏好相关性拒答与一次性外部终测
 
 自由文本首先经过冻结 MiniLM embedding 上的 logistic relevance gate。gate 只决定“是否允许进入六轴 profile decoder”，拒绝样本的六个目标倍率全部回到 1.0；它不改变不可协商 collision 约束。阈值仅由 AerialVLN `val_seen` 负样本上限校准，开发版 gate SHA-256 为 `8518d9be...87fd`，阈值为 `0.0244081132`。AerialVLN `val_unseen` 已在设计阶段查看，因此只作为 development evaluation，不作为最终盲测。
@@ -12,7 +20,7 @@ CityNav 在接触文本前完成 v2 预注册：冻结源 commit、190,078,685-b
 
 VMAS navigation 与 dispersion 只检验 MARL 架构外部有效性。所有变体统一使用 `intent_source=none`、`intent_profile_decoder=none`、`eta=0`、无 action mask、无 safety filter、direct policy；协议验证器拒绝把 UAV 语言、奖励画像或安全语义带入 VMAS。比较对象为 attention centralized PPO、MAPPO、IPPO、独立 actor 顺序 HAPPO 和 MATD3，唯一有效主指标为场景原生 episode return。
 
-VMASAdapter 固定 v1.5.2，强制注册 horizon，并仅映射原生 reward 与显式 collision diagnostics；`pos_rew` 不会被重命名为 UAV task completion。两个 5-algorithm/1-seed smoke 均通过 checksum/artifact 审计；它们只证明管线，不支持排序。10-seed、100-evaluation-episode paper 配置已冻结，粗略预算为 navigation 36.4–55.5 GPUh、dispersion 32.2–49.0 GPUh，正式运行前仍需 100-episode calibration。
+VMASAdapter 固定 v1.5.2，强制注册 horizon，并仅映射原生 reward 与显式 collision diagnostics；`pos_rew` 不会被重命名为 UAV task completion。两个 5-algorithm/1-seed smoke 均通过 checksum/artifact 审计；它们只证明管线，不支持排序。navigation 与 dispersion 的五算法、单 seed、100-training-episode calibration 均已完成。最终统计固定 100 episodes；训练期每次监控独立注册为 20 episodes，避免把最终样本量重复执行 40 次。按 process CPU active-time 和逐算法实际 workload 外推，50-run paper 计划分别为 33.42–44.36 与 34.09–45.47 active CPU-hours；该量排除宿主挂起但不是 GPU device-hours，且单 calibration seed 仍不足以估计跨 seed 时间方差。
 
 ## 0.1 Betaflight SITL 高保真迁移
 
@@ -341,4 +349,4 @@ M \leftarrow M\,\exp\{\log \pi_{i_m}^{new}(a_{i_m}|o_{i_m})-\log \pi_{i_m}^{old}
 
 正式运行仍注册完整 variants、seeds、训练 episode、评测 episode 和风险档。执行时可以选择 variant×seed 子集；每个逐 seed result 原子写入独立目录。若尚有注册 pair 缺失，manifest 为 `partial`，列出 missing pairs，且不生成 summary、显著性检验或 `complete` 标志。后续 `--resume` 首先核验已有 result 的 seed、variant key 和完整 variant definition，所有 pair 齐全后重新从磁盘载入全集并一次性聚合。因此中断和调用顺序不改变统计样本。
 
-预算器用 smoke 实测 wall time 按训练与评测 environment-step 数外推。总 workload 比率给出低估计，训练/评测最大单项比率给出保守估计；同构算法 study 中唯一极端首轮耗时可拆为一次性 text-model/cache cold start，混合算法 study 不作该假设。该范围只用于 GPU 预约，并被标记为高不确定性；100-training-episode calibration 后才更新正式预算。
+预算器 schema v2 按训练与评测 environment-step 数外推，并强制声明参考来源与 timing field。wall time 仅作为独占加速器占用代理，可能含宿主挂起；process CPU time 排除挂起但不是 GPU device time，二者不得互换命名。总 workload 比率给出低估计，训练/评测最大单项比率给出保守估计；同构算法 study 中唯一极端首轮耗时可拆为一次性 cold start，混合算法 study 不作该假设。VMAS 采用 100-training-episode calibration 的 process CPU time，预算不再使用受挂起污染的 smoke wall time。

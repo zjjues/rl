@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "source_study": "D:\\seu\\p\\rl\\experiments\\pilot\\uav_marl_architecture_v3_calibration",
+  "source_config": "D:\\seu\\p\\rl\\configs\\research\\uav_marl_architecture_v3.calibration.json",
+  "files": {
+    "figure_main_metrics.png": "a3e4359394134dce5c3a9f0a05bb6919d3ca629f89f2ad27ce23c97e70acd9c5",
+    "figure_paired_primary.png": "5af3805d86908ac7fcb8573355ccfe0d23128683909abe346fa92d2cf4b95d2c",
+    "main_results.csv": "e34c734a1c82d073236f0351a7a94e61987782456489290980b870f4761b3d65",
+    "paired_primary_results.csv": "244d396838fd63ba78394419d99bf1a5af6b8fd7a4d4858f6ff88ba5e7d46f13",
+    "PILOT_STATISTICAL_REPORT.md": "e13e9d3431fff0b91ec920a9497c63aa37e76a46ec792c6801c5f50db0e9f076"
+  }
+}

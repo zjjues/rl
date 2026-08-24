@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -183,6 +184,59 @@ class IMAPPOIntentAlignmentTests(unittest.TestCase):
         self.assertEqual(tuple(values.shape), (2, 4))
         self.assertEqual(tuple(local_weights.shape), (2, 4, 4))
         self.assertEqual(algo.intent_representation_metadata()["representation_type"], "none")
+
+    def test_private_rng_makes_intent_sequence_seed_deterministic(self):
+        def build(seed: int) -> IMAPPO:
+            return IMAPPO(
+                IMAPPOConfig(
+                    algorithm="imappo",
+                    n_agents=4,
+                    n_targets=4,
+                    obs_dim=30,
+                    state_dim=120,
+                    intent_dim=25,
+                    intent_source="none",
+                    intent_profile_decoder="none",
+                    device="cpu",
+                    seed=seed,
+                )
+            )
+
+        first = build(7)
+        second = build(7)
+        different = build(11)
+        first_labels = [first.sample_episode_intent_and_mask()[2] for _ in range(16)]
+        second_labels = [second.sample_episode_intent_and_mask()[2] for _ in range(16)]
+        different_labels = [
+            different.sample_episode_intent_and_mask()[2] for _ in range(16)
+        ]
+        self.assertEqual(first_labels, second_labels)
+        self.assertNotEqual(first_labels, different_labels)
+
+    def test_checkpoint_restores_next_private_rng_sample(self):
+        algo = IMAPPO(
+            IMAPPOConfig(
+                algorithm="imappo",
+                n_agents=4,
+                n_targets=4,
+                obs_dim=30,
+                state_dim=120,
+                intent_dim=25,
+                intent_source="none",
+                intent_profile_decoder="none",
+                device="cpu",
+                seed=7,
+            )
+        )
+        for _ in range(5):
+            algo.sample_episode_intent_and_mask()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = str(Path(temp_dir) / "imappo.pt")
+            algo.save_checkpoint(path)
+            expected = [algo.sample_episode_intent_and_mask()[2] for _ in range(12)]
+            restored = IMAPPO.load_checkpoint(path)
+        actual = [restored.sample_episode_intent_and_mask()[2] for _ in range(12)]
+        self.assertEqual(expected, actual)
 
 
 if __name__ == "__main__":

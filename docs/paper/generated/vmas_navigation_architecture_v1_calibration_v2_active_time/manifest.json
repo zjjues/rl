@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "source_study": "D:\\seu\\p\\rl\\experiments\\pilot\\vmas_navigation_architecture_v1_calibration",
+  "source_config": "D:\\seu\\p\\rl\\configs\\research\\vmas_navigation_architecture_v1.calibration.json",
+  "files": {
+    "episode_return.csv": "f00a066e8edfb6b7087f6a00da2fd715527522d6fde3e57cc63f7ccadf7ef70f",
+    "episode_return.png": "9a0b7c3612df0ed9ea86c43ac17a24f9f82784e8c11606f1a62880fa93688b55",
+    "paired_comparisons.csv": "26a7189f4729885e5f8866cc6518cd00f8baef8bdadcdd2afcaeb5381188cb95",
+    "REPORT.md": "57b498f71878d119f89057941789b91743c18cb7ed3aed8f88f5ce5b67c266fe"
+  }
+}

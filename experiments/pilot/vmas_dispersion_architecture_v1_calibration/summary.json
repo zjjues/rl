@@ -1,0 +1,343 @@
+{
+  "variants": {
+    "imappo_attention": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "canonical": {
+          "episode_return": {
+            "n": 1,
+            "mean": 0.05000000149011612,
+            "std": 0.0,
+            "median": 0.05000000149011612,
+            "iqm": 0.05000000149011612,
+            "min": 0.05000000149011612,
+            "max": 0.05000000149011612,
+            "mean_ci": {
+              "low": 0.05000000149011612,
+              "high": 0.05000000149011612,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260824
+            },
+            "iqm_ci": {
+              "low": 0.05000000149011612,
+              "high": 0.05000000149011612,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260825
+            },
+            "raw": [
+              0.05000000149011612
+            ]
+          }
+        }
+      }
+    },
+    "mappo": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "canonical": {
+          "episode_return": {
+            "n": 1,
+            "mean": 0.01666666716337204,
+            "std": 0.0,
+            "median": 0.01666666716337204,
+            "iqm": 0.01666666716337204,
+            "min": 0.01666666716337204,
+            "max": 0.01666666716337204,
+            "mean_ci": {
+              "low": 0.01666666716337204,
+              "high": 0.01666666716337204,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260824
+            },
+            "iqm_ci": {
+              "low": 0.01666666716337204,
+              "high": 0.01666666716337204,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260825
+            },
+            "raw": [
+              0.01666666716337204
+            ]
+          }
+        }
+      }
+    },
+    "ippo": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "canonical": {
+          "episode_return": {
+            "n": 1,
+            "mean": 0.03333333432674408,
+            "std": 0.0,
+            "median": 0.03333333432674408,
+            "iqm": 0.03333333432674408,
+            "min": 0.03333333432674408,
+            "max": 0.03333333432674408,
+            "mean_ci": {
+              "low": 0.03333333432674408,
+              "high": 0.03333333432674408,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260824
+            },
+            "iqm_ci": {
+              "low": 0.03333333432674408,
+              "high": 0.03333333432674408,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260825
+            },
+            "raw": [
+              0.03333333432674408
+            ]
+          }
+        }
+      }
+    },
+    "happo": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "canonical": {
+          "episode_return": {
+            "n": 1,
+            "mean": 0.03333333432674408,
+            "std": 0.0,
+            "median": 0.03333333432674408,
+            "iqm": 0.03333333432674408,
+            "min": 0.03333333432674408,
+            "max": 0.03333333432674408,
+            "mean_ci": {
+              "low": 0.03333333432674408,
+              "high": 0.03333333432674408,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260824
+            },
+            "iqm_ci": {
+              "low": 0.03333333432674408,
+              "high": 0.03333333432674408,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260825
+            },
+            "raw": [
+              0.03333333432674408
+            ]
+          }
+        }
+      }
+    },
+    "matd3": {
+      "seed_count": 1,
+      "risk_tiers": {
+        "canonical": {
+          "episode_return": {
+            "n": 1,
+            "mean": 0.13333333730697633,
+            "std": 0.0,
+            "median": 0.13333333730697633,
+            "iqm": 0.13333333730697633,
+            "min": 0.13333333730697633,
+            "max": 0.13333333730697633,
+            "mean_ci": {
+              "low": 0.13333333730697633,
+              "high": 0.13333333730697633,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260824
+            },
+            "iqm_ci": {
+              "low": 0.13333333730697633,
+              "high": 0.13333333730697633,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20260825
+            },
+            "raw": [
+              0.13333333730697633
+            ]
+          }
+        }
+      }
+    }
+  },
+  "paired_comparisons": {
+    "mappo": {
+      "risk_tiers": {
+        "canonical": {
+          "episode_return": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": 0.033333334326744075,
+            "median_difference": 0.033333334326744075,
+            "win_rate": 1.0,
+            "tie_rate": 0.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.033333334326744075,
+              "high": 0.033333334326744075,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261824
+            },
+            "raw_differences": [
+              0.033333334326744075
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × registered primary_metrics"
+          }
+        }
+      }
+    },
+    "ippo": {
+      "risk_tiers": {
+        "canonical": {
+          "episode_return": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": 0.016666667163372034,
+            "median_difference": 0.016666667163372034,
+            "win_rate": 1.0,
+            "tie_rate": 0.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.016666667163372034,
+              "high": 0.016666667163372034,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261825
+            },
+            "raw_differences": [
+              0.016666667163372034
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × registered primary_metrics"
+          }
+        }
+      }
+    },
+    "happo": {
+      "risk_tiers": {
+        "canonical": {
+          "episode_return": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": 0.016666667163372034,
+            "median_difference": 0.016666667163372034,
+            "win_rate": 1.0,
+            "tie_rate": 0.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": 0.016666667163372034,
+              "high": 0.016666667163372034,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261826
+            },
+            "raw_differences": [
+              0.016666667163372034
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × registered primary_metrics"
+          }
+        }
+      }
+    },
+    "matd3": {
+      "risk_tiers": {
+        "canonical": {
+          "episode_return": {
+            "direction": "treatment_minus_baseline",
+            "lower_is_better": false,
+            "mean_difference": -0.08333333581686021,
+            "median_difference": -0.08333333581686021,
+            "win_rate": 0.0,
+            "tie_rate": 0.0,
+            "standardized_effect_dz": 0.0,
+            "randomization_test": {
+              "alternative": "two-sided",
+              "method": "exact_paired_sign_flip",
+              "p_value": 1.0,
+              "permutations": 2
+            },
+            "difference_ci": {
+              "low": -0.08333333581686021,
+              "high": -0.08333333581686021,
+              "confidence": 0.95,
+              "n_resamples": 10000,
+              "seed": 20261827
+            },
+            "raw_differences": [
+              -0.08333333581686021
+            ],
+            "holm_adjusted_p_value": 1.0,
+            "holm_reject_0_05": false,
+            "multiplicity_family": "all baselines × tiers × registered primary_metrics"
+          }
+        }
+      }
+    }
+  },
+  "primary_multiplicity": {
+    "method": "holm",
+    "alpha": 0.05,
+    "family_size": 4,
+    "adjusted_p_values": {
+      "mappo/canonical/episode_return": 1.0,
+      "ippo/canonical/episode_return": 1.0,
+      "happo/canonical/episode_return": 1.0,
+      "matd3/canonical/episode_return": 1.0
+    },
+    "reject": {
+      "mappo/canonical/episode_return": false,
+      "ippo/canonical/episode_return": false,
+      "happo/canonical/episode_return": false,
+      "matd3/canonical/episode_return": false
+    },
+    "family_definition": "all baselines × tiers × registered primary_metrics"
+  },
+  "metric_contract": {
+    "valid_scope": "architecture_only",
+    "primary_metrics": [
+      "episode_return"
+    ],
+    "summary_metrics": [
+      "episode_return"
+    ],
+    "artifact_metrics": [
+      "episode_return"
+    ],
+    "summary_metric_directions": [
+      [
+        "episode_return",
+        false
+      ]
+    ]
+  }
+}

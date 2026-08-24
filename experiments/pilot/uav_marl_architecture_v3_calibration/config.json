@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_marl_architecture_v3_calibration",
+  "level": "pilot",
+  "objective": "Single-seed active-time and stability calibration for the corrected six-algorithm UAV architecture protocol; not an effect study.",
+  "seeds": [
+    7
+  ],
+  "bootstrap_seed": 20260824,
+  "treatment_key": "imappo",
+  "environment": {
+    "name": "uav-scheduling-v2",
+    "n_agents": 8,
+    "n_targets": 6,
+    "safety_reward_coef": 1.0,
+    "task_reward_coef": 1.2,
+    "intent_reward_profiles_enabled": true
+  },
+  "training": {
+    "episodes": 100,
+    "steps": 100,
+    "rollout_length": 128,
+    "minibatch_size": 64,
+    "eval_interval": 100,
+    "monitor_eval_episodes": 20,
+    "actor_lr": 0.0003,
+    "critic_lr": 0.0003,
+    "eta": 0.5,
+    "eta_end": 0.1,
+    "entropy_coef": 0.001,
+    "entropy_coef_end": 0.0001,
+    "potential_update_mode": "normal",
+    "potential_update_interval": 4,
+    "device": "cuda"
+  },
+  "intent": {
+    "dim": 25,
+    "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "encoder_revision": "",
+    "projection_seed": 17,
+    "code_seed": 29
+  },
+  "variants": [
+    {
+      "key": "imappo",
+      "intent_source": "onehot",
+      "intent_profile_decoder": "none",
+      "algorithm": "imappo",
+      "critic_mode": "attention",
+      "policy_mode": "direct",
+      "rule_prior_context": "neutral",
+      "residual_action_scale": 0.25,
+      "use_action_mask": true,
+      "safety_filter_mode": "none",
+      "disable_intent_reward": true
+    },
+    {
+      "key": "imappo_no_mask",
+      "intent_source": "onehot",
+      "intent_profile_decoder": "none",
+      "algorithm": "imappo",
+      "critic_mode": "attention",
+      "policy_mode": "direct",
+      "rule_prior_context": "neutral",
+      "residual_action_scale": 0.25,
+      "use_action_mask": false,
+      "safety_filter_mode": "none",
+      "disable_intent_reward": true
+    },
+    {
+      "key": "mappo",
+      "intent_source": "onehot",
+      "intent_profile_decoder": "none",
+      "algorithm": "mappo",
+      "critic_mode": "mlp",
+      "policy_mode": "direct",
+      "rule_prior_context": "neutral",
+      "residual_action_scale": 0.25,
+      "use_action_mask": false,
+      "safety_filter_mode": "none",
+      "disable_intent_reward": true
+    },
+    {
+      "key": "ippo",
+      "intent_source": "onehot",
+      "intent_profile_decoder": "none",
+      "algorithm": "ippo",
+      "critic_mode": "local",
+      "policy_mode": "direct",
+      "rule_prior_context": "neutral",
+      "residual_action_scale": 0.25,
+      "use_action_mask": false,
+      "safety_filter_mode": "none",
+      "disable_intent_reward": true
+    },
+    {
+      "key": "happo",
+      "intent_source": "none",
+      "intent_profile_decoder": "none",
+      "algorithm": "happo",
+      "critic_mode": "mlp",
+      "policy_mode": "direct",
+      "rule_prior_context": "neutral",
+      "residual_action_scale": 0.25,
+      "use_action_mask": false,
+      "safety_filter_mode": "none",
+      "disable_intent_reward": true,
+      "actor_parameter_sharing": "independent",
+      "update_scheme": "random_sequential_likelihood_factor"
+    },
+    {
+      "key": "matd3",
+      "intent_source": "onehot",
+      "intent_profile_decoder": "none",
+      "algorithm": "matd3",
+      "critic_mode": "mlp",
+      "policy_mode": "direct",
+      "rule_prior_context": "neutral",
+      "residual_action_scale": 0.25,
+      "use_action_mask": false,
+      "safety_filter_mode": "none",
+      "disable_intent_reward": true
+    }
+  ],
+  "evaluation": {
+    "episodes": 20,
+    "risk_tiers": {
+      "easy": {
+        "spawn_region_scale": 0.5,
+        "spawn_separation_scale": 1.2,
+        "intent_mode": "dense"
+      },
+      "medium": {
+        "spawn_region_scale": 0.4,
+        "spawn_separation_scale": 1.0,
+        "intent_mode": "dense"
+      },
+      "hard": {
+        "spawn_region_scale": 0.3,
+        "spawn_separation_scale": 0.8,
+        "intent_mode": "dense"
+      }
+    }
+  }
+}

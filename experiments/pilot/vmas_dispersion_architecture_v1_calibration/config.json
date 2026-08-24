@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "study_id": "vmas_dispersion_architecture_v1_calibration",
+  "level": "pilot",
+  "objective": "100-training-episode runtime and variance calibration for the architecture-only VMAS dispersion paper protocol; not an effect study.",
+  "seeds": [
+    7
+  ],
+  "bootstrap_seed": 20260824,
+  "treatment_key": "imappo_attention",
+  "environment": {
+    "name": "vmas:dispersion",
+    "package_name": "vmas",
+    "package_version": "1.5.2",
+    "n_agents": 3,
+    "intent_reward_profiles_enabled": false
+  },
+  "training": {
+    "episodes": 100,
+    "steps": 100,
+    "rollout_length": 256,
+    "minibatch_size": 128,
+    "eval_interval": 25,
+    "actor_lr": 0.0003,
+    "critic_lr": 0.0003,
+    "eta": 0.0,
+    "eta_end": 0.0,
+    "entropy_coef": 0.001,
+    "entropy_coef_end": 0.0001,
+    "potential_update_mode": "frozen",
+    "matd3_warmup_steps": 200,
+    "replay_capacity": 50000,
+    "device": "cuda"
+  },
+  "intent": {
+    "dim": 1,
+    "encoder_model": "not_used",
+    "encoder_revision": "",
+    "projection_seed": 0,
+    "code_seed": 0
+  },
+  "variants": [
+    {
+      "key": "imappo_attention",
+      "algorithm": "imappo",
+      "critic_mode": "attention",
+      "intent_source": "none",
+      "intent_profile_decoder": "none",
+      "disable_intent_reward": true,
+      "use_action_mask": false,
+      "policy_mode": "direct",
+      "safety_filter_mode": "none"
+    },
+    {
+      "key": "mappo",
+      "algorithm": "mappo",
+      "critic_mode": "mlp",
+      "intent_source": "none",
+      "intent_profile_decoder": "none",
+      "disable_intent_reward": true,
+      "use_action_mask": false,
+      "policy_mode": "direct",
+      "safety_filter_mode": "none"
+    },
+    {
+      "key": "ippo",
+      "algorithm": "ippo",
+      "critic_mode": "local",
+      "intent_source": "none",
+      "intent_profile_decoder": "none",
+      "disable_intent_reward": true,
+      "use_action_mask": false,
+      "policy_mode": "direct",
+      "safety_filter_mode": "none"
+    },
+    {
+      "key": "happo",
+      "algorithm": "happo",
+      "critic_mode": "mlp",
+      "intent_source": "none",
+      "intent_profile_decoder": "none",
+      "disable_intent_reward": true,
+      "use_action_mask": false,
+      "policy_mode": "direct",
+      "safety_filter_mode": "none",
+      "actor_parameter_sharing": "independent",
+      "update_scheme": "random_sequential_likelihood_factor"
+    },
+    {
+      "key": "matd3",
+      "algorithm": "matd3",
+      "critic_mode": "mlp",
+      "intent_source": "none",
+      "intent_profile_decoder": "none",
+      "disable_intent_reward": true,
+      "use_action_mask": false,
+      "policy_mode": "direct",
+      "safety_filter_mode": "none"
+    }
+  ],
+  "evaluation": {
+    "episodes": 20,
+    "risk_tiers": {
+      "canonical": {
+        "n_agents": 3,
+        "intent_mode": "standard"
+      }
+    }
+  },
+  "reporting": {
+    "primary_metric": "canonical_episode_return",
+    "primary_metrics": [
+      "episode_return"
+    ],
+    "summary_metrics": [
+      "episode_return"
+    ],
+    "artifact_metrics": [
+      "episode_return"
+    ],
+    "valid_scope": "architecture_only",
+    "invalid_claims": [
+      "language_generalization",
+      "preference_accuracy",
+      "UAV_safety_transfer",
+      "task_completion_from_UAV_schema"
+    ]
+  }
+}

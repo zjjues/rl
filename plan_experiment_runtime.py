@@ -1,8 +1,8 @@
 """Estimate paper-study runtime and emit safe resumable run chunks.
 
-The estimate extrapolates measured smoke wall time by environment-step workload.
-It is a planning bound, not a performance claim; a 100-episode calibration run is
-still required before reserving the final GPU window.
+The estimate extrapolates a registered smoke or calibration timing field by
+environment-step workload. Wall and process-CPU time are kept semantically
+distinct; neither is relabelled as measured GPU compute time.
 """
 
 from __future__ import annotations
@@ -19,19 +19,49 @@ def read_json(path: Path) -> Dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def workload(spec: Mapping[str, object]) -> Dict[str, int]:
+def workload(
+    spec: Mapping[str, object], variant: Mapping[str, object] | None = None
+) -> Dict[str, int]:
+    """Count executed environment steps, including in-training evaluations."""
     steps = int(spec["training"]["steps"])
-    training = int(spec["training"]["episodes"]) * steps
-    evaluation = (
+    training_episodes = int(spec["training"]["episodes"])
+    algorithm = str((variant or {}).get("algorithm", "imappo"))
+    training = (
+        0 if algorithm == "rule_planner" else training_episodes * steps
+    )
+    periodic_evaluation = 0
+    collision_probe = 0
+    if algorithm not in {"rule_planner", "matd3"}:
+        interval = max(int(spec["training"].get("eval_interval", training_episodes)), 1)
+        events = math.ceil(training_episodes / interval)
+        monitor_episodes = int(
+            spec["training"].get(
+                "monitor_eval_episodes", spec["evaluation"]["episodes"]
+            )
+        )
+        periodic_evaluation = events * monitor_episodes * steps
+        if not str(spec["environment"]["name"]).startswith("vmas:"):
+            collision_probe = periodic_evaluation
+    final_evaluation = (
         int(spec["evaluation"]["episodes"])
         * len(spec["evaluation"]["risk_tiers"])
         * steps
     )
-    return {"training": training, "evaluation": evaluation, "total": training + evaluation}
+    evaluation = periodic_evaluation + collision_probe + final_evaluation
+    return {
+        "training": training,
+        "periodic_evaluation": periodic_evaluation,
+        "collision_probe": collision_probe,
+        "final_evaluation": final_evaluation,
+        "evaluation": evaluation,
+        "total": training + evaluation,
+    }
 
 
 def measured_variant_times(
-    result_root: Path, expected_variants: set[str]
+    result_root: Path,
+    expected_variants: set[str],
+    timing_field: str = "wall_time_seconds",
 ) -> Dict[str, float]:
     measured: Dict[str, float] = {}
     for path in result_root.rglob("result.json"):
@@ -40,7 +70,12 @@ def measured_variant_times(
         key = str(variant.get("key")) if isinstance(variant, Mapping) else str(variant)
         if key not in expected_variants:
             continue
-        seconds = float(result["resource_audit"]["wall_time_seconds"])
+        resource = result.get("resource_audit", {})
+        if timing_field not in resource:
+            raise ValueError(
+                f"result {path} is missing resource_audit.{timing_field}"
+            )
+        seconds = float(resource[timing_field])
         if seconds <= 0 or key in measured:
             raise ValueError(f"invalid or duplicate smoke timing for {key!r}")
         measured[key] = seconds
@@ -57,6 +92,8 @@ def build_runtime_plan(
     *,
     config_path: str,
     max_chunk_hours: float = 12.0,
+    reference_label: str = "smoke",
+    timing_field: str = "wall_time_seconds",
 ) -> Dict[str, object]:
     paper_variants = [str(item["key"]) for item in paper["variants"]]
     smoke_variants = [str(item["key"]) for item in smoke["variants"]]
@@ -66,12 +103,44 @@ def build_runtime_plan(
         raise ValueError("measured timings must exactly match registered variants")
     if max_chunk_hours <= 0:
         raise ValueError("max_chunk_hours must be positive")
-    smoke_work = workload(smoke)
-    paper_work = workload(paper)
-    blended_scale = paper_work["total"] / smoke_work["total"]
-    training_scale = paper_work["training"] / smoke_work["training"]
-    evaluation_scale = paper_work["evaluation"] / smoke_work["evaluation"]
-    upper_scale = max(training_scale, evaluation_scale)
+    smoke_variant_defs = {
+        str(item["key"]): item for item in smoke["variants"]
+    }
+    paper_variant_defs = {
+        str(item["key"]): item for item in paper["variants"]
+    }
+    reference_workloads = {
+        key: workload(smoke, smoke_variant_defs[key]) for key in paper_variants
+    }
+    paper_workloads = {
+        key: workload(paper, paper_variant_defs[key]) for key in paper_variants
+    }
+    scale_components = (
+        "training",
+        "periodic_evaluation",
+        "collision_probe",
+        "final_evaluation",
+    )
+    scales = {}
+    for key in paper_variants:
+        reference_work = reference_workloads[key]
+        target_work = paper_workloads[key]
+        component_scales = {}
+        for component in scale_components:
+            reference_value = reference_work[component]
+            target_value = target_work[component]
+            if reference_value == 0:
+                if target_value != 0:
+                    raise ValueError(
+                        f"reference workload has no {component} for {key!r}"
+                    )
+                continue
+            component_scales[component] = target_value / reference_value
+        scales[key] = {
+            "blended": target_work["total"] / reference_work["total"],
+            "conservative": max(component_scales.values()),
+            "components": component_scales,
+        }
 
     timings = {key: float(measured_seconds[key]) for key in paper_variants}
     fixed_cold_start = 0.0
@@ -89,16 +158,28 @@ def build_runtime_plan(
     total_low = fixed_cold_start
     total_high = fixed_cold_start
     for key in paper_variants:
-        low_per_run = timings[key] * blended_scale
-        high_per_run = timings[key] * upper_scale
+        low_per_run = timings[key] * scales[key]["blended"]
+        high_per_run = timings[key] * scales[key]["conservative"]
         per_variant[key] = {
-            "smoke_wall_seconds": float(measured_seconds[key]),
-            "recurring_smoke_seconds": timings[key],
+            "reference_seconds": float(measured_seconds[key]),
+            "recurring_reference_seconds": timings[key],
+            "reference_workload_units": reference_workloads[key],
+            "paper_workload_units": paper_workloads[key],
+            "workload_scales": scales[key],
             "estimated_seconds_per_seed_low": low_per_run,
             "estimated_seconds_per_seed_high": high_per_run,
-            "estimated_gpu_hours_all_seeds_low": low_per_run * seed_count / 3600,
-            "estimated_gpu_hours_all_seeds_high": high_per_run * seed_count / 3600,
+            "estimated_active_hours_all_seeds_low": low_per_run * seed_count / 3600,
+            "estimated_active_hours_all_seeds_high": high_per_run * seed_count / 3600,
         }
+        if timing_field == "wall_time_seconds":
+            per_variant[key]["smoke_wall_seconds"] = float(measured_seconds[key])
+            per_variant[key]["recurring_smoke_seconds"] = timings[key]
+            per_variant[key]["estimated_gpu_occupancy_hours_all_seeds_low"] = (
+                low_per_run * seed_count / 3600
+            )
+            per_variant[key]["estimated_gpu_occupancy_hours_all_seeds_high"] = (
+                high_per_run * seed_count / 3600
+            )
         total_low += low_per_run * seed_count
         total_high += high_per_run * seed_count
 
@@ -128,19 +209,32 @@ def build_runtime_plan(
             first = False
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "study_id": str(paper["study_id"]),
-        "method": "linear environment-step extrapolation from measured smoke wall time",
-        "uncertainty": "high; run a 100-training-episode calibration before final reservation",
-        "smoke_workload_units": smoke_work,
-        "paper_workload_units": paper_work,
-        "blended_scale": blended_scale,
-        "conservative_scale": upper_scale,
+        "method": (
+            "linear environment-step extrapolation from measured "
+            f"{reference_label} {timing_field}"
+        ),
+        "reference_label": str(reference_label),
+        "timing_field": str(timing_field),
+        "timing_semantics": (
+            "process CPU time excludes host suspension but is not GPU device time"
+            if timing_field == "process_cpu_time_seconds"
+            else "wall time estimates exclusive accelerator occupancy and may include host suspension"
+        ),
+        "uncertainty": (
+            "moderate-to-high; one calibration seed does not capture seed/runtime variance"
+            if reference_label == "calibration"
+            else "high; run a 100-training-episode calibration before final reservation"
+        ),
+        "reference_workload_units_by_variant": reference_workloads,
+        "paper_workload_units_by_variant": paper_workloads,
+        "workload_scales_by_variant": scales,
         "fixed_cold_start_seconds": fixed_cold_start,
         "seed_count": seed_count,
         "run_count": seed_count * len(paper_variants),
-        "estimated_gpu_hours_low": total_low / 3600,
-        "estimated_gpu_hours_high": total_high / 3600,
+        "estimated_active_hours_low": total_low / 3600,
+        "estimated_active_hours_high": total_high / 3600,
         "per_variant": per_variant,
         "max_chunk_hours": max_chunk_hours,
         "chunks": chunks,
@@ -158,18 +252,30 @@ def main() -> int:
     parser.add_argument("--smoke-config", type=Path, required=True)
     parser.add_argument("--smoke-results", type=Path, required=True)
     parser.add_argument("--max-chunk-hours", type=float, default=12.0)
+    parser.add_argument(
+        "--timing-field",
+        choices=("wall_time_seconds", "process_cpu_time_seconds"),
+        default="wall_time_seconds",
+    )
+    parser.add_argument(
+        "--reference-label", choices=("smoke", "calibration"), default="smoke"
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     paper = read_json(args.paper_config)
     smoke = read_json(args.smoke_config)
     variants = {str(item["key"]) for item in paper["variants"]}
-    timings = measured_variant_times(args.smoke_results, variants)
+    timings = measured_variant_times(
+        args.smoke_results, variants, timing_field=args.timing_field
+    )
     plan = build_runtime_plan(
         paper,
         smoke,
         timings,
         config_path=str(args.paper_config),
         max_chunk_hours=args.max_chunk_hours,
+        reference_label=args.reference_label,
+        timing_field=args.timing_field,
     )
     rendered = json.dumps(plan, ensure_ascii=False, indent=2) + "\n"
     if args.output:

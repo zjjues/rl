@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import copy
 from collections import deque
-from typing import Dict, List, Tuple
+from dataclasses import fields
+from typing import Callable, Dict, List, Mapping, Optional, Tuple
 
 import numpy as np
 import torch
@@ -84,6 +85,37 @@ class ReplayBuffer:
         indices = rng.choice(len(self.data), size=int(batch_size), replace=False)
         fields = list(zip(*(self.data[int(index)] for index in indices)))
         return tuple(np.stack(field) for field in fields)
+
+    def state_dict(self) -> Dict[str, object]:
+        return {
+            "capacity": int(self.data.maxlen),
+            "data": [
+                tuple(
+                    value.copy() if isinstance(value, np.ndarray) else value
+                    for value in transition
+                )
+                for transition in self.data
+            ],
+        }
+
+    def load_state_dict(self, state: Mapping[str, object]) -> None:
+        capacity = int(state["capacity"])
+        if capacity != int(self.data.maxlen):
+            raise ValueError(
+                "replay-buffer capacity mismatch: "
+                f"checkpoint={capacity}, config={self.data.maxlen}"
+            )
+        restored = deque(maxlen=capacity)
+        for transition in state["data"]:
+            if len(transition) != 7:
+                raise ValueError("invalid MATD3 replay transition")
+            restored.append(
+                tuple(
+                    value.copy() if isinstance(value, np.ndarray) else value
+                    for value in transition
+                )
+            )
+        self.data = restored
 
 
 class MATD3Baseline:
@@ -227,8 +259,76 @@ class MATD3Baseline:
             "replay_size": float(len(self.replay)),
         }
 
+    def save_checkpoint(
+        self, path: str, extra: Optional[Dict[str, object]] = None
+    ) -> None:
+        config_fields = {field.name for field in fields(self.config)}
+        torch.save(
+            {
+                "checkpoint_schema": "matd3_training_v1",
+                "config": {
+                    key: value
+                    for key, value in self.config.__dict__.items()
+                    if key in config_fields
+                },
+                "actor": self.actor.state_dict(),
+                "actor_target": self.actor_target.state_dict(),
+                "critic": self.critic.state_dict(),
+                "critic_target": self.critic_target.state_dict(),
+                "actor_optim": self.actor_optim.state_dict(),
+                "critic_optim": self.critic_optim.state_dict(),
+                "replay": self.replay.state_dict(),
+                "update_steps": int(self.update_steps),
+                "actor_updates": int(self.actor_updates),
+                "last_actor_loss": float(self.last_actor_loss),
+                "rng_state": self.rng.bit_generator.state,
+                "extra": extra or {},
+            },
+            path,
+        )
 
-def train_matd3(env_factory, config):
+    @classmethod
+    def load_checkpoint(
+        cls, path: str, device: Optional[str] = None
+    ) -> "MATD3Baseline":
+        from imappo import IMAPPOConfig
+
+        checkpoint = torch.load(
+            path, map_location=device or "cpu", weights_only=False
+        )
+        if checkpoint.get("checkpoint_schema") != "matd3_training_v1":
+            raise ValueError("checkpoint is not a MATD3 training checkpoint")
+        config_dict = dict(checkpoint["config"])
+        if device is not None:
+            config_dict["device"] = device
+        algo = cls(IMAPPOConfig(**config_dict))
+        algo.actor.load_state_dict(checkpoint["actor"])
+        algo.actor_target.load_state_dict(checkpoint["actor_target"])
+        algo.critic.load_state_dict(checkpoint["critic"])
+        algo.critic_target.load_state_dict(checkpoint["critic_target"])
+        algo.actor_optim.load_state_dict(checkpoint["actor_optim"])
+        algo.critic_optim.load_state_dict(checkpoint["critic_optim"])
+        algo.replay.load_state_dict(checkpoint["replay"])
+        algo.update_steps = int(checkpoint.get("update_steps", 0))
+        algo.actor_updates = int(checkpoint.get("actor_updates", 0))
+        algo.last_actor_loss = float(checkpoint.get("last_actor_loss", 0.0))
+        if "rng_state" in checkpoint:
+            algo.rng.bit_generator.state = checkpoint["rng_state"]
+        return algo
+
+
+def train_matd3(
+    env_factory,
+    config,
+    *,
+    initial_algo: Optional[MATD3Baseline] = None,
+    initial_logs: Optional[List[Dict[str, object]]] = None,
+    start_episode: int = 0,
+    total_steps: int = 0,
+    training_state_callback: Optional[
+        Callable[[object, Dict[str, object]], None]
+    ] = None,
+):
     """Train MATD3 under the same deterministic episode seed protocol."""
     from imappo import (
         build_global_state,
@@ -243,10 +343,16 @@ def train_matd3(env_factory, config):
         training_tactical_posture,
     )
 
-    algo = MATD3Baseline(config)
-    logs = []
-    total_steps = 0
-    for episode in range(config.max_episodes):
+    if not 0 <= int(start_episode) <= int(config.max_episodes):
+        raise ValueError(
+            f"start_episode must be in [0, {config.max_episodes}], got {start_episode}"
+        )
+    algo = initial_algo if initial_algo is not None else MATD3Baseline(config)
+    if algo.config.algorithm != config.algorithm:
+        raise ValueError("restored algorithm does not match training config")
+    logs = list(initial_logs or [])
+    total_steps = int(total_steps)
+    for episode in range(int(start_episode), config.max_episodes):
         config._env_progress = episode / max(config.max_episodes - 1, 1)
         config._use_hard_train_env = (
             config.hard_train_interval > 0
@@ -318,4 +424,13 @@ def train_matd3(env_factory, config):
         finally:
             if hasattr(env, "close"):
                 env.close()
+        if training_state_callback is not None:
+            training_state_callback(
+                algo,
+                {
+                    "next_episode": int(episode + 1),
+                    "logs": logs,
+                    "total_steps": int(total_steps),
+                },
+            )
     return algo, logs

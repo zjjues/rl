@@ -110,15 +110,22 @@ class HAPPOBaselineTests(unittest.TestCase):
 
     def test_checkpoint_preserves_all_independent_actors(self):
         algo = HAPPOBaseline(self.config())
+        for _ in range(4):
+            algo.rng.permutation(algo.config.n_agents)
         with tempfile.TemporaryDirectory() as temp_dir:
             path = str(Path(temp_dir) / "happo.pt")
             algo.save_checkpoint(path)
+            expected_order = algo.rng.permutation(algo.config.n_agents).tolist()
             restored = HAPPOBaseline.load_checkpoint(path)
         for expected_actor, actual_actor in zip(algo.actor, restored.actor):
             for expected, actual in zip(
                 expected_actor.parameters(), actual_actor.parameters()
             ):
                 self.assertTrue(torch.equal(expected, actual))
+        self.assertEqual(
+            expected_order,
+            restored.rng.permutation(restored.config.n_agents).tolist(),
+        )
 
 
 if __name__ == "__main__":

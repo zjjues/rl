@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import platform
+import random
 import subprocess
 import sys
 import time
@@ -88,6 +89,12 @@ def expected_result_path(
     return output_dir / variant_key / f"seed_{seed}" / "result.json"
 
 
+def expected_training_checkpoint_path(
+    output_dir: Path, variant_key: str, seed: int
+) -> Path:
+    return output_dir / variant_key / f"seed_{seed}" / "training_checkpoint.pt"
+
+
 def read_json(path: Path) -> Dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -100,6 +107,140 @@ def write_json(path: Path, payload: object) -> None:
         encoding="utf-8",
     )
     temporary.replace(path)
+
+
+TRAINING_CHECKPOINT_SCHEMA = "episode_boundary_training_v1"
+
+
+def implementation_fingerprint() -> str:
+    """Hash executable study code so resumed optimization never crosses code edits."""
+    digest = hashlib.sha256()
+    sources = [Path(__file__), *sorted(SRC.rglob("*.py"))]
+    for path in sources:
+        digest.update(path.relative_to(ROOT).as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def training_checkpoint_identity(
+    spec: Mapping[str, object], variant: Mapping[str, object], seed: int
+) -> Dict[str, object]:
+    registered = json.dumps(
+        {"spec": spec, "variant": variant, "seed": int(seed)},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    ).encode("utf-8")
+    return {
+        "study_id": str(spec["study_id"]),
+        "variant_key": str(variant["key"]),
+        "seed": int(seed),
+        "registered_protocol_sha256": hashlib.sha256(registered).hexdigest(),
+        "implementation_sha256": implementation_fingerprint(),
+    }
+
+
+def capture_global_rng_state() -> Dict[str, object]:
+    import torch
+
+    return {
+        "python_random": random.getstate(),
+        "numpy_global": np.random.get_state(),
+        "torch_cpu": torch.get_rng_state(),
+        "torch_cuda_all": (
+            torch.cuda.get_rng_state_all() if torch.cuda.is_available() else []
+        ),
+    }
+
+
+def restore_global_rng_state(state: Mapping[str, object]) -> None:
+    import torch
+
+    random.setstate(state["python_random"])
+    np.random.set_state(state["numpy_global"])
+    torch.set_rng_state(state["torch_cpu"].cpu())
+    cuda_states = list(state.get("torch_cuda_all", []))
+    if cuda_states:
+        if not torch.cuda.is_available():
+            raise RuntimeError(
+                "checkpoint contains CUDA RNG state but CUDA is unavailable; "
+                "exact training resume is impossible"
+            )
+        torch.cuda.set_rng_state_all([item.cpu() for item in cuda_states])
+
+
+def write_training_checkpoint(
+    path: Path,
+    algo: object,
+    training_state: Mapping[str, object],
+    identity: Mapping[str, object],
+) -> None:
+    """Atomically persist model, optimizer, buffer/log cursor, and all RNG streams."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    extra = dict(training_state)
+    extra.update(
+        {
+            "training_checkpoint_schema": TRAINING_CHECKPOINT_SCHEMA,
+            "training_checkpoint_identity": dict(identity),
+            "global_rng_state": capture_global_rng_state(),
+        }
+    )
+    try:
+        algo.save_checkpoint(str(temporary), extra=extra)
+        temporary.replace(path)
+    except Exception:
+        if temporary.exists():
+            temporary.unlink()
+        raise
+
+
+def load_training_checkpoint(
+    path: Path,
+    cfg: "IMAPPOConfig",
+    expected_identity: Mapping[str, object],
+):
+    import torch
+
+    raw = torch.load(path, map_location="cpu", weights_only=False)
+    extra = raw.get("extra", {})
+    if extra.get("training_checkpoint_schema") != TRAINING_CHECKPOINT_SCHEMA:
+        raise ValueError("unsupported or incomplete episode training checkpoint")
+    if extra.get("training_checkpoint_identity") != dict(expected_identity):
+        raise ValueError(
+            "training checkpoint identity mismatch; registered protocol or "
+            "implementation changed"
+        )
+    checkpoint_algorithm = str(raw.get("config", {}).get("algorithm", ""))
+    if checkpoint_algorithm != str(cfg.algorithm):
+        raise ValueError("training checkpoint algorithm does not match config")
+    if cfg.algorithm == "happo":
+        from happo_baseline import HAPPOBaseline
+
+        algo = HAPPOBaseline.load_checkpoint(str(path), device=cfg.device)
+    elif cfg.algorithm == "matd3":
+        from matd3_baseline import MATD3Baseline
+
+        algo = MATD3Baseline.load_checkpoint(str(path), device=cfg.device)
+    else:
+        from imappo import IMAPPO
+
+        algo = IMAPPO.load_checkpoint(str(path), device=cfg.device)
+    restore_global_rng_state(extra["global_rng_state"])
+    training_state = {
+        key: value
+        for key, value in extra.items()
+        if key
+        not in {
+            "training_checkpoint_schema",
+            "training_checkpoint_identity",
+            "global_rng_state",
+        }
+    }
+    return algo, training_state
 
 
 def git_output(*args: str) -> str:
@@ -123,6 +264,16 @@ def validate_spec(spec: Dict[str, object], allow_dirty: bool) -> None:
         raise ValueError("level must be smoke, pilot, or paper")
     seeds = list(spec["seeds"])
     eval_episodes = int(spec["evaluation"]["episodes"])
+    checkpoint_interval = int(
+        spec["training"].get("checkpoint_interval_episodes", 1)
+    )
+    if checkpoint_interval <= 0:
+        raise ValueError("training.checkpoint_interval_episodes must be positive")
+    monitor_eval_episodes = int(
+        spec["training"].get("monitor_eval_episodes", eval_episodes)
+    )
+    if monitor_eval_episodes <= 0:
+        raise ValueError("training.monitor_eval_episodes must be positive")
     if len(seeds) != len(set(seeds)):
         raise ValueError("seeds must be unique")
     if level == "paper":
@@ -610,6 +761,11 @@ def build_config(spec: Dict[str, object], variant: Dict[str, object], seed: int)
         minibatch_size=int(training["minibatch_size"]),
         eval_interval=int(training["eval_interval"]),
         eval_episodes=int(spec["evaluation"]["episodes"]),
+        monitor_eval_episodes=int(
+            training.get(
+                "monitor_eval_episodes", spec["evaluation"]["episodes"]
+            )
+        ),
         actor_lr=float(training.get("actor_lr", 3e-4)),
         critic_lr=float(training.get("critic_lr", 3e-4)),
         eta=eta,
@@ -637,7 +793,12 @@ def build_config(spec: Dict[str, object], variant: Dict[str, object], seed: int)
     return cfg
 
 
-def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> Dict[str, object]:
+def run_seed(
+    spec: Dict[str, object],
+    variant: Dict[str, object],
+    seed: int,
+    training_checkpoint_path: Path | None = None,
+) -> Dict[str, object]:
     started = time.perf_counter()
     cpu_started = time.process_time()
     import torch
@@ -647,6 +808,7 @@ def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> 
         torch.cuda.reset_peak_memory_stats()
     import envs.uav_scheduling_env  # noqa: F401
     from imappo import (
+        RolloutBuffer,
         build_uav_env_factory,
         evaluate_dynamic_intent_switch,
         evaluate_imappo,
@@ -654,6 +816,28 @@ def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> 
     )
 
     cfg = build_config(spec, variant, seed)
+    checkpoint_identity = training_checkpoint_identity(spec, variant, seed)
+    restored_algo = None
+    restored_state: Dict[str, object] = {}
+    if training_checkpoint_path is not None and training_checkpoint_path.is_file():
+        restored_algo, restored_state = load_training_checkpoint(
+            training_checkpoint_path, cfg, checkpoint_identity
+        )
+
+    def persist_training_state(algo: object, state: Dict[str, object]) -> None:
+        next_episode = int(state["next_episode"])
+        checkpoint_interval = int(
+            spec["training"].get("checkpoint_interval_episodes", 1)
+        )
+        should_persist = (
+            next_episode == int(cfg.max_episodes)
+            or next_episode % checkpoint_interval == 0
+        )
+        if training_checkpoint_path is not None and should_persist:
+            write_training_checkpoint(
+                training_checkpoint_path, algo, state, checkpoint_identity
+            )
+
     environment_name = str(spec["environment"]["name"])
     if environment_name.startswith("vmas:"):
         from envs.vmas_adapter import VMASAdapter
@@ -676,8 +860,20 @@ def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> 
     elif cfg.algorithm == "matd3":
         from matd3_baseline import train_matd3
 
-        algo, logs = train_matd3(train_factory, cfg)
+        algo, logs = train_matd3(
+            train_factory,
+            cfg,
+            initial_algo=restored_algo,
+            initial_logs=restored_state.get("logs"),
+            start_episode=int(restored_state.get("next_episode", 0)),
+            total_steps=int(restored_state.get("total_steps", 0)),
+            training_state_callback=persist_training_state,
+        )
     else:
+        restored_buffer = None
+        if "rollout_buffer" in restored_state:
+            restored_buffer = RolloutBuffer()
+            restored_buffer.load_state_dict(restored_state["rollout_buffer"])
         algo, logs = train_imappo(
             env_factory=train_factory,
             eval_env_factory=build_risk_factory(
@@ -688,6 +884,11 @@ def run_seed(spec: Dict[str, object], variant: Dict[str, object], seed: int) -> 
                 else build_uav_env_factory(cfg, "collision_probe")
             ),
             config=cfg,
+            initial_algo=restored_algo,
+            initial_buffer=restored_buffer,
+            initial_logs=restored_state.get("logs"),
+            start_episode=int(restored_state.get("next_episode", 0)),
+            training_state_callback=persist_training_state,
         )
     tier_results = {}
     for tier_index, (tier_name, tier) in enumerate(spec["evaluation"]["risk_tiers"].items()):
@@ -1309,12 +1510,22 @@ def main() -> None:
             if int(seed) not in selected_seeds:
                 continue
             result_path = expected_result_path(output_dir, variant_key, int(seed))
+            checkpoint_path = expected_training_checkpoint_path(
+                output_dir, variant_key, int(seed)
+            )
             if args.resume and result_path.exists():
                 result = read_json(result_path)
                 validate_result_identity(result, variant, int(seed))
+                checkpoint_path.unlink(missing_ok=True)
             else:
-                result = run_seed(spec, variant, int(seed))
+                result = run_seed(
+                    spec,
+                    variant,
+                    int(seed),
+                    training_checkpoint_path=checkpoint_path,
+                )
                 write_json(result_path, result)
+                checkpoint_path.unlink(missing_ok=True)
 
     missing = []
     for variant in spec["variants"]:

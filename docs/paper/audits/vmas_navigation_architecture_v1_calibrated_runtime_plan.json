@@ -1,0 +1,457 @@
+{
+  "schema_version": 2,
+  "study_id": "vmas_navigation_architecture_v1_paper",
+  "method": "linear environment-step extrapolation from measured calibration process_cpu_time_seconds",
+  "reference_label": "calibration",
+  "timing_field": "process_cpu_time_seconds",
+  "timing_semantics": "process CPU time excludes host suspension but is not GPU device time",
+  "uncertainty": "moderate-to-high; one calibration seed does not capture seed/runtime variance",
+  "reference_workload_units_by_variant": {
+    "imappo_attention": {
+      "training": 10000,
+      "periodic_evaluation": 8000,
+      "collision_probe": 0,
+      "final_evaluation": 2000,
+      "evaluation": 10000,
+      "total": 20000
+    },
+    "mappo": {
+      "training": 10000,
+      "periodic_evaluation": 8000,
+      "collision_probe": 0,
+      "final_evaluation": 2000,
+      "evaluation": 10000,
+      "total": 20000
+    },
+    "ippo": {
+      "training": 10000,
+      "periodic_evaluation": 8000,
+      "collision_probe": 0,
+      "final_evaluation": 2000,
+      "evaluation": 10000,
+      "total": 20000
+    },
+    "happo": {
+      "training": 10000,
+      "periodic_evaluation": 8000,
+      "collision_probe": 0,
+      "final_evaluation": 2000,
+      "evaluation": 10000,
+      "total": 20000
+    },
+    "matd3": {
+      "training": 10000,
+      "periodic_evaluation": 0,
+      "collision_probe": 0,
+      "final_evaluation": 2000,
+      "evaluation": 2000,
+      "total": 12000
+    }
+  },
+  "paper_workload_units_by_variant": {
+    "imappo_attention": {
+      "training": 200000,
+      "periodic_evaluation": 80000,
+      "collision_probe": 0,
+      "final_evaluation": 10000,
+      "evaluation": 90000,
+      "total": 290000
+    },
+    "mappo": {
+      "training": 200000,
+      "periodic_evaluation": 80000,
+      "collision_probe": 0,
+      "final_evaluation": 10000,
+      "evaluation": 90000,
+      "total": 290000
+    },
+    "ippo": {
+      "training": 200000,
+      "periodic_evaluation": 80000,
+      "collision_probe": 0,
+      "final_evaluation": 10000,
+      "evaluation": 90000,
+      "total": 290000
+    },
+    "happo": {
+      "training": 200000,
+      "periodic_evaluation": 80000,
+      "collision_probe": 0,
+      "final_evaluation": 10000,
+      "evaluation": 90000,
+      "total": 290000
+    },
+    "matd3": {
+      "training": 200000,
+      "periodic_evaluation": 0,
+      "collision_probe": 0,
+      "final_evaluation": 10000,
+      "evaluation": 10000,
+      "total": 210000
+    }
+  },
+  "workload_scales_by_variant": {
+    "imappo_attention": {
+      "blended": 14.5,
+      "conservative": 20.0,
+      "components": {
+        "training": 20.0,
+        "periodic_evaluation": 10.0,
+        "final_evaluation": 5.0
+      }
+    },
+    "mappo": {
+      "blended": 14.5,
+      "conservative": 20.0,
+      "components": {
+        "training": 20.0,
+        "periodic_evaluation": 10.0,
+        "final_evaluation": 5.0
+      }
+    },
+    "ippo": {
+      "blended": 14.5,
+      "conservative": 20.0,
+      "components": {
+        "training": 20.0,
+        "periodic_evaluation": 10.0,
+        "final_evaluation": 5.0
+      }
+    },
+    "happo": {
+      "blended": 14.5,
+      "conservative": 20.0,
+      "components": {
+        "training": 20.0,
+        "periodic_evaluation": 10.0,
+        "final_evaluation": 5.0
+      }
+    },
+    "matd3": {
+      "blended": 17.5,
+      "conservative": 20.0,
+      "components": {
+        "training": 20.0,
+        "final_evaluation": 5.0
+      }
+    }
+  },
+  "fixed_cold_start_seconds": 0.0,
+  "seed_count": 10,
+  "run_count": 50,
+  "estimated_active_hours_low": 33.42339409722222,
+  "estimated_active_hours_high": 44.35590277777778,
+  "per_variant": {
+    "imappo_attention": {
+      "reference_seconds": 142.59375,
+      "recurring_reference_seconds": 142.59375,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 8000,
+        "collision_probe": 0,
+        "final_evaluation": 2000,
+        "evaluation": 10000,
+        "total": 20000
+      },
+      "paper_workload_units": {
+        "training": 200000,
+        "periodic_evaluation": 80000,
+        "collision_probe": 0,
+        "final_evaluation": 10000,
+        "evaluation": 90000,
+        "total": 290000
+      },
+      "workload_scales": {
+        "blended": 14.5,
+        "conservative": 20.0,
+        "components": {
+          "training": 20.0,
+          "periodic_evaluation": 10.0,
+          "final_evaluation": 5.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2067.609375,
+      "estimated_seconds_per_seed_high": 2851.875,
+      "estimated_active_hours_all_seeds_low": 5.743359375,
+      "estimated_active_hours_all_seeds_high": 7.921875
+    },
+    "mappo": {
+      "reference_seconds": 141.28125,
+      "recurring_reference_seconds": 141.28125,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 8000,
+        "collision_probe": 0,
+        "final_evaluation": 2000,
+        "evaluation": 10000,
+        "total": 20000
+      },
+      "paper_workload_units": {
+        "training": 200000,
+        "periodic_evaluation": 80000,
+        "collision_probe": 0,
+        "final_evaluation": 10000,
+        "evaluation": 90000,
+        "total": 290000
+      },
+      "workload_scales": {
+        "blended": 14.5,
+        "conservative": 20.0,
+        "components": {
+          "training": 20.0,
+          "periodic_evaluation": 10.0,
+          "final_evaluation": 5.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2048.578125,
+      "estimated_seconds_per_seed_high": 2825.625,
+      "estimated_active_hours_all_seeds_low": 5.690494791666667,
+      "estimated_active_hours_all_seeds_high": 7.848958333333333
+    },
+    "ippo": {
+      "reference_seconds": 153.75,
+      "recurring_reference_seconds": 153.75,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 8000,
+        "collision_probe": 0,
+        "final_evaluation": 2000,
+        "evaluation": 10000,
+        "total": 20000
+      },
+      "paper_workload_units": {
+        "training": 200000,
+        "periodic_evaluation": 80000,
+        "collision_probe": 0,
+        "final_evaluation": 10000,
+        "evaluation": 90000,
+        "total": 290000
+      },
+      "workload_scales": {
+        "blended": 14.5,
+        "conservative": 20.0,
+        "components": {
+          "training": 20.0,
+          "periodic_evaluation": 10.0,
+          "final_evaluation": 5.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2229.375,
+      "estimated_seconds_per_seed_high": 3075.0,
+      "estimated_active_hours_all_seeds_low": 6.192708333333333,
+      "estimated_active_hours_all_seeds_high": 8.541666666666666
+    },
+    "happo": {
+      "reference_seconds": 208.9375,
+      "recurring_reference_seconds": 208.9375,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 8000,
+        "collision_probe": 0,
+        "final_evaluation": 2000,
+        "evaluation": 10000,
+        "total": 20000
+      },
+      "paper_workload_units": {
+        "training": 200000,
+        "periodic_evaluation": 80000,
+        "collision_probe": 0,
+        "final_evaluation": 10000,
+        "evaluation": 90000,
+        "total": 290000
+      },
+      "workload_scales": {
+        "blended": 14.5,
+        "conservative": 20.0,
+        "components": {
+          "training": 20.0,
+          "periodic_evaluation": 10.0,
+          "final_evaluation": 5.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 3029.59375,
+      "estimated_seconds_per_seed_high": 4178.75,
+      "estimated_active_hours_all_seeds_low": 8.415538194444444,
+      "estimated_active_hours_all_seeds_high": 11.60763888888889
+    },
+    "matd3": {
+      "reference_seconds": 151.84375,
+      "recurring_reference_seconds": 151.84375,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 0,
+        "collision_probe": 0,
+        "final_evaluation": 2000,
+        "evaluation": 2000,
+        "total": 12000
+      },
+      "paper_workload_units": {
+        "training": 200000,
+        "periodic_evaluation": 0,
+        "collision_probe": 0,
+        "final_evaluation": 10000,
+        "evaluation": 10000,
+        "total": 210000
+      },
+      "workload_scales": {
+        "blended": 17.5,
+        "conservative": 20.0,
+        "components": {
+          "training": 20.0,
+          "final_evaluation": 5.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2657.265625,
+      "estimated_seconds_per_seed_high": 3036.875,
+      "estimated_active_hours_all_seeds_low": 7.381293402777778,
+      "estimated_active_hours_all_seeds_high": 8.43576388888889
+    }
+  },
+  "max_chunk_hours": 12.0,
+  "chunks": [
+    {
+      "index": 1,
+      "variant": "imappo_attention",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 7.921875,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "imappo_attention",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809,907,1009"
+      ]
+    },
+    {
+      "index": 2,
+      "variant": "mappo",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 7.848958333333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "mappo",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809,907,1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 3,
+      "variant": "ippo",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 8.541666666666666,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "ippo",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809,907,1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 4,
+      "variant": "happo",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 11.60763888888889,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809,907,1009",
+        "--resume"
+      ]
+    },
+    {
+      "index": 5,
+      "variant": "matd3",
+      "seeds": [
+        101,
+        203,
+        307,
+        401,
+        503,
+        607,
+        701,
+        809,
+        907,
+        1009
+      ],
+      "estimated_hours_high": 8.43576388888889,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\vmas_navigation_architecture_v1.paper.json",
+        "--only-variants",
+        "matd3",
+        "--only-seeds",
+        "101,203,307,401,503,607,701,809,907,1009",
+        "--resume"
+      ]
+    }
+  ],
+  "safety_contract": {
+    "protocol_reduction_allowed": false,
+    "resume_required_after_first_chunk": true,
+    "final_summary_written_only_when_all_registered_pairs_exist": true
+  }
+}

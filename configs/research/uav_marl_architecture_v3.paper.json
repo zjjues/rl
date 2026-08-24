@@ -16,10 +16,12 @@
   },
   "training": {
     "episodes": 3000,
+    "checkpoint_interval_episodes": 50,
     "steps": 200,
     "rollout_length": 128,
     "minibatch_size": 64,
     "eval_interval": 100,
+    "monitor_eval_episodes": 20,
     "actor_lr": 0.0003,
     "critic_lr": 0.0003,
     "eta": 0.5,

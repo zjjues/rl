@@ -1,0 +1,5 @@
+baseline,tier,metric,mean_difference,ci_low,ci_high,effect_dz,exact_p,holm_p,holm_reject_0_05
+mappo,canonical,episode_return,-1.921038083778694,-1.921038083778694,-1.921038083778694,0.0,1.0,1.0,False
+ippo,canonical,episode_return,-0.7977564353030173,-0.7977564353030173,-0.7977564353030173,0.0,1.0,1.0,False
+happo,canonical,episode_return,-3.526325413910672,-3.526325413910672,-3.526325413910672,0.0,1.0,1.0,False
+matd3,canonical,episode_return,-4.2253511641174555,-4.2253511641174555,-4.2253511641174555,0.0,1.0,1.0,False

@@ -1,5 +1,13 @@
 # 可发表性差距审计
 
+## 2026-08-24 长实验可靠性更新
+
+已关闭“单个算法×种子中断会丢失全部训练进度”的工程缺口：IMAPPO/HAPPO/MATD3 现在具备绑定协议与源码指纹的 episode 边界原子恢复，CPU 确定性测试验证连续与中断恢复路径逐 tensor 相等；全量回归 **176 passed**。全部五个 `*.paper.json` 配置已通过 dry-run，遗留 `uav_imappo_main.paper.json` 中伪 `concat` critic、pilot 等级和 50-episode 评估已修正为独立的 `uav_imappo_main_paper_v2`。
+
+这提升的是实验可恢复性与 provenance，不提升论文效果证据等级。navigation/dispersion 五算法 100-episode calibration 已完成；预算器计入训练期监控、UAV collision probe 和算法差异，并将最终评估 100 episodes 与训练监控 20 episodes 解耦。navigation 50-run 预算为 **33.42–44.36 active CPU-hours**。MAPPO 同配置复跑得到完全相同 return，但 CPU time 从异常的 457.98 s 回落至 141.28 s，证明旧单次计时不可直接外推。正式 multi-seed 结果及六个硬缺口仍未关闭，因此总体 paper 证据仍维持 **48%–52%**。
+
+UAV v3 六算法 calibration 也已完成：正式 60-run 预算从历史 smoke-wall 的 60.9–105.2“GPU-hours”更正为 **70.76–96.04 active CPU-hours**。HAPPO 独立 actor 顺序更新是主成本（36.17–48.22 h），MATD3 为 13.91–20.24 h。MATD3 calibration 的 wall=3711.34 s、CPU=121.42 s，再次显示宿主时间污染；论文只能引用 process-CPU active-time 作为规划量。calibration 仍为单 seed，不增加效果证据等级。
+
 ## 2026-08-24 最新判定（覆盖下文历史比例）
 
 工程/协议准备度约 **95%**，论文证据准备度约 **48%–52%**；比例表示门槛完成度，不是录用概率。下降不是工程退步，而是 CityNav 真正一次性终测推翻了 relevance gate 的可迁移性假设。当前不能诚实声称系统能区分“操作偏好”与新的真实城市导航目标语言。
@@ -15,7 +23,7 @@
 5. 多机冲突 policy-in-loop SITL，而非仅有单/双机链路 smoke；
 6. HIL 或受控实机证据，以及与系统辨识覆盖率一致的延迟/动力学安全边界。
 
-在这些缺口关闭前，合适定位仍是“完整研究平台 + 已记录关键负结果”，不是顶刊 ready。正式长实验预计仅现有注册配置就需要约 212–315 GPUh（UAV 架构/消融与两套 VMAS 计划的高低范围相加，未含 calibration 和失败重跑），不得在 dirty worktree 上启动。
+在这些缺口关闭前，合适定位仍是“完整研究平台 + 已记录关键负结果”，不是顶刊 ready。两套 VMAS 计划经逐算法 workload calibration 后合计为 **67.52–89.83 active CPU-hours**，明确不是 GPU device-hours；UAV 架构/消融的旧 smoke-wall 预算仍为高不确定性且不可与该量直接相加，必须另做同口径 calibration。任何 paper run 都不得在 dirty worktree 上启动。
 
 ## 总体判断
 
@@ -93,7 +101,7 @@
 
 安全合同代码已从旧七轴 profile 迁移为六个可协商偏好 + 固定 collision constraint。此前架构 v3/消融 smoke 因使用旧合同已 superseded，尽管其历史 artifact 自身仍完整；clean commit 后必须重跑。
 
-长实验现在支持原子 variant×seed 分块与严格 resume。按 smoke workload 外推，架构 v3 为 60.9–105.2 GPU-hours，5-seed 消融为 82.2–105.0 GPU-hours；这是高不确定性规划范围，不是已消耗资源。正式启动前需先跑 100-training-episode calibration，且必须在 clean commit 上执行。
+长实验现在支持原子 variant×seed 分块与 episode-boundary 精确 resume。VMAS 两场景 calibration 已关闭预算前置门槛；UAV 架构 v3 与消融的历史 60.9–105.2/82.2–105.0 “GPU-hours”仅为 smoke wall-time 占用代理，尚未同口径校准，不能当作 GPU compute。正式 UAV paper 启动前仍需 100-training-episode calibration，且必须在 clean commit 上执行。
 
 CPU 资源审计显示：冻结双模型构造约 11.28 s，33-query 首次批量推理约 2.43 s；profile 缓存后每条约 0.93 µs，重复完整 MiniLM 编码约 72 ms/33 条。在线系统必须在任务下达时预编码并缓存，不能在控制环内冷启动 1.42 亿参数 NLI 模型。
 

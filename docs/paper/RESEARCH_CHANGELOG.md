@@ -1,5 +1,29 @@
 # 研究变更日志
 
+## 2026-08-24：Episode 边界精确恢复、RNG 隔离与 paper 配置修复
+
+### 工程变更
+
+- IMAPPO/MAPPO/IPPO/HAPPO 训练入口支持从下一 episode、累计日志和未满 rollout buffer 恢复；IMAPPO/HAPPO 私有 intent/update RNG 写入算法 checkpoint。
+- MATD3 新增在线/目标网络、优化器、完整 replay、更新游标和私有 RNG 的 checkpoint；训练入口恢复累计 environment steps，保持 warmup 与 delayed policy update 相位。
+- 研究运行器原子保存所有 Python/NumPy/Torch CPU/CUDA RNG，并用完整注册 spec 与研究源码 SHA-256 绑定 checkpoint；最终 result 原子落盘后才清除 checkpoint。
+- checkpoint cadence 成为正整数注册字段；默认 1。MATD3 10,000-transition checkpoint 实测增长至 18.22 MiB，据此把 3000/2000-episode paper 配置注册为 50，最终 episode 强制保存。
+- 修复 `uav_imappo_main.paper.json` 的遗留伪 `concat` critic、错误 pilot 等级和不足的 50-episode eval，使用新 study id 避免覆盖历史 pilot。五份 paper 配置均 dry-run 通过。
+- 新增中断恢复等价性测试；全量回归 **178 passed, 14 warnings**。
+
+### 论文影响
+
+- 可以在 Methods/Artifact Appendix 中声称确定性 CPU 测试路径的 episode-boundary bitwise resume，并明确 CUDA 跨平台非确定性边界。
+- 不能把恢复协议当作效果证据；当前 paper 结果仍为空。navigation 与 dispersion 均完成 5/5 单 seed calibration。
+
+### Calibration 与预算证据
+
+- navigation 五算法 calibration 完成；MAPPO 同配置复跑 return 完全相同，验证当前 VMAS seed 路径的结果可重复性。
+- 旧 attention 16,556 s 墙钟被 active-time 复跑证伪；稳定 process CPU 为 141–209 s/variant，MAPPO 首轮 458 s 瞬时异常也由复跑识别并保留。
+- runtime planner schema v2 区分 wall/process-CPU time，并逐算法计入训练、周期监控、UAV collision probe 与最终评估。最终评估保持 100 episodes，训练监控独立注册为 20；navigation/dispersion 新预算分别为 33.42–44.36/34.09–45.47 active CPU-hours。
+- 新增 `monitor_eval_episodes`，将训练期监控与最终统计样本量解耦；paper 最终 100 episodes/tier 不变，monitor 固定 20。
+- UAV v3 六算法 calibration 完成；60-run 预算校正为 70.76–96.04 active CPU-hours。MATD3 的 3711 s wall/121 s CPU 分离作为第二个宿主时间污染证据保留。
+
 ## 2026-08-20：CityNav 一次性 OOD 终测失败、VMAS 架构复现与人工数据冻结入口
 
 ### 工程变更

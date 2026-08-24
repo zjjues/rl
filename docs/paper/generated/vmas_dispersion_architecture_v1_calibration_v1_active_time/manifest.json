@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "source_study": "D:\\seu\\p\\rl\\experiments\\pilot\\vmas_dispersion_architecture_v1_calibration",
+  "source_config": "D:\\seu\\p\\rl\\configs\\research\\vmas_dispersion_architecture_v1.calibration.json",
+  "files": {
+    "episode_return.csv": "4dad63d10817b93f37378623b789ee4c247fd3265f22d95b804c7d987c24ef3f",
+    "episode_return.png": "ee3511f8e0e4854cfe2fac86fb8d05821d40a925006511c2c8bb86a8dd347d59",
+    "paired_comparisons.csv": "b8f00230dfeecc5150a49ad71f5f44027b07122b1bdddf534c62e779e4ad4af9",
+    "REPORT.md": "952c9d01824e5d3222c82c7737b9bf68aa9cbc57c4c9be056ede643723f78bf2"
+  }
+}

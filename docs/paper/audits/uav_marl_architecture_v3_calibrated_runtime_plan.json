@@ -1,0 +1,643 @@
+{
+  "schema_version": 2,
+  "study_id": "uav_marl_architecture_v3_paper",
+  "method": "linear environment-step extrapolation from measured calibration process_cpu_time_seconds",
+  "reference_label": "calibration",
+  "timing_field": "process_cpu_time_seconds",
+  "timing_semantics": "process CPU time excludes host suspension but is not GPU device time",
+  "uncertainty": "moderate-to-high; one calibration seed does not capture seed/runtime variance",
+  "reference_workload_units_by_variant": {
+    "imappo": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 6000,
+      "evaluation": 10000,
+      "total": 20000
+    },
+    "imappo_no_mask": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 6000,
+      "evaluation": 10000,
+      "total": 20000
+    },
+    "mappo": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 6000,
+      "evaluation": 10000,
+      "total": 20000
+    },
+    "ippo": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 6000,
+      "evaluation": 10000,
+      "total": 20000
+    },
+    "happo": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 6000,
+      "evaluation": 10000,
+      "total": 20000
+    },
+    "matd3": {
+      "training": 10000,
+      "periodic_evaluation": 0,
+      "collision_probe": 0,
+      "final_evaluation": 6000,
+      "evaluation": 6000,
+      "total": 16000
+    }
+  },
+  "paper_workload_units_by_variant": {
+    "imappo": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 60000,
+      "evaluation": 300000,
+      "total": 900000
+    },
+    "imappo_no_mask": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 60000,
+      "evaluation": 300000,
+      "total": 900000
+    },
+    "mappo": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 60000,
+      "evaluation": 300000,
+      "total": 900000
+    },
+    "ippo": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 60000,
+      "evaluation": 300000,
+      "total": 900000
+    },
+    "happo": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 60000,
+      "evaluation": 300000,
+      "total": 900000
+    },
+    "matd3": {
+      "training": 600000,
+      "periodic_evaluation": 0,
+      "collision_probe": 0,
+      "final_evaluation": 60000,
+      "evaluation": 60000,
+      "total": 660000
+    }
+  },
+  "workload_scales_by_variant": {
+    "imappo": {
+      "blended": 45.0,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "imappo_no_mask": {
+      "blended": 45.0,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "mappo": {
+      "blended": 45.0,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "ippo": {
+      "blended": 45.0,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "happo": {
+      "blended": 45.0,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "matd3": {
+      "blended": 41.25,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "final_evaluation": 10.0
+      }
+    }
+  },
+  "fixed_cold_start_seconds": 0.0,
+  "seed_count": 10,
+  "run_count": 60,
+  "estimated_active_hours_low": 70.76448567708333,
+  "estimated_active_hours_high": 96.0390625,
+  "per_variant": {
+    "imappo": {
+      "reference_seconds": 45.15625,
+      "recurring_reference_seconds": 45.15625,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 6000,
+        "evaluation": 10000,
+        "total": 20000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 60000,
+        "evaluation": 300000,
+        "total": 900000
+      },
+      "workload_scales": {
+        "blended": 45.0,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2032.03125,
+      "estimated_seconds_per_seed_high": 2709.375,
+      "estimated_active_hours_all_seeds_low": 5.64453125,
+      "estimated_active_hours_all_seeds_high": 7.526041666666667
+    },
+    "imappo_no_mask": {
+      "reference_seconds": 41.046875,
+      "recurring_reference_seconds": 41.046875,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 6000,
+        "evaluation": 10000,
+        "total": 20000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 60000,
+        "evaluation": 300000,
+        "total": 900000
+      },
+      "workload_scales": {
+        "blended": 45.0,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 1847.109375,
+      "estimated_seconds_per_seed_high": 2462.8125,
+      "estimated_active_hours_all_seeds_low": 5.130859375,
+      "estimated_active_hours_all_seeds_high": 6.841145833333333
+    },
+    "mappo": {
+      "reference_seconds": 39.828125,
+      "recurring_reference_seconds": 39.828125,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 6000,
+        "evaluation": 10000,
+        "total": 20000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 60000,
+        "evaluation": 300000,
+        "total": 900000
+      },
+      "workload_scales": {
+        "blended": 45.0,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 1792.265625,
+      "estimated_seconds_per_seed_high": 2389.6875,
+      "estimated_active_hours_all_seeds_low": 4.978515625,
+      "estimated_active_hours_all_seeds_high": 6.638020833333333
+    },
+    "ippo": {
+      "reference_seconds": 39.453125,
+      "recurring_reference_seconds": 39.453125,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 6000,
+        "evaluation": 10000,
+        "total": 20000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 60000,
+        "evaluation": 300000,
+        "total": 900000
+      },
+      "workload_scales": {
+        "blended": 45.0,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 1775.390625,
+      "estimated_seconds_per_seed_high": 2367.1875,
+      "estimated_active_hours_all_seeds_low": 4.931640625,
+      "estimated_active_hours_all_seeds_high": 6.575520833333333
+    },
+    "happo": {
+      "reference_seconds": 289.328125,
+      "recurring_reference_seconds": 289.328125,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 6000,
+        "evaluation": 10000,
+        "total": 20000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 60000,
+        "evaluation": 300000,
+        "total": 900000
+      },
+      "workload_scales": {
+        "blended": 45.0,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 13019.765625,
+      "estimated_seconds_per_seed_high": 17359.6875,
+      "estimated_active_hours_all_seeds_low": 36.166015625,
+      "estimated_active_hours_all_seeds_high": 48.221354166666664
+    },
+    "matd3": {
+      "reference_seconds": 121.421875,
+      "recurring_reference_seconds": 121.421875,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 0,
+        "collision_probe": 0,
+        "final_evaluation": 6000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 0,
+        "collision_probe": 0,
+        "final_evaluation": 60000,
+        "evaluation": 60000,
+        "total": 660000
+      },
+      "workload_scales": {
+        "blended": 41.25,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 5008.65234375,
+      "estimated_seconds_per_seed_high": 7285.3125,
+      "estimated_active_hours_all_seeds_low": 13.912923177083334,
+      "estimated_active_hours_all_seeds_high": 20.236979166666668
+    }
+  },
+  "max_chunk_hours": 12.0,
+  "chunks": [
+    {
+      "index": 1,
+      "variant": "imappo",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 7.526041666666666,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "imappo",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096"
+      ]
+    },
+    {
+      "index": 2,
+      "variant": "imappo_no_mask",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 6.841145833333333,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "imappo_no_mask",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 3,
+      "variant": "mappo",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 6.638020833333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "mappo",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 4,
+      "variant": "ippo",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 6.575520833333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "ippo",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 5,
+      "variant": "happo",
+      "seeds": [
+        7,
+        11
+      ],
+      "estimated_hours_high": 9.644270833333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "7,11",
+        "--resume"
+      ]
+    },
+    {
+      "index": 6,
+      "variant": "happo",
+      "seeds": [
+        23,
+        42
+      ],
+      "estimated_hours_high": 9.644270833333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "23,42",
+        "--resume"
+      ]
+    },
+    {
+      "index": 7,
+      "variant": "happo",
+      "seeds": [
+        100,
+        256
+      ],
+      "estimated_hours_high": 9.644270833333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "100,256",
+        "--resume"
+      ]
+    },
+    {
+      "index": 8,
+      "variant": "happo",
+      "seeds": [
+        512,
+        1024
+      ],
+      "estimated_hours_high": 9.644270833333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "512,1024",
+        "--resume"
+      ]
+    },
+    {
+      "index": 9,
+      "variant": "happo",
+      "seeds": [
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 9.644270833333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "happo",
+        "--only-seeds",
+        "2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 10,
+      "variant": "matd3",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100
+      ],
+      "estimated_hours_high": 10.118489583333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "matd3",
+        "--only-seeds",
+        "7,11,23,42,100",
+        "--resume"
+      ]
+    },
+    {
+      "index": 11,
+      "variant": "matd3",
+      "seeds": [
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 10.118489583333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "matd3",
+        "--only-seeds",
+        "256,512,1024,2048,4096",
+        "--resume"
+      ]
+    }
+  ],
+  "safety_contract": {
+    "protocol_reduction_allowed": false,
+    "resume_required_after_first_chunk": true,
+    "final_summary_written_only_when_all_registered_pairs_exist": true
+  }
+}

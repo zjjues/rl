@@ -12,8 +12,10 @@ sys.path.insert(0, str(ROOT))
 from run_research_study import (  # noqa: E402
     build_resume_manifest,
     expected_result_path,
+    expected_training_checkpoint_path,
     merge_resume_specs,
     resolve_run_selection,
+    validate_spec,
     validate_result_identity,
 )
 
@@ -50,6 +52,10 @@ class ResearchResumeTests(unittest.TestCase):
     def test_expected_result_path_is_stable(self):
         path = expected_result_path(Path("study"), "full", 7)
         self.assertEqual(path.as_posix(), "study/full/seed_7/result.json")
+        checkpoint = expected_training_checkpoint_path(Path("study"), "full", 7)
+        self.assertEqual(
+            checkpoint.as_posix(), "study/full/seed_7/training_checkpoint.pt"
+        )
 
     def test_resume_adds_variants_without_changing_protocol(self):
         first = study_spec({"key": "a", "algorithm": "imappo"})
@@ -74,6 +80,18 @@ class ResearchResumeTests(unittest.TestCase):
         second = study_spec({"key": "a", "algorithm": "ippo"})
         with self.assertRaisesRegex(ValueError, "redefines"):
             merge_resume_specs(first, second)
+
+    def test_checkpoint_interval_must_be_positive(self):
+        spec = study_spec({"key": "a", "algorithm": "imappo"})
+        spec["training"]["checkpoint_interval_episodes"] = 0
+        with self.assertRaisesRegex(ValueError, "checkpoint_interval_episodes"):
+            validate_spec(spec, allow_dirty=True)
+
+    def test_monitor_eval_episodes_must_be_positive(self):
+        spec = study_spec({"key": "a", "algorithm": "imappo"})
+        spec["training"]["monitor_eval_episodes"] = 0
+        with self.assertRaisesRegex(ValueError, "monitor_eval_episodes"):
+            validate_spec(spec, allow_dirty=True)
 
     def test_resume_manifest_keeps_prior_invocation(self):
         spec = study_spec({"key": "a", "algorithm": "imappo"})

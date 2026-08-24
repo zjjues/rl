@@ -95,6 +95,7 @@ class IMAPPOConfig:
     max_steps: int = 200
     eval_interval: int = 10
     eval_episodes: int = 3
+    monitor_eval_episodes: int = 0
     curriculum_spawn_scale_start: float = 0.45
     curriculum_spawn_scale_end: float = 0.30
     curriculum_separation_start: float = 0.95
@@ -465,6 +466,29 @@ class RolloutBuffer:
         return {
             key: torch.stack(value, dim=0).to(device)
             for key, value in self.storage.items()
+        }
+
+    def state_dict(self) -> Dict[str, List[Tensor]]:
+        """Return an isolated CPU snapshot suitable for an atomic checkpoint."""
+        return {
+            key: [tensor.detach().cpu().clone() for tensor in values]
+            for key, values in self.storage.items()
+        }
+
+    def load_state_dict(self, state: Mapping[str, List[Tensor]]) -> None:
+        expected = set(self.storage)
+        observed = set(state)
+        if observed != expected:
+            raise ValueError(
+                "rollout-buffer checkpoint fields mismatch: "
+                f"missing={sorted(expected - observed)}, extra={sorted(observed - expected)}"
+            )
+        lengths = {len(state[key]) for key in expected}
+        if len(lengths) > 1:
+            raise ValueError("rollout-buffer checkpoint fields have inconsistent lengths")
+        self.storage = {
+            key: [tensor.detach().cpu().clone() for tensor in state[key]]
+            for key in self.storage
         }
 
 
@@ -1629,6 +1653,7 @@ def evaluate_imappo(
     tactical_posture_override: Optional[str] = None,
     objective_profile_override: Optional[Mapping[str, float]] = None,
     evaluation_seed_offset: int = 0,
+    evaluation_episodes: Optional[int] = None,
 ) -> Dict[str, float]:
     env = env_factory()
     episode_returns = []
@@ -1660,7 +1685,14 @@ def evaluate_imappo(
     ).startswith("vmas:")
     episode_resources = {name: [] for name in resource_metric_names}
 
-    for episode_index in range(config.eval_episodes):
+    episode_count = (
+        int(config.eval_episodes)
+        if evaluation_episodes is None
+        else int(evaluation_episodes)
+    )
+    if episode_count <= 0:
+        raise ValueError("evaluation_episodes must be positive")
+    for episode_index in range(episode_count):
         evaluation_seed = int(config.seed) * 1_000_000 + int(evaluation_seed_offset) + episode_index
         obs_data, _ = env_reset(env, seed=evaluation_seed)
         agent_order = infer_agent_order(env, obs_data, config)
@@ -1968,18 +2000,34 @@ def train_imappo(
     logger=None,
     log_callback: Optional[Callable[[Dict[str, float]], None]] = None,
     checkpoint_callback: Optional[Callable[["IMAPPO", Dict[str, float]], None]] = None,
+    initial_algo: Optional["IMAPPO"] = None,
+    initial_buffer: Optional[RolloutBuffer] = None,
+    initial_logs: Optional[List[Dict[str, object]]] = None,
+    start_episode: int = 0,
+    training_state_callback: Optional[
+        Callable[[object, Dict[str, object]], None]
+    ] = None,
 ) -> Tuple[IMAPPO, List[Dict[str, float]]]:
     cfg = config or IMAPPOConfig()
-    if cfg.algorithm == "happo":
-        from happo_baseline import HAPPOBaseline
-
-        algo = HAPPOBaseline(cfg)
+    if not 0 <= int(start_episode) <= int(cfg.max_episodes):
+        raise ValueError(
+            f"start_episode must be in [0, {cfg.max_episodes}], got {start_episode}"
+        )
+    if initial_algo is not None:
+        algo = initial_algo
+        if algo.config.algorithm != cfg.algorithm:
+            raise ValueError("restored algorithm does not match training config")
     else:
-        algo = IMAPPO(cfg)
-    buffer = RolloutBuffer()
-    logs: List[Dict[str, float]] = []
+        if cfg.algorithm == "happo":
+            from happo_baseline import HAPPOBaseline
 
-    for episode in range(cfg.max_episodes):
+            algo = HAPPOBaseline(cfg)
+        else:
+            algo = IMAPPO(cfg)
+    buffer = initial_buffer if initial_buffer is not None else RolloutBuffer()
+    logs: List[Dict[str, object]] = list(initial_logs or [])
+
+    for episode in range(int(start_episode), cfg.max_episodes):
         cfg._env_progress = episode / max(cfg.max_episodes - 1, 1)
         cfg._use_hard_train_env = (
             cfg.hard_train_interval > 0 and (episode + 1) % cfg.hard_train_interval == 0
@@ -2152,6 +2200,11 @@ def train_imappo(
                 prefix="eval",
                 evaluation_mode="standard",
                 evaluation_seed_offset=500_000,
+                evaluation_episodes=(
+                    cfg.monitor_eval_episodes
+                    if cfg.monitor_eval_episodes > 0
+                    else cfg.eval_episodes
+                ),
             )
             eval_log["episode"] = float(episode)
             eval_log["algorithm"] = cfg.algorithm
@@ -2172,6 +2225,11 @@ def train_imappo(
                     prefix="probe",
                     evaluation_mode="dense",
                     evaluation_seed_offset=600_000,
+                    evaluation_episodes=(
+                        cfg.monitor_eval_episodes
+                        if cfg.monitor_eval_episodes > 0
+                        else cfg.eval_episodes
+                    ),
                 )
                 probe_log["episode"] = float(episode)
                 probe_log["algorithm"] = cfg.algorithm
@@ -2186,6 +2244,15 @@ def train_imappo(
                             logger.log_stat(key, value, episode)
 
         env.close()
+        if training_state_callback is not None:
+            training_state_callback(
+                algo,
+                {
+                    "next_episode": int(episode + 1),
+                    "logs": logs,
+                    "rollout_buffer": buffer.state_dict(),
+                },
+            )
     return algo, logs
 
 

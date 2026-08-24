@@ -1,5 +1,38 @@
 # 正式结果台账
 
+## 2026-08-24 VMAS navigation calibration（完成，非论文结果）
+
+- 范围：5 algorithms × seed 7 × 100 training episodes × 100 steps × 20 eval episodes；只注册原生 episode return。
+- 点值：attention-PPO **-2.711723**、MAPPO **-0.790685**、IPPO **-1.913966**、HAPPO **0.814603**、MATD3 **1.513628**。单 seed 禁止算法排序、显著性或等效性主张。
+- process CPU seconds：142.59、141.28、153.75、208.94、151.84；CUDA peak 22.88–27.09 MiB。
+- MAPPO 首轮 return 与复跑值逐 double 相同（`-0.7906847595237195`），但首轮 CPU=457.98 s、复跑 CPU=141.28 s；首轮文件保留并排除出预算。
+- 旧 attention pre-instrumentation 结果 wall=16,556.20 s 且无 CPU time，受宿主挂起污染，已保留为 legacy、禁止据此外推。
+- 计入 on-policy 训练期监控、MATD3 无周期评估以及 final evaluation 后，navigation paper 预算为 **33.42–44.36 active CPU-hours**；它不是 GPU device-hours，单 calibration seed 仍有中高不确定性。
+- 审计：`docs/paper/audits/vmas_navigation_architecture_v1_calibrated_runtime_plan.json`；图表：`docs/paper/generated/vmas_navigation_architecture_v1_calibration_v2_active_time/`。
+
+## 2026-08-24 训练恢复验证（工程证据）
+
+- IMAPPO、独立 actor HAPPO、MATD3：四 episode 连续运行与 episode 2 后中断/恢复的最终模型逐 tensor 相等。
+- MATD3 额外验证目标网络、replay、environment-step 与 delayed actor-update 游标；协议/代码身份错误必须拒绝加载。
+- 全量测试：**176 passed, 14 warnings**。该结果属于复现基础设施验证，不是算法效果结果。
+
+## 2026-08-24 VMAS dispersion calibration（完成，非论文结果）
+
+- 范围同 navigation：5 algorithms × seed 7 × 100 training episodes × 100 steps × 20 eval episodes，仅原生 return。
+- 点值：attention-PPO **0.050000**、MAPPO **0.016667**、IPPO **0.033333**、HAPPO **0.033333**、MATD3 **0.133333**；单 seed 禁止排序。
+- process CPU seconds：121.17、126.64、173.95、261.34、135.36；CUDA peak 26.88–29.77 MiB。
+- 50-run paper active-time 预算为 **34.09–45.47 active CPU-hours**，不是 GPU device-hours。
+- 审计：`docs/paper/audits/vmas_dispersion_architecture_v1_calibrated_runtime_plan.json`；图表：`docs/paper/generated/vmas_dispersion_architecture_v1_calibration_v1_active_time/`。
+
+## 2026-08-24 UAV architecture v3 calibration（完成，非论文结果）
+
+- 范围：6 algorithms × seed 7 × 100 training episodes × 100 max steps；训练监控/碰撞 probe 各 20 episodes，最终 easy/medium/hard 各 20 episodes。
+- hard-tier `(collision_rate, task_completion)`：IMAPPO `(0.737, 0.54388)`、no-mask `(0.828, 0.53636)`、MAPPO `(0.809, 0.54098)`、IPPO `(0.639, 0.54625)`、HAPPO `(0.740, 0.55310)`、MATD3 `(0.536, 0.54618)`。单 seed 禁止排序或显著性主张。
+- process CPU seconds：45.16、41.05、39.83、39.45、289.33、121.42；CUDA peak 24.92–35.62 MiB。
+- MATD3 wall=3711.34 s 与 CPU=121.42 s 严重分离，属于宿主挂起/调度污染；wall 不进入预算。
+- 逐算法 workload 外推的 60-run paper 预算为 **70.76–96.04 active CPU-hours**；HAPPO 占 36.17–48.22 h，MATD3 占 13.91–20.24 h。
+- 审计：`docs/paper/audits/uav_marl_architecture_v3_calibrated_runtime_plan.json`；产物：`docs/paper/generated/uav_marl_architecture_v3_calibration_v1_active_time/`。
+
 ## 2026-08-20 CityNav 预注册一次性外部 OOD 终测
 
 - 范围：四个 canonical split，共 32,637 条；31,751 条规范化唯一文本。

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "study_id": "uav_imappo_main",
-  "level": "pilot",
-  "objective": "Main MARL comparison: I-MAPPO (attention critic + action mask) vs MAPPO vs MATD3 vs IPPO. All use onehot intent to isolate critic architecture effect.",
+  "study_id": "uav_imappo_main_paper_v2",
+  "level": "paper",
+  "objective": "Primary UAV MARL comparison: intent-conditioned attention PPO versus correctly implemented MAPPO, MATD3, and IPPO continuous-action baselines.",
   "seeds": [7, 11, 23, 42, 100, 256, 512, 1024, 2048, 4096],
   "bootstrap_seed": 20260802,
   "treatment_key": "imappo",
@@ -16,10 +16,12 @@
   },
   "training": {
     "episodes": 3000,
+    "checkpoint_interval_episodes": 50,
     "steps": 200,
     "rollout_length": 128,
     "minibatch_size": 64,
     "eval_interval": 100,
+    "monitor_eval_episodes": 20,
     "actor_lr": 0.0003,
     "critic_lr": 0.0003,
     "eta": 0.5,
@@ -50,9 +52,10 @@
     },
     {
       "key": "mappo",
-      "intent_source": "onehot",
-      "algorithm": "imappo",
-      "critic_mode": "concat",
+      "intent_source": "none",
+      "intent_profile_decoder": "none",
+      "algorithm": "mappo",
+      "critic_mode": "mlp",
       "policy_mode": "direct",
       "use_action_mask": false,
       "safety_filter_mode": "none",
@@ -60,9 +63,10 @@
     },
     {
       "key": "matd3",
-      "intent_source": "onehot",
+      "intent_source": "none",
+      "intent_profile_decoder": "none",
       "algorithm": "matd3",
-      "critic_mode": "concat",
+      "critic_mode": "mlp",
       "policy_mode": "direct",
       "use_action_mask": false,
       "safety_filter_mode": "none",
@@ -70,9 +74,10 @@
     },
     {
       "key": "ippo",
-      "intent_source": "onehot",
+      "intent_source": "none",
+      "intent_profile_decoder": "none",
       "algorithm": "ippo",
-      "critic_mode": "concat",
+      "critic_mode": "local",
       "policy_mode": "direct",
       "use_action_mask": false,
       "safety_filter_mode": "none",
@@ -80,7 +85,7 @@
     }
   ],
   "evaluation": {
-    "episodes": 50,
+    "episodes": 100,
     "risk_tiers": {
       "easy": {
         "spawn_region_scale": 0.50,

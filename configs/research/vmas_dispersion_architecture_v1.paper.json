@@ -7,7 +7,7 @@
   "bootstrap_seed": 20260820,
   "treatment_key": "imappo_attention",
   "environment": {"name": "vmas:dispersion", "package_name": "vmas", "package_version": "1.5.2", "n_agents": 3, "intent_reward_profiles_enabled": false},
-  "training": {"episodes": 2000, "steps": 100, "rollout_length": 1024, "minibatch_size": 256, "eval_interval": 50, "actor_lr": 0.0003, "critic_lr": 0.0003, "eta": 0.0, "eta_end": 0.0, "entropy_coef": 0.001, "entropy_coef_end": 0.0001, "potential_update_mode": "frozen", "matd3_warmup_steps": 5000, "replay_capacity": 500000, "device": "cuda"},
+  "training": {"episodes": 2000, "checkpoint_interval_episodes": 50, "steps": 100, "rollout_length": 1024, "minibatch_size": 256, "eval_interval": 50, "monitor_eval_episodes": 20, "actor_lr": 0.0003, "critic_lr": 0.0003, "eta": 0.0, "eta_end": 0.0, "entropy_coef": 0.001, "entropy_coef_end": 0.0001, "potential_update_mode": "frozen", "matd3_warmup_steps": 5000, "replay_capacity": 500000, "device": "cuda"},
   "intent": {"dim": 1, "encoder_model": "not_used", "encoder_revision": "", "projection_seed": 0, "code_seed": 0},
   "variants": [
     {"key": "imappo_attention", "algorithm": "imappo", "critic_mode": "attention", "intent_source": "none", "intent_profile_decoder": "none", "disable_intent_reward": true, "use_action_mask": false, "policy_mode": "direct", "safety_filter_mode": "none"},

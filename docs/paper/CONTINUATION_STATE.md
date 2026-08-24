@@ -1,7 +1,24 @@
 # 项目持续执行与恢复状态
 
 > 最后更新：2026-08-24（Asia/Shanghai）
-> 状态：**目标仍在进行。工程/协议约 95%，paper 证据约 48%–52%。CityNav 一次性终测已真实失败并冻结；VMAS 两场景架构 smoke 已完成；尚无 clean multi-seed 主结果，也没有独立人工偏好数据。**
+> 状态：**按用户要求暂停。工程/协议约 95%，paper 证据约 48%–52%。CityNav 一次性终测已真实失败并冻结；VMAS 两场景架构 smoke 与三套单种子 calibration 已完成；尚无 clean multi-seed 主结果，也没有独立人工偏好数据。**
+
+### 2026-08-24 最新增量（优先读取）
+
+- 远程安全快照：`testv1` commit `6beb076c4e6a61add16b4241ab421b3d3eabc022`；其后工作区新增 episode-boundary checkpoint 实现与文档，尚未提交。
+- IMAPPO/HAPPO/MATD3 已支持完整训练态原子恢复：rollout/replay、在线/目标网络、优化器、更新游标、日志、下一 episode、私有及全局 RNG；checkpoint 绑定注册 spec 与研究源码指纹。
+- paper 配置 checkpoint cadence=50，默认/当前 calibration cadence=1；最终 episode 总是保存，最终 result 成功落盘后才删除。50 来自 MATD3 replay checkpoint 的实测 I/O，而非任意选择。
+- `tests/test_training_checkpoint_resume.py` 验证三算法连续与中断恢复路径逐 tensor 相等；最新全量回归 **178 passed, 14 warnings, 8.87 s**。
+- 五份 `*.paper.json` 全部 dry-run 通过；遗留 `uav_imappo_main.paper.json` 已改为新 `uav_imappo_main_paper_v2` 并移除伪 `concat` critic。
+- navigation calibration 已完成 5/5（seed 7）：attention/MAPPO/IPPO/HAPPO/MATD3 native return = -2.711723/-0.790685/-1.913966/0.814603/1.513628。仅为单 seed calibration，禁止排序。
+- 五算法 process CPU=142.59/141.28/153.75/208.94/151.84 s；计入逐算法周期评估 workload 后，navigation paper 预算=33.42–44.36 active CPU-hours，不是 GPU device-hours。旧 attention 16,556 s 与 MAPPO 首轮 457.98 CPU s 均保留为异常证据并由复跑替代。
+- dispersion calibration 也已完成 5/5：attention/MAPPO/IPPO/HAPPO/MATD3 native return = 0.050000/0.016667/0.033333/0.033333/0.133333；process CPU=121.17/126.64/173.95/261.34/135.36 s。
+- 两套 VMAS paper active-time 预算合计 67.52–89.83 CPU-hours；不是 GPU device-hours。下一计算前置项转为 UAV 架构/消融 calibration 或 clean multi-seed 分块运行。
+- UAV v3 calibration 已完成 6/6（seed 7）；hard collision/task 点值见 `RESULTS_LEDGER.md`，单 seed 禁止排序。process CPU=45.16/41.05/39.83/39.45/289.33/121.42 s（IMAPPO/no-mask/MAPPO/IPPO/HAPPO/MATD3）。
+- UAV v3 paper 60-run 校正预算=70.76–96.04 active CPU-hours；HAPPO 为主成本。MATD3 wall=3711.34 s 但 CPU=121.42 s，禁止引用 wall 作为 GPU compute。
+- 最终评估仍固定 100 episodes/tier；新增 `monitor_eval_episodes=20` 只缩减训练期重复监控，不削弱最终统计协议。
+- 新文件：`configs/research/uav_marl_architecture_v3.calibration.json`、`docs/paper/audits/uav_marl_architecture_v3_calibrated_runtime_plan.json`、`docs/paper/generated/uav_marl_architecture_v3_calibration_v1_active_time/`、`experiments/pilot/uav_marl_architecture_v3_calibration/`。
+- 完整恢复协议：`docs/paper/EXACT_TRAINING_RESUME_PROTOCOL.md`。
 
 ## 0. 最新恢复点（优先于下文历史保存点）
 
@@ -12,19 +29,19 @@
 - CityNav v2 预注册与 one-shot 已完成：32,637 条，accepted=31,381，FAR=0.961516，Wilson 95% CI=[0.959374, 0.963549]，outcome=`fail`。结果位于 `docs/paper/audits/citynav_human_language_final_ood_v2.json`；`.attempt.json` 为 completed。**禁止删除、重跑或用 CityNav 修改 gate/threshold。**
 - CityNav archive 位于 `.cache/citynav_final_ood/data.tar.gz`，190,078,685 bytes，SHA-256 `121d052e81a4d3f58fb9c6a45ceac3c616bb191dd5ae39cf5ac2dbd636af65bd`；缓存不上传 Git。
 - VMAS navigation/dispersion 各 5 algorithms × 1 seed smoke complete 且 artifact valid，只有 dirty warning。paper 配置各 10 seeds/100 eval episodes，未启动。
-- VMAS paper 粗预算：navigation 36.4–55.5 GPUh；dispersion 32.2–49.0 GPUh。两个 smoke 只证明管线，禁止算法排序。
+- VMAS navigation/dispersion calibration 均完成；校正预算分别为 33.42–44.36/34.09–45.47 active CPU-hours。两个单 seed calibration 仍禁止算法排序。
 - 正式人工数据入口：`freeze_preference_dataset.py` + `audit_formal_preference_dataset`；当前没有实际独立人类数据，因此语言主张被阻断。
-- 可恢复实验仍支持 `--only-variants`、`--only-seeds`、`--resume` 和 partial manifest；正式长运行前先做 100-episode calibration。
+- 可恢复实验支持 `--only-variants`、`--only-seeds`、`--resume`、partial manifest 和 episode-boundary checkpoint；VMAS navigation/dispersion 与 UAV v3 calibration 均已完成。
 - 没有已知活跃后台实验进程。
-- 最新全量回归：**164 passed, 14 warnings, 8.71 s**；48 个 config/audit JSON 全部可解析。warnings 仍为可选 PettingZoo 与 Matplotlib/PyParsing deprecation。
+- 最新全量回归：**178 passed, 14 warnings, 8.87 s**；54 个 config/audit JSON 全部可解析；五份 paper 配置 dry-run 通过；残留 `training_checkpoint.pt` 数量为 0。warnings 仍为可选 PettingZoo 与 Matplotlib/PyParsing deprecation。
 - `git diff --check` 在移除本文件 Markdown 行尾空格后通过；CRLF 转换提示不属于 whitespace error。
 
 ### 下一步严格顺序
 
-1. 全量 pytest、`git diff --check`、所有新增 JSON 解析与 artifact audit；把精确结果回填本文件。
+1. 恢复任务后先确认 `testv1` 分支、工作树洁净性、Python 环境和本节审计数字；不要重跑已完成 calibration。
 2. 人工 preference 招募/consent/独立复核（外部协调硬阻塞）；冻结 JSONL 与 test hash 后才能开发 gate v2。
-3. 形成 clean commit，重新生成配置/源哈希，重跑六轴 UAV smoke，替换旧七轴 superseded 证据。
-4. 执行 100-training-episode calibration，再分块跑 UAV 消融、UAV 架构、VMAS navigation/dispersion paper runs。
+3. 在 clean snapshot 上重跑六轴 UAV smoke，替换旧七轴 superseded 证据。
+4. 先执行 UAV 消融 calibration，再依据已校正预算分块执行 UAV 消融/架构与 VMAS navigation/dispersion clean multi-seed paper runs。
 5. 官方 HARL 数值交叉核验；多机冲突 policy-in-loop SITL；HIL/受控实机。
 
 ### 新增关键文件
@@ -68,7 +85,7 @@
 ### 1.3 原子分块与预算
 
 - `run_research_study.py` 新增 `--only-variants`/`--only-seeds`。未齐全时 manifest=`partial` 并列出 missing pairs，不生成 summary/显著性；全部注册 pairs 存在后重新载入全集再聚合。
-- `plan_experiment_runtime.py` 从 smoke wall time 和 environment-step workload 估计并生成 resume chunks，不允许缩减 protocol。
+- `plan_experiment_runtime.py` schema v2 区分 wall/process-CPU timing 并生成 resume chunks，不允许缩减 protocol。
 - 架构 v3：60 runs，粗估 **60.9–105.2 GPU-hours**。
 - 5-seed 消融：50 runs，粗估 **82.2–105.0 GPU-hours**；此前约 52 小时估计作废。
 - 范围为高不确定性；必须先做 100-training-episode calibration。
@@ -112,7 +129,7 @@
 2. 在 clean commit 上重跑六轴 v3 smoke 与 10-variant ablation smoke，替换 superseded artifact 并消除 dirty warning。
 3. 建立独立人类 preference train/dev/test；至少 13 类×50 条、每 split ≥5 writers，先冻结 test hash；用 dev 校准拒答/置信阈值。
 4. 在完整 AerialVLN `val_unseen` 上报告冻结 threshold 的 OOD false-accept rate，并做失败类型分析；不能用 OOD test 反调阈值。
-5. 运行 100-training-episode calibration，更新两份 runtime plan，再按 `partial`/`resume` 分块执行 5-seed 消融。
+5. VMAS calibration/runtime plan 已更新；下一步运行 UAV 100-training-episode calibration，再按 `partial`/`resume` 分块执行 5-seed 消融。
 6. clean 10-seed 架构 v3 paper；另用官方 HARL 对至少一个任务/seed 做数值轨迹交叉核验。
 7. 补跨场景语言证据、多机冲突 SITL policy-in-loop、HIL/受控实机。后三项仍是顶刊真实性硬门槛。
 
