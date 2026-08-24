@@ -27,3 +27,11 @@
 2. calibration 的 10 个 result、summary、manifest 与 checksums 必须通过 artifact audit；不得把 partial manifest 当完成。
 3. 预算只称为 active CPU-hours 或 wall-hours；没有设备级计时就不得称 GPU-hours。
 4. calibration 后仍不提升论文效果证据等级；只有 clean 10-seed paper artifact 才能关闭“算法新颖性与因果消融”门槛。
+
+## 2026-08-24 执行记录
+
+运行前注册提交为 `b974937`。十个变体均完成 seed 7 的 100×100-step 训练、20-episode monitor、20-episode collision probe 与 hard-tier 20-episode final evaluation。artifact audit 为 `valid`：10/10 results、14 checksum entries、9 条契约对照、0 errors、0 warnings；训练完成后无残留 checkpoint。
+
+各变体 process CPU 为 40.16–58.23 s，wall 为 44.89–86.86 s。逐字段同构预算器把 16,000-step calibration workload 外推到每个正式 run 的 860,000 steps，100-run 正式计划为 **70.65–78.87 active CPU-hours**；这是排除宿主挂起的进程 CPU 规划量，不是 GPU device-hours。
+
+单 seed 诊断中，full/no-CBF collision rate 为 0.003/0.018；但 no-attention、no-intent-reward、no-NLI-gate、prior-only 与 full 的多项点值接近。该现象只用于确认正式实验必须允许零效应或负结果，不能据此声称 CBF 有效或其余机制无效。审计、预算和自动报告分别位于 `docs/paper/audits/uav_imappo_ablation_calibration_v1_artifact_audit.json`、`docs/paper/audits/uav_imappo_ablation_calibrated_runtime_plan.json` 和 `docs/paper/generated/uav_imappo_ablation_calibration_v1_active_time/`。

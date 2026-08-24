@@ -2,11 +2,13 @@
 
 ## 2026-08-24 长实验可靠性更新
 
-已关闭“单个算法×种子中断会丢失全部训练进度”的工程缺口：IMAPPO/HAPPO/MATD3 现在具备绑定协议与源码指纹的 episode 边界原子恢复，CPU 确定性测试验证连续与中断恢复路径逐 tensor 相等；全量回归 **176 passed**。全部五个 `*.paper.json` 配置已通过 dry-run，遗留 `uav_imappo_main.paper.json` 中伪 `concat` critic、pilot 等级和 50-episode 评估已修正为独立的 `uav_imappo_main_paper_v2`。
+已关闭“单个算法×种子中断会丢失全部训练进度”的工程缺口：IMAPPO/HAPPO/MATD3 现在具备绑定协议与源码指纹的 episode 边界原子恢复，CPU 确定性测试验证连续与中断恢复路径逐 tensor 相等；最近完整回归 **179 passed**。六个 `*.paper.json` 配置已通过 dry-run，遗留 `uav_imappo_main.paper.json` 中伪 `concat` critic、pilot 等级和 50-episode 评估已修正为独立的 `uav_imappo_main_paper_v2`。
 
 这提升的是实验可恢复性与 provenance，不提升论文效果证据等级。navigation/dispersion 五算法 100-episode calibration 已完成；预算器计入训练期监控、UAV collision probe 和算法差异，并将最终评估 100 episodes 与训练监控 20 episodes 解耦。navigation 50-run 预算为 **33.42–44.36 active CPU-hours**。MAPPO 同配置复跑得到完全相同 return，但 CPU time 从异常的 457.98 s 回落至 141.28 s，证明旧单次计时不可直接外推。正式 multi-seed 结果及六个硬缺口仍未关闭，因此总体 paper 证据仍维持 **48%–52%**。
 
 UAV v3 六算法 calibration 也已完成：正式 60-run 预算从历史 smoke-wall 的 60.9–105.2“GPU-hours”更正为 **70.76–96.04 active CPU-hours**。HAPPO 独立 actor 顺序更新是主成本（36.17–48.22 h），MATD3 为 13.91–20.24 h。MATD3 calibration 的 wall=3711.34 s、CPU=121.42 s，再次显示宿主时间污染；论文只能引用 process-CPU active-time 作为规划量。calibration 仍为单 seed，不增加效果证据等级。
+
+UAV 十变体链式消融现在另有正式 `paper` 注册：10 seeds、100 final episodes、18 个 Holm 家族假设，共 100 个训练单元。与其逐字段同构的单 seed calibration 已通过 10/10 result、14 checksums、9 条对照和 0 warning 审计，正式预算为 **70.65–78.87 active CPU-hours**。calibration 中多条机制点差近零，只能视为“正式实验可能产生负结果”的设计预警；它没有关闭因果消融门槛。
 
 ## 2026-08-24 最新判定（覆盖下文历史比例）
 
@@ -18,12 +20,12 @@ UAV v3 六算法 calibration 也已完成：正式 60-run 预算从历史 smoke-
 
 1. 独立招募的 writer-disjoint 人工偏好 train/dev/test 与伦理/consent 记录；
 2. 重新训练的多来源 relevance gate，并在未访问的人类 preference test 与新的 OOD test 上冻结验证；CityNav 不得复用作调参或第二次 final；
-3. clean commit 上的六轴 UAV 10-seed 架构、5-seed 链式消融和统计主结果；
+3. clean commit 上的六轴 UAV 10-seed 架构、10-seed 链式消融和统计主结果；
 4. VMAS 两场景 10-seed 原生 return 复现及官方 HARL 数值交叉核验；
 5. 多机冲突 policy-in-loop SITL，而非仅有单/双机链路 smoke；
 6. HIL 或受控实机证据，以及与系统辨识覆盖率一致的延迟/动力学安全边界。
 
-在这些缺口关闭前，合适定位仍是“完整研究平台 + 已记录关键负结果”，不是顶刊 ready。两套 VMAS 计划经逐算法 workload calibration 后合计为 **67.52–89.83 active CPU-hours**，明确不是 GPU device-hours；UAV 架构/消融的旧 smoke-wall 预算仍为高不确定性且不可与该量直接相加，必须另做同口径 calibration。任何 paper run 都不得在 dirty worktree 上启动。
+在这些缺口关闭前，合适定位仍是“完整研究平台 + 已记录关键负结果”，不是顶刊 ready。两套 VMAS 计划经逐算法 workload calibration 后合计为 **67.52–89.83 active CPU-hours**；UAV 架构与消融的校正预算分别为 **70.76–96.04** 与 **70.65–78.87 active CPU-hours**。它们均不是 GPU device-hours，且单 calibration seed 尚未覆盖运行时间方差。任何 paper run 都不得在 dirty worktree 上启动。
 
 ## 总体判断
 

@@ -14,7 +14,7 @@ on-policy IMAPPO/MAPPO/IPPO/HAPPO 检查点包含：actor/critic/potential、全
 
 ## 等价性证据
 
-`tests/test_training_checkpoint_resume.py` 在带真实梯度更新的确定性双 UAV 环境中比较两条路径：(a) 四个 episode 连续训练；(b) 第二个 episode 后模拟进程异常、磁盘恢复并完成训练。IMAPPO、独立 actor HAPPO 与 MATD3 的最终网络逐 tensor `torch.equal`；日志完全相等；MATD3 的目标网络、replay transition、总更新数和 delayed actor update 游标完全相等。独立测试还验证同 seed 意图序列、IMAPPO/HAPPO 私有 RNG checkpoint、身份不匹配拒绝和临时文件清理。2026-08-24 全量回归为 **178 passed, 14 warnings**。
+`tests/test_training_checkpoint_resume.py` 在带真实梯度更新的确定性双 UAV 环境中比较两条路径：(a) 四个 episode 连续训练；(b) 第二个 episode 后模拟进程异常、磁盘恢复并完成训练。IMAPPO、独立 actor HAPPO 与 MATD3 的最终网络逐 tensor `torch.equal`；日志完全相等；MATD3 的目标网络、replay transition、总更新数和 delayed actor update 游标完全相等。独立测试还验证同 seed 意图序列、IMAPPO/HAPPO 私有 RNG checkpoint、身份不匹配拒绝和临时文件清理。2026-08-24 全量回归为 **179 passed, 14 warnings**。
 
 该结果证明 CPU 测试路径在 episode 边界可 bitwise 恢复；它不等于宣称任意 CUDA kernel 跨驱动/硬件 bitwise deterministic。正式运行仍固定硬件、软件版本和代码指纹，并报告任何 CUDA 非确定性设置。注册间隔为 50 时，最坏只丢失并确定性重算最近 49 个已完成 episode，而不是声称每个 episode 都永久落盘。
 

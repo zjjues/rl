@@ -1,0 +1,981 @@
+{
+  "schema_version": 2,
+  "study_id": "uav_imappo_ablation_paper_v2",
+  "method": "linear environment-step extrapolation from measured calibration process_cpu_time_seconds",
+  "reference_label": "calibration",
+  "timing_field": "process_cpu_time_seconds",
+  "timing_semantics": "process CPU time excludes host suspension but is not GPU device time",
+  "uncertainty": "moderate-to-high; one calibration seed does not capture seed/runtime variance",
+  "reference_workload_units_by_variant": {
+    "imappo_full": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 2000,
+      "evaluation": 6000,
+      "total": 16000
+    },
+    "no_mask": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 2000,
+      "evaluation": 6000,
+      "total": 16000
+    },
+    "no_attention": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 2000,
+      "evaluation": 6000,
+      "total": 16000
+    },
+    "no_intent_reward": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 2000,
+      "evaluation": 6000,
+      "total": 16000
+    },
+    "no_cbf": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 2000,
+      "evaluation": 6000,
+      "total": 16000
+    },
+    "no_nli_gate": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 2000,
+      "evaluation": 6000,
+      "total": 16000
+    },
+    "prior_only": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 2000,
+      "evaluation": 6000,
+      "total": 16000
+    },
+    "no_profile_prior": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 2000,
+      "evaluation": 6000,
+      "total": 16000
+    },
+    "identity_oracle": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 2000,
+      "evaluation": 6000,
+      "total": 16000
+    },
+    "no_intent": {
+      "training": 10000,
+      "periodic_evaluation": 2000,
+      "collision_probe": 2000,
+      "final_evaluation": 2000,
+      "evaluation": 6000,
+      "total": 16000
+    }
+  },
+  "paper_workload_units_by_variant": {
+    "imappo_full": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 20000,
+      "evaluation": 260000,
+      "total": 860000
+    },
+    "no_mask": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 20000,
+      "evaluation": 260000,
+      "total": 860000
+    },
+    "no_attention": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 20000,
+      "evaluation": 260000,
+      "total": 860000
+    },
+    "no_intent_reward": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 20000,
+      "evaluation": 260000,
+      "total": 860000
+    },
+    "no_cbf": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 20000,
+      "evaluation": 260000,
+      "total": 860000
+    },
+    "no_nli_gate": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 20000,
+      "evaluation": 260000,
+      "total": 860000
+    },
+    "prior_only": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 20000,
+      "evaluation": 260000,
+      "total": 860000
+    },
+    "no_profile_prior": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 20000,
+      "evaluation": 260000,
+      "total": 860000
+    },
+    "identity_oracle": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 20000,
+      "evaluation": 260000,
+      "total": 860000
+    },
+    "no_intent": {
+      "training": 600000,
+      "periodic_evaluation": 120000,
+      "collision_probe": 120000,
+      "final_evaluation": 20000,
+      "evaluation": 260000,
+      "total": 860000
+    }
+  },
+  "workload_scales_by_variant": {
+    "imappo_full": {
+      "blended": 53.75,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "no_mask": {
+      "blended": 53.75,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "no_attention": {
+      "blended": 53.75,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "no_intent_reward": {
+      "blended": 53.75,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "no_cbf": {
+      "blended": 53.75,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "no_nli_gate": {
+      "blended": 53.75,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "prior_only": {
+      "blended": 53.75,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "no_profile_prior": {
+      "blended": 53.75,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "identity_oracle": {
+      "blended": 53.75,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    },
+    "no_intent": {
+      "blended": 53.75,
+      "conservative": 60.0,
+      "components": {
+        "training": 60.0,
+        "periodic_evaluation": 60.0,
+        "collision_probe": 60.0,
+        "final_evaluation": 10.0
+      }
+    }
+  },
+  "fixed_cold_start_seconds": 0.0,
+  "seed_count": 10,
+  "run_count": 100,
+  "estimated_active_hours_low": 70.65418836805556,
+  "estimated_active_hours_high": 78.86979166666667,
+  "per_variant": {
+    "imappo_full": {
+      "reference_seconds": 58.234375,
+      "recurring_reference_seconds": 58.234375,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 2000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 20000,
+        "evaluation": 260000,
+        "total": 860000
+      },
+      "workload_scales": {
+        "blended": 53.75,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 3130.09765625,
+      "estimated_seconds_per_seed_high": 3494.0625,
+      "estimated_active_hours_all_seeds_low": 8.694715711805555,
+      "estimated_active_hours_all_seeds_high": 9.705729166666666
+    },
+    "no_mask": {
+      "reference_seconds": 47.46875,
+      "recurring_reference_seconds": 47.46875,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 2000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 20000,
+        "evaluation": 260000,
+        "total": 860000
+      },
+      "workload_scales": {
+        "blended": 53.75,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2551.4453125,
+      "estimated_seconds_per_seed_high": 2848.125,
+      "estimated_active_hours_all_seeds_low": 7.087348090277778,
+      "estimated_active_hours_all_seeds_high": 7.911458333333333
+    },
+    "no_attention": {
+      "reference_seconds": 48.640625,
+      "recurring_reference_seconds": 48.640625,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 2000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 20000,
+        "evaluation": 260000,
+        "total": 860000
+      },
+      "workload_scales": {
+        "blended": 53.75,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2614.43359375,
+      "estimated_seconds_per_seed_high": 2918.4375,
+      "estimated_active_hours_all_seeds_low": 7.262315538194445,
+      "estimated_active_hours_all_seeds_high": 8.106770833333334
+    },
+    "no_intent_reward": {
+      "reference_seconds": 44.96875,
+      "recurring_reference_seconds": 44.96875,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 2000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 20000,
+        "evaluation": 260000,
+        "total": 860000
+      },
+      "workload_scales": {
+        "blended": 53.75,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2417.0703125,
+      "estimated_seconds_per_seed_high": 2698.125,
+      "estimated_active_hours_all_seeds_low": 6.714084201388889,
+      "estimated_active_hours_all_seeds_high": 7.494791666666667
+    },
+    "no_cbf": {
+      "reference_seconds": 45.34375,
+      "recurring_reference_seconds": 45.34375,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 2000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 20000,
+        "evaluation": 260000,
+        "total": 860000
+      },
+      "workload_scales": {
+        "blended": 53.75,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2437.2265625,
+      "estimated_seconds_per_seed_high": 2720.625,
+      "estimated_active_hours_all_seeds_low": 6.770073784722222,
+      "estimated_active_hours_all_seeds_high": 7.557291666666667
+    },
+    "no_nli_gate": {
+      "reference_seconds": 49.46875,
+      "recurring_reference_seconds": 49.46875,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 2000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 20000,
+        "evaluation": 260000,
+        "total": 860000
+      },
+      "workload_scales": {
+        "blended": 53.75,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2658.9453125,
+      "estimated_seconds_per_seed_high": 2968.125,
+      "estimated_active_hours_all_seeds_low": 7.385959201388889,
+      "estimated_active_hours_all_seeds_high": 8.244791666666666
+    },
+    "prior_only": {
+      "reference_seconds": 49.390625,
+      "recurring_reference_seconds": 49.390625,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 2000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 20000,
+        "evaluation": 260000,
+        "total": 860000
+      },
+      "workload_scales": {
+        "blended": 53.75,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2654.74609375,
+      "estimated_seconds_per_seed_high": 2963.4375,
+      "estimated_active_hours_all_seeds_low": 7.374294704861111,
+      "estimated_active_hours_all_seeds_high": 8.231770833333334
+    },
+    "no_profile_prior": {
+      "reference_seconds": 45.59375,
+      "recurring_reference_seconds": 45.59375,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 2000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 20000,
+        "evaluation": 260000,
+        "total": 860000
+      },
+      "workload_scales": {
+        "blended": 53.75,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2450.6640625,
+      "estimated_seconds_per_seed_high": 2735.625,
+      "estimated_active_hours_all_seeds_low": 6.807400173611111,
+      "estimated_active_hours_all_seeds_high": 7.598958333333333
+    },
+    "identity_oracle": {
+      "reference_seconds": 43.953125,
+      "recurring_reference_seconds": 43.953125,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 2000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 20000,
+        "evaluation": 260000,
+        "total": 860000
+      },
+      "workload_scales": {
+        "blended": 53.75,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2362.48046875,
+      "estimated_seconds_per_seed_high": 2637.1875,
+      "estimated_active_hours_all_seeds_low": 6.562445746527778,
+      "estimated_active_hours_all_seeds_high": 7.325520833333333
+    },
+    "no_intent": {
+      "reference_seconds": 40.15625,
+      "recurring_reference_seconds": 40.15625,
+      "reference_workload_units": {
+        "training": 10000,
+        "periodic_evaluation": 2000,
+        "collision_probe": 2000,
+        "final_evaluation": 2000,
+        "evaluation": 6000,
+        "total": 16000
+      },
+      "paper_workload_units": {
+        "training": 600000,
+        "periodic_evaluation": 120000,
+        "collision_probe": 120000,
+        "final_evaluation": 20000,
+        "evaluation": 260000,
+        "total": 860000
+      },
+      "workload_scales": {
+        "blended": 53.75,
+        "conservative": 60.0,
+        "components": {
+          "training": 60.0,
+          "periodic_evaluation": 60.0,
+          "collision_probe": 60.0,
+          "final_evaluation": 10.0
+        }
+      },
+      "estimated_seconds_per_seed_low": 2158.3984375,
+      "estimated_seconds_per_seed_high": 2409.375,
+      "estimated_active_hours_all_seeds_low": 5.995551215277778,
+      "estimated_active_hours_all_seeds_high": 6.692708333333333
+    }
+  },
+  "max_chunk_hours": 8.0,
+  "chunks": [
+    {
+      "index": 1,
+      "variant": "imappo_full",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024
+      ],
+      "estimated_hours_high": 7.764583333333333,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "imappo_full",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024"
+      ]
+    },
+    {
+      "index": 2,
+      "variant": "imappo_full",
+      "seeds": [
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 1.9411458333333333,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "imappo_full",
+        "--only-seeds",
+        "2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 3,
+      "variant": "no_mask",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 7.911458333333333,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "no_mask",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 4,
+      "variant": "no_attention",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "estimated_hours_high": 7.29609375,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "no_attention",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048",
+        "--resume"
+      ]
+    },
+    {
+      "index": 5,
+      "variant": "no_attention",
+      "seeds": [
+        4096
+      ],
+      "estimated_hours_high": 0.8106770833333333,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "no_attention",
+        "--only-seeds",
+        "4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 6,
+      "variant": "no_intent_reward",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 7.494791666666667,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "no_intent_reward",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 7,
+      "variant": "no_cbf",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 7.557291666666667,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "no_cbf",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 8,
+      "variant": "no_nli_gate",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "estimated_hours_high": 7.4203125,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "no_nli_gate",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048",
+        "--resume"
+      ]
+    },
+    {
+      "index": 9,
+      "variant": "no_nli_gate",
+      "seeds": [
+        4096
+      ],
+      "estimated_hours_high": 0.8244791666666667,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "no_nli_gate",
+        "--only-seeds",
+        "4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 10,
+      "variant": "prior_only",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048
+      ],
+      "estimated_hours_high": 7.40859375,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "prior_only",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048",
+        "--resume"
+      ]
+    },
+    {
+      "index": 11,
+      "variant": "prior_only",
+      "seeds": [
+        4096
+      ],
+      "estimated_hours_high": 0.8231770833333333,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "prior_only",
+        "--only-seeds",
+        "4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 12,
+      "variant": "no_profile_prior",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 7.598958333333333,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "no_profile_prior",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 13,
+      "variant": "identity_oracle",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 7.325520833333333,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "identity_oracle",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    },
+    {
+      "index": 14,
+      "variant": "no_intent",
+      "seeds": [
+        7,
+        11,
+        23,
+        42,
+        100,
+        256,
+        512,
+        1024,
+        2048,
+        4096
+      ],
+      "estimated_hours_high": 6.692708333333334,
+      "command": [
+        "python",
+        "run_research_study.py",
+        "--config",
+        "configs\\research\\uav_imappo_ablation.paper.json",
+        "--only-variants",
+        "no_intent",
+        "--only-seeds",
+        "7,11,23,42,100,256,512,1024,2048,4096",
+        "--resume"
+      ]
+    }
+  ],
+  "safety_contract": {
+    "protocol_reduction_allowed": false,
+    "resume_required_after_first_chunk": true,
+    "final_summary_written_only_when_all_registered_pairs_exist": true
+  }
+}

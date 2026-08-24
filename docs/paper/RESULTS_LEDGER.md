@@ -1,5 +1,14 @@
 # 正式结果台账
 
+## 2026-08-24 UAV 十变体消融 calibration（完成，非论文结果）
+
+- 范围：10 variants × seed 7 × 100 training episodes × 100 max steps；训练 monitor、collision probe、hard final evaluation 各 20 episodes。
+- artifact audit：`valid`，10/10 result files、14 checksums、9 条注册链式比较、0 errors、0 warnings。
+- hard-tier `(collision_rate, task_completion)`：full `(0.003, 0.608392)`、no-mask `(0.004, 0.672851)`、no-attention `(0.003, 0.608440)`、no-intent-reward `(0.003, 0.608409)`、no-CBF `(0.018, 0.608574)`、no-NLI-gate `(0.003, 0.609192)`、prior-only `(0.003, 0.608545)`、no-profile-prior `(0.007, 0.617855)`、identity-oracle `(0.007, 0.617827)`、no-intent `(0.007, 0.617782)`。
+- 上述为单 seed calibration 点值，禁止排序、显著性、等效性或 CBF 效果主张；接近零的多条差异是正式研究可能得到负结果的预警。
+- process CPU 为 40.16–58.23 s/variant；100-run、10-seed paper 预算为 **70.65–78.87 active CPU-hours**，不是 GPU device-hours。
+- 审计：`docs/paper/audits/uav_imappo_ablation_calibration_v1_artifact_audit.json` 与 `uav_imappo_ablation_calibrated_runtime_plan.json`；自动报告：`docs/paper/generated/uav_imappo_ablation_calibration_v1_active_time/`。
+
 ## 2026-08-24 VMAS navigation calibration（完成，非论文结果）
 
 - 范围：5 algorithms × seed 7 × 100 training episodes × 100 steps × 20 eval episodes；只注册原生 episode return。
@@ -14,7 +23,7 @@
 
 - IMAPPO、独立 actor HAPPO、MATD3：四 episode 连续运行与 episode 2 后中断/恢复的最终模型逐 tensor 相等。
 - MATD3 额外验证目标网络、replay、environment-step 与 delayed actor-update 游标；协议/代码身份错误必须拒绝加载。
-- 全量测试：**176 passed, 14 warnings**。该结果属于复现基础设施验证，不是算法效果结果。
+- 全量测试：**179 passed, 14 warnings**。该结果属于复现基础设施验证，不是算法效果结果。
 
 ## 2026-08-24 VMAS dispersion calibration（完成，非论文结果）
 

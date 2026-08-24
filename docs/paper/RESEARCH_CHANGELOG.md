@@ -9,7 +9,7 @@
 - 研究运行器原子保存所有 Python/NumPy/Torch CPU/CUDA RNG，并用完整注册 spec 与研究源码 SHA-256 绑定 checkpoint；最终 result 原子落盘后才清除 checkpoint。
 - checkpoint cadence 成为正整数注册字段；默认 1。MATD3 10,000-transition checkpoint 实测增长至 18.22 MiB，据此把 3000/2000-episode paper 配置注册为 50，最终 episode 强制保存。
 - 修复 `uav_imappo_main.paper.json` 的遗留伪 `concat` critic、错误 pilot 等级和不足的 50-episode eval，使用新 study id 避免覆盖历史 pilot。五份 paper 配置均 dry-run 通过。
-- 新增中断恢复等价性测试；全量回归 **178 passed, 14 warnings**。
+- 新增中断恢复等价性测试；本批最终全量回归 **179 passed, 14 warnings**。
 
 ### 论文影响
 
@@ -23,6 +23,8 @@
 - runtime planner schema v2 区分 wall/process-CPU time，并逐算法计入训练、周期监控、UAV collision probe 与最终评估。最终评估保持 100 episodes，训练监控独立注册为 20；navigation/dispersion 新预算分别为 33.42–44.36/34.09–45.47 active CPU-hours。
 - 新增 `monitor_eval_episodes`，将训练期监控与最终统计样本量解耦；paper 最终 100 episodes/tier 不变，monitor 固定 20。
 - UAV v3 六算法 calibration 完成；60-run 预算校正为 70.76–96.04 active CPU-hours。MATD3 的 3711 s wall/121 s CPU 分离作为第二个宿主时间污染证据保留。
+- 新增 10-seed/100-run UAV 链式消融 paper 注册及同构 calibration；运行时规划器现在拒绝同名变体的任意执行字段漂移。
+- 消融 calibration 完成 10/10，artifact valid、0 warning；正式预算为 70.65–78.87 active CPU-hours。单 seed 近零差异只记录为负结果风险，不进入效果台账。
 
 ## 2026-08-20：CityNav 一次性 OOD 终测失败、VMAS 架构复现与人工数据冻结入口
 

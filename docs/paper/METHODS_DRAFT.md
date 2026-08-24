@@ -8,6 +8,12 @@
 
 最终 paper evaluation 固定为每 seed、每 risk tier 100 episodes，不因预算调整而缩减。训练期定期监控只用于故障发现和学习曲线，独立注册 `monitor_eval_episodes=20`；UAV on-policy 监控后另执行同样 20 episodes 的 collision-probe，MATD3 没有训练期 evaluator。预算器逐算法计入 training、periodic monitoring、collision probe 与 final tier evaluation，避免把 MAPPO/HAPPO 的评估结构错误套给 MATD3。UAV v3 calibration 的 reference workload 为 on-policy 20,000、MATD3 16,000 最大 environment steps；paper workload 分别为 900,000 与 660,000。
 
+## 22. 链式单因素消融与运行时同构
+
+正式消融由十个变体和九条有向对照构成。每个非根变体恰有一个父对照，注册的 `changed_fields` 必须等于两份变体执行字典的真实逐字段差异；因此 attention、mask、intent shaping、CBF、NLI prototype gate、learned residual、semantic rule prior、semantic representation 和 intent channel 分别具有唯一可审计对照。主要统计族固定为九条对照乘 hard-tier 的 collision rate 与 task completion，共 18 个假设，使用共同随机数种子、配对效应、bootstrap 置信区间、exact test 与 Holm 校正。
+
+运行时 calibration 与 paper 配置不仅要求相同键名和顺序，还要求每个变体字典逐字段完全相同；算法、critic、语义源或安全层的任何漂移都会拒绝外推。单 seed calibration 使用 16,000 最大 environment steps；正式每 run 为 860,000 steps，含训练、30 次 monitor、30 次 collision probe 与 hard-tier 100-episode final evaluation。由 process CPU 外推的 100-run 预算为 70.65–78.87 active CPU-hours。该 calibration 只验证管线和预算，不进入 18 个正式假设的效果证据。
+
 ## 18. 偏好相关性拒答与一次性外部终测
 
 自由文本首先经过冻结 MiniLM embedding 上的 logistic relevance gate。gate 只决定“是否允许进入六轴 profile decoder”，拒绝样本的六个目标倍率全部回到 1.0；它不改变不可协商 collision 约束。阈值仅由 AerialVLN `val_seen` 负样本上限校准，开发版 gate SHA-256 为 `8518d9be...87fd`，阈值为 `0.0244081132`。AerialVLN `val_unseen` 已在设计阶段查看，因此只作为 development evaluation，不作为最终盲测。

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "source_study": "D:\\seu\\p\\rl\\experiments\\pilot\\uav_imappo_ablation_calibration_v1",
+  "source_config": "D:\\seu\\p\\rl\\configs\\research\\uav_imappo_ablation.calibration.json",
+  "files": {
+    "ablation_means.csv": "6911f81c0a17f692dfdcd47db5582726a9600e510dab2d3240784c7181c0c248",
+    "ablation_primary_comparisons.csv": "3c5d833cec0655e3474e746c0a857901d27e4d96e99b9a04e1467ee2a8fc95fd",
+    "ABLATION_REPORT.md": "573ad9176c822d1580af9f65f4da1b4810b16945aafb1183215f29a3f98a66f2",
+    "figure_ablation_primary.png": "08be06e90168e83b0fa318dff0af6ed415f3f354ed1916ad59c351b95e812ca0",
+    "resource_audit.csv": "adf6671b799f150d457996ba65c8642eb1ce4e2b828713bfc14dc86ac284cb4c"
+  }
+}
