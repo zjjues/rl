@@ -14,9 +14,11 @@ from run_research_study import (  # noqa: E402
     expected_result_path,
     expected_training_checkpoint_path,
     merge_resume_specs,
+    implementation_fingerprint,
     resolve_run_selection,
     validate_spec,
     validate_result_identity,
+    training_checkpoint_identity,
 )
 
 
@@ -99,6 +101,7 @@ class ResearchResumeTests(unittest.TestCase):
             "started_at_utc": "2026-01-01T00:00:00+00:00",
             "completed_at_utc": "2026-01-01T00:01:00+00:00",
             "git_commit": "abc",
+            "implementation_sha256": implementation_fingerprint(),
             "command": ["first"],
             "config": spec,
             "status": "complete",
@@ -111,9 +114,34 @@ class ResearchResumeTests(unittest.TestCase):
 
     def test_cached_result_identity_is_checked(self):
         variant = {"key": "a", "algorithm": "imappo"}
-        validate_result_identity({"seed": 7, "variant": variant}, variant, 7)
+        spec = study_spec(variant)
+        result = {
+            "seed": 7,
+            "variant": variant,
+            "provenance": training_checkpoint_identity(spec, variant, 7),
+        }
+        validate_result_identity(result, spec, variant, 7)
         with self.assertRaisesRegex(ValueError, "seed"):
-            validate_result_identity({"seed": 11, "variant": variant}, variant, 7)
+            validate_result_identity(
+                {**result, "seed": 11}, spec, variant, 7
+            )
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            validate_result_identity(
+                {**result, "provenance": {}}, spec, variant, 7
+            )
+
+    def test_resume_manifest_rejects_implementation_drift(self):
+        spec = study_spec({"key": "a", "algorithm": "imappo"})
+        existing = {
+            "started_at_utc": "2026-01-01T00:00:00+00:00",
+            "git_commit": "abc",
+            "implementation_sha256": "0" * 64,
+            "command": ["first"],
+            "config": spec,
+            "status": "partial",
+        }
+        with self.assertRaisesRegex(ValueError, "implementation_sha256 differs"):
+            build_resume_manifest(existing, spec, spec, ["second"])
 
 
 if __name__ == "__main__":

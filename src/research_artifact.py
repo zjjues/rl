@@ -97,6 +97,7 @@ def validate_study_artifact(
     expected_spec: Mapping[str, object] | None = None,
     *,
     verify_checksums: bool = True,
+    allow_partial: bool = False,
 ) -> Dict[str, object]:
     """Validate study structure, cached identities, summaries, and provenance."""
 
@@ -105,7 +106,18 @@ def validate_study_artifact(
     warnings: list[str] = []
     config = _load_json(study_dir / "config.json", errors)
     manifest = _load_json(study_dir / "manifest.json", errors)
-    summary = _load_json(study_dir / "summary.json", errors)
+    partial_mode = bool(
+        allow_partial
+        and manifest is not None
+        and manifest.get("status") == "partial"
+    )
+    summary_path = study_dir / "summary.json"
+    if partial_mode:
+        summary = None
+        if summary_path.exists():
+            errors.append("partial artifact must not contain summary.json")
+    else:
+        summary = _load_json(summary_path, errors)
     checksum_count = _verify_checksums(study_dir, errors) if verify_checksums else 0
     if config is None:
         return {
@@ -157,6 +169,8 @@ def validate_study_artifact(
     tiers = list(reference.get("evaluation", {}).get("risk_tiers", {}))
     result_values: Dict[str, Dict[str, Dict[str, list[float]]]] = {}
     observed_paths = set()
+    missing_runs: list[Dict[str, object]] = []
+    completed_result_count = 0
     for variant_key, variant in expected_variants.items():
         result_values[variant_key] = {
             tier: {metric: [] for metric in required_metrics} for tier in tiers
@@ -164,9 +178,13 @@ def validate_study_artifact(
         for seed in seeds:
             relative = Path(variant_key) / f"seed_{seed}" / "result.json"
             observed_paths.add(relative.as_posix())
+            if partial_mode and not (study_dir / relative).is_file():
+                missing_runs.append({"variant": variant_key, "seed": int(seed)})
+                continue
             result = _load_json(study_dir / relative, errors)
             if result is None:
                 continue
+            completed_result_count += 1
             if int(result.get("seed", -1)) != seed:
                 errors.append(f"result seed mismatch: {relative.as_posix()}")
             result_variant = result.get("variant")
@@ -201,6 +219,7 @@ def validate_study_artifact(
                 else:
                     required_resource = {
                         "wall_time_seconds",
+                        "process_cpu_time_seconds",
                         "device",
                         "cuda_peak_allocated_mb",
                         "model_parameters",
@@ -219,6 +238,35 @@ def validate_study_artifact(
                     ):
                         errors.append(
                             f"paper resource_audit is non-finite: {relative.as_posix()}"
+                        )
+                provenance = result.get("provenance")
+                if not isinstance(provenance, Mapping):
+                    errors.append(
+                        f"paper result lacks provenance: {relative.as_posix()}"
+                    )
+                else:
+                    from research_provenance import (
+                        registered_result_protocol_fingerprint,
+                    )
+
+                    expected_provenance = {
+                        "study_id": str(reference["study_id"]),
+                        "variant_key": variant_key,
+                        "seed": int(seed),
+                        "registered_protocol_sha256": (
+                            registered_result_protocol_fingerprint(
+                                reference, variant, seed
+                            )
+                        ),
+                        "implementation_sha256": (
+                            manifest.get("implementation_sha256")
+                            if isinstance(manifest, Mapping)
+                            else None
+                        ),
+                    }
+                    if dict(provenance) != expected_provenance:
+                        errors.append(
+                            f"paper result provenance mismatch: {relative.as_posix()}"
                         )
             tier_metrics = result.get("tier_metrics")
             if not isinstance(tier_metrics, Mapping):
@@ -243,31 +291,32 @@ def validate_study_artifact(
     if extra_results:
         errors.append(f"unexpected per-seed results: {extra_results}")
 
-    summary_variants = summary.get("variants", {}) if summary else {}
-    if set(summary_variants) != set(expected_variants):
-        errors.append("summary variant keys do not match expected variants")
-    for variant_key in set(summary_variants) & set(expected_variants):
-        risk_tiers = summary_variants[variant_key].get("risk_tiers", {})
-        for tier in tiers:
-            for metric in required_metrics:
-                try:
-                    raw = risk_tiers[tier][metric]["raw"]
-                except (KeyError, TypeError):
-                    errors.append(
-                        f"summary missing {variant_key}/{tier}/{metric}/raw"
-                    )
-                    continue
-                observed = result_values[variant_key][tier][metric]
-                if len(raw) != len(seeds) or not np.allclose(raw, observed):
-                    errors.append(
-                        f"summary raw values differ for {variant_key}/{tier}/{metric}"
-                    )
-    if reference.get("treatment_key") and len(expected_variants) > 1:
-        multiplicity = summary.get("primary_multiplicity") if summary else None
-        if not isinstance(multiplicity, Mapping):
-            errors.append("summary lacks primary_multiplicity audit")
-        elif int(multiplicity.get("family_size", -1)) <= 0:
-            errors.append("primary_multiplicity family is empty")
+    if not partial_mode:
+        summary_variants = summary.get("variants", {}) if summary else {}
+        if set(summary_variants) != set(expected_variants):
+            errors.append("summary variant keys do not match expected variants")
+        for variant_key in set(summary_variants) & set(expected_variants):
+            risk_tiers = summary_variants[variant_key].get("risk_tiers", {})
+            for tier in tiers:
+                for metric in required_metrics:
+                    try:
+                        raw = risk_tiers[tier][metric]["raw"]
+                    except (KeyError, TypeError):
+                        errors.append(
+                            f"summary missing {variant_key}/{tier}/{metric}/raw"
+                        )
+                        continue
+                    observed = result_values[variant_key][tier][metric]
+                    if len(raw) != len(seeds) or not np.allclose(raw, observed):
+                        errors.append(
+                            f"summary raw values differ for {variant_key}/{tier}/{metric}"
+                        )
+        if reference.get("treatment_key") and len(expected_variants) > 1:
+            multiplicity = summary.get("primary_multiplicity") if summary else None
+            if not isinstance(multiplicity, Mapping):
+                errors.append("summary lacks primary_multiplicity audit")
+            elif int(multiplicity.get("family_size", -1)) <= 0:
+                errors.append("primary_multiplicity family is empty")
     if (
         summary is not None
         and metric_contract is not None
@@ -284,7 +333,13 @@ def validate_study_artifact(
     if manifest is not None:
         if manifest.get("config") != config:
             errors.append("manifest embedded config differs from artifact config")
-        if manifest.get("status") != "complete":
+        if partial_mode:
+            declared_missing = manifest.get("missing_training_runs")
+            if declared_missing != missing_runs:
+                errors.append("manifest missing_training_runs differs from files")
+            if int(manifest.get("completed_training_runs", -1)) != completed_result_count:
+                errors.append("manifest completed_training_runs differs from files")
+        elif manifest.get("status") != "complete":
             errors.append("manifest status is not complete")
         records = manifest.get("run_history", [manifest])
         if not isinstance(records, list) or not records:
@@ -313,14 +368,33 @@ def validate_study_artifact(
             errors.append("paper artifact violates minimum seed/evaluation protocol")
         if any("dirty Git worktree" in warning for warning in warnings):
             errors.append("paper artifact was produced from a dirty Git worktree")
+        if manifest is not None:
+            from research_provenance import registered_study_protocol_fingerprint
+
+            implementation = str(manifest.get("implementation_sha256", ""))
+            if len(implementation) != 64:
+                errors.append("paper manifest lacks implementation_sha256")
+            expected_study_hash = registered_study_protocol_fingerprint(reference)
+            if manifest.get("registered_study_protocol_sha256") != expected_study_hash:
+                errors.append("paper manifest registered protocol SHA-256 mismatch")
+            for record in manifest.get("run_history", [manifest]):
+                if not isinstance(record, Mapping):
+                    continue
+                if record.get("implementation_sha256") != implementation:
+                    errors.append("paper run history mixes implementation SHA-256 values")
     return {
-        "status": "valid" if not errors else "invalid",
+        "status": (
+            "valid_partial" if partial_mode and not errors
+            else "valid" if not errors
+            else "invalid"
+        ),
         "study_id": reference.get("study_id"),
         "level": level,
         "study_dir": str(study_dir),
         "variant_count": len(expected_variants),
         "seed_count": len(seeds),
         "expected_result_count": len(expected_variants) * len(seeds),
+        "completed_result_count": completed_result_count,
         "checksum_entry_count": checksum_count,
         "variant_protocol_audit": protocol_audit,
         "errors": errors,

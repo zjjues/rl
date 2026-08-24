@@ -9,7 +9,10 @@
 - 研究运行器原子保存所有 Python/NumPy/Torch CPU/CUDA RNG，并用完整注册 spec 与研究源码 SHA-256 绑定 checkpoint；最终 result 原子落盘后才清除 checkpoint。
 - checkpoint cadence 成为正整数注册字段；默认 1。MATD3 10,000-transition checkpoint 实测增长至 18.22 MiB，据此把 3000/2000-episode paper 配置注册为 50，最终 episode 强制保存。
 - 修复 `uav_imappo_main.paper.json` 的遗留伪 `concat` critic、错误 pilot 等级和不足的 50-episode eval，使用新 study id 避免覆盖历史 pilot。五份 paper 配置均 dry-run 通过。
-- 新增中断恢复等价性测试；本批最终全量回归 **179 passed, 14 warnings**。
+- 分块 paper result/manifest 新增 canonical protocol 与 implementation SHA-256；resume 拒绝旧无指纹 fragment 或跨实现运行。
+- artifact validator 新增严格 `--allow-partial`：只接受 missing-pair 集合精确、已有结果身份/校验和有效且无 summary 的 `valid_partial`。
+- 首个完成但缺 result 指纹的正式消融单元原样保留并标记 superseded；新 validator 对其反证审计为预期 invalid。
+- 新增中断恢复等价性测试；本批最终全量回归 **182 passed, 14 warnings**。
 
 ### 论文影响
 

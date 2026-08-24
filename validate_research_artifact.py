@@ -22,6 +22,11 @@ def main() -> None:
     parser.add_argument("--config", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--skip-checksums", action="store_true")
+    parser.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="validate an intentionally incomplete chunk without requiring summary.json",
+    )
     args = parser.parse_args()
     expected = (
         json.loads(args.config.read_text(encoding="utf-8")) if args.config else None
@@ -30,13 +35,15 @@ def main() -> None:
         args.study_dir,
         expected,
         verify_checksums=not args.skip_checksums,
+        allow_partial=args.allow_partial,
     )
     payload = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(payload, encoding="utf-8")
     print(payload, end="")
-    if report["status"] != "valid":
+    accepted = {"valid", "valid_partial"} if args.allow_partial else {"valid"}
+    if report["status"] not in accepted:
         raise SystemExit(2)
 
 

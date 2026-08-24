@@ -12,6 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from research_artifact import validate_study_artifact  # noqa: E402
+from research_provenance import (  # noqa: E402
+    registered_result_protocol_fingerprint,
+    registered_study_protocol_fingerprint,
+)
 
 
 def write_json(path: Path, value: object) -> None:
@@ -172,6 +176,96 @@ class ResearchArtifactTests(unittest.TestCase):
             write_checksums(root)
             report = validate_study_artifact(root, config)
             self.assertEqual(report["status"], "valid", report["errors"])
+
+    def make_partial_paper_artifact(self, root: Path) -> dict:
+        variant = {"key": "a", "algorithm": "imappo"}
+        config = {
+            "schema_version": 1,
+            "study_id": "partial_paper_test",
+            "level": "paper",
+            "seeds": list(range(10)),
+            "bootstrap_seed": 23,
+            "environment": {"name": "test"},
+            "training": {"episodes": 2},
+            "intent": {"dim": 3},
+            "variants": [variant],
+            "evaluation": {"episodes": 100, "risk_tiers": {"easy": {}}},
+        }
+        implementation = "a" * 64
+        write_json(root / "config.json", config)
+        write_json(
+            root / "a" / "seed_0" / "result.json",
+            {
+                "seed": 0,
+                "variant": variant,
+                "provenance": {
+                    "study_id": config["study_id"],
+                    "variant_key": "a",
+                    "seed": 0,
+                    "registered_protocol_sha256": (
+                        registered_result_protocol_fingerprint(config, variant, 0)
+                    ),
+                    "implementation_sha256": implementation,
+                },
+                "tier_metrics": {
+                    "easy": {
+                        "easy_collision_rate": 0.1,
+                        "easy_task_completion": 0.8,
+                        "easy_episode_return": 1.0,
+                    }
+                },
+                "resource_audit": {
+                    "wall_time_seconds": 1.0,
+                    "process_cpu_time_seconds": 0.9,
+                    "device": "cpu",
+                    "cuda_peak_allocated_mb": 0.0,
+                    "model_parameters": {},
+                    "frozen_text_model_cache": {},
+                },
+            },
+        )
+        missing = [{"variant": "a", "seed": seed} for seed in range(1, 10)]
+        write_json(
+            root / "manifest.json",
+            {
+                "config": config,
+                "status": "partial",
+                "completed_training_runs": 1,
+                "missing_training_runs": missing,
+                "git_status_short": "",
+                "implementation_sha256": implementation,
+                "registered_study_protocol_sha256": (
+                    registered_study_protocol_fingerprint(config)
+                ),
+                "command": ["runner"],
+            },
+        )
+        write_checksums(root)
+        return config
+
+    def test_partial_paper_artifact_is_strictly_validated_when_enabled(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = self.make_partial_paper_artifact(root)
+            report = validate_study_artifact(root, config, allow_partial=True)
+            self.assertEqual(report["status"], "valid_partial", report["errors"])
+            self.assertEqual(report["completed_result_count"], 1)
+            strict = validate_study_artifact(root, config)
+            self.assertEqual(strict["status"], "invalid")
+
+    def test_partial_manifest_cannot_hide_a_missing_result(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = self.make_partial_paper_artifact(root)
+            manifest = json.loads((root / "manifest.json").read_text())
+            manifest["missing_training_runs"] = manifest["missing_training_runs"][1:]
+            write_json(root / "manifest.json", manifest)
+            write_checksums(root)
+            report = validate_study_artifact(root, config, allow_partial=True)
+            self.assertEqual(report["status"], "invalid")
+            self.assertTrue(
+                any("missing_training_runs" in item for item in report["errors"])
+            )
 
 
 if __name__ == "__main__":

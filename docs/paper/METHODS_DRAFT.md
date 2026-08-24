@@ -14,6 +14,10 @@
 
 运行时 calibration 与 paper 配置不仅要求相同键名和顺序，还要求每个变体字典逐字段完全相同；算法、critic、语义源或安全层的任何漂移都会拒绝外推。单 seed calibration 使用 16,000 最大 environment steps；正式每 run 为 860,000 steps，含训练、30 次 monitor、30 次 collision probe 与 hard-tier 100-episode final evaluation。由 process CPU 外推的 100-run 预算为 70.65–78.87 active CPU-hours。该 calibration 只验证管线和预算，不进入 18 个正式假设的效果证据。
 
+## 23. 分块结果的内容寻址 provenance
+
+每个正式 result 保存两个内容指纹：完整注册 `spec+variant+seed` 的 canonical JSON SHA-256，以及 runner 与全部研究源码的 implementation SHA-256。study manifest 和每次 resume history 同时记录完整 spec hash 与 implementation hash。Git commit 可因新增实验文件变化，但所有 chunk 的 implementation hash 必须一致；否则 resume 在读取缓存结果或开始新训练前拒绝。partial artifact 只在 manifest 的  missing pairs 与文件系统精确一致、已有结果身份/checksum 有效且不存在 summary 时标记 `valid_partial`。默认最终审计仍拒绝 partial。
+
 ## 18. 偏好相关性拒答与一次性外部终测
 
 自由文本首先经过冻结 MiniLM embedding 上的 logistic relevance gate。gate 只决定“是否允许进入六轴 profile decoder”，拒绝样本的六个目标倍率全部回到 1.0；它不改变不可协商 collision 约束。阈值仅由 AerialVLN `val_seen` 负样本上限校准，开发版 gate SHA-256 为 `8518d9be...87fd`，阈值为 `0.0244081132`。AerialVLN `val_unseen` 已在设计阶段查看，因此只作为 development evaluation，不作为最终盲测。

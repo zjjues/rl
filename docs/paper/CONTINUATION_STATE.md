@@ -8,7 +8,7 @@
 - 远程安全分支：`testv1`；本批交付时 `origin/testv1` 与当前 HEAD 同步，精确提交号以 `git rev-parse HEAD` 为准。消融运行前注册提交为 `b974937`，calibration 由该洁净快照产生。
 - IMAPPO/HAPPO/MATD3 已支持完整训练态原子恢复：rollout/replay、在线/目标网络、优化器、更新游标、日志、下一 episode、私有及全局 RNG；checkpoint 绑定注册 spec 与研究源码指纹。
 - paper 配置 checkpoint cadence=50；既有 calibration 默认 cadence=1，新消融 calibration 显式 cadence=25；最终 episode 总是保存，最终 result 成功落盘后才删除。50 来自 MATD3 replay checkpoint 的实测 I/O，而非任意选择。
-- `tests/test_training_checkpoint_resume.py` 验证三算法连续与中断恢复路径逐 tensor 相等；最新全量回归 **179 passed, 14 warnings, 7.60 s**。
+- `tests/test_training_checkpoint_resume.py` 验证三算法连续与中断恢复路径逐 tensor 相等；最新全量回归 **182 passed, 14 warnings, 7.93 s**。
 - 原五份 `*.paper.json` 全部 dry-run 通过；新增 `uav_imappo_ablation.paper.json` 也已独立 dry-run 通过。遗留 `uav_imappo_main.paper.json` 已改为新 `uav_imappo_main_paper_v2` 并移除伪 `concat` critic。
 - navigation calibration 已完成 5/5（seed 7）：attention/MAPPO/IPPO/HAPPO/MATD3 native return = -2.711723/-0.790685/-1.913966/0.814603/1.513628。仅为单 seed calibration，禁止排序。
 - 五算法 process CPU=142.59/141.28/153.75/208.94/151.84 s；计入逐算法周期评估 workload 后，navigation paper 预算=33.42–44.36 active CPU-hours，不是 GPU device-hours。旧 attention 16,556 s 与 MAPPO 首轮 457.98 CPU s 均保留为异常证据并由复跑替代。
@@ -17,9 +17,11 @@
 - UAV v3 calibration 已完成 6/6（seed 7）；hard collision/task 点值见 `RESULTS_LEDGER.md`，单 seed 禁止排序。process CPU=45.16/41.05/39.83/39.45/289.33/121.42 s（IMAPPO/no-mask/MAPPO/IPPO/HAPPO/MATD3）。
 - UAV v3 paper 60-run 校正预算=70.76–96.04 active CPU-hours；HAPPO 为主成本。MATD3 wall=3711.34 s 但 CPU=121.42 s，禁止引用 wall 作为 GPU compute。
 - UAV 消融 calibration 已完成 10/10，artifact valid、0 errors、0 warnings；100-run/10-seed paper 校正预算=70.65–78.87 active CPU-hours。单 seed 点值禁止效果推断。
+- 首个 `imappo_full×seed7` paper 单元数值完成，但因旧 result/manifest 未持久化 implementation SHA-256 而 superseded；原目录保留，严禁聚合。新协议已补 result/manifest/run-history 双指纹、跨实现 resume 拒绝和严格 `valid_partial` 审计，需在新 clean commit 重跑该单元。
 - 最终评估仍固定 100 episodes/tier；新增 `monitor_eval_episodes=20` 只缩减训练期重复监控，不削弱最终统计协议。
 - 新文件：`configs/research/uav_marl_architecture_v3.calibration.json`、`docs/paper/audits/uav_marl_architecture_v3_calibrated_runtime_plan.json`、`docs/paper/generated/uav_marl_architecture_v3_calibration_v1_active_time/`、`experiments/pilot/uav_marl_architecture_v3_calibration/`。
 - 完整恢复协议：`docs/paper/EXACT_TRAINING_RESUME_PROTOCOL.md`。
+- 分块 provenance 协议：`docs/paper/CHUNKED_PAPER_PROVENANCE_PROTOCOL.md`。
 
 ## 0. 最新恢复点（优先于下文历史保存点）
 
@@ -33,8 +35,9 @@
 - VMAS navigation/dispersion calibration 均完成；校正预算分别为 33.42–44.36/34.09–45.47 active CPU-hours。两个单 seed calibration 仍禁止算法排序。
 - 正式人工数据入口：`freeze_preference_dataset.py` + `audit_formal_preference_dataset`；当前没有实际独立人类数据，因此语言主张被阻断。
 - 可恢复实验支持 `--only-variants`、`--only-seeds`、`--resume`、partial manifest 和 episode-boundary checkpoint；VMAS navigation/dispersion、UAV v3 与 UAV 消融 calibration 均已完成。
+- 当前没有可聚合的正式消融结果；superseded 1-run fragment 只作失败分析。下一次从空的 `experiments/paper/uav_imappo_ablation_paper_v2/` 在新洁净实现上重跑。
 - 没有已知活跃后台实验进程。
-- 最新全量回归：**179 passed, 14 warnings, 7.60 s**；58 个 config/audit JSON 全部可解析；六份 paper 配置 dry-run 通过；残留 `training_checkpoint.pt` 数量为 0。warnings 仍为可选 PettingZoo 与 Matplotlib/PyParsing deprecation。
+- 最新全量回归：**182 passed, 14 warnings, 7.93 s**；59 个 config/audit JSON 全部可解析；六份 paper 配置 dry-run 通过；残留 `training_checkpoint.pt` 数量为 0。warnings 仍为可选 PettingZoo 与 Matplotlib/PyParsing deprecation。
 - `git diff --check` 在移除本文件 Markdown 行尾空格后通过；CRLF 转换提示不属于 whitespace error。
 
 ### 下一步严格顺序

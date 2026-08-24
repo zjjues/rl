@@ -1,5 +1,12 @@
 # 正式结果台账
 
+## 2026-08-24 首个正式消融单元（保留但 superseded）
+
+- `imappo_full × seed 7` 从 clean commit `0447ffd` 完成 3000×200 training、注册 monitor/probe 和 hard final 100 episodes；partial manifest 为 1 completed/99 missing、无 summary、无残留 checkpoint。
+- wall/process CPU=1472.10/1319.58 s；hard collision/task/return=0.0042/0.599881/−18.578883。
+- 后验 provenance 审计发现旧 result/manifest 未持久化 checkpoint implementation SHA-256；因此该数值 **不得进入论文统计**，目录整体改名保留且必须在新协议下重跑。
+- 新 validator 对保留 fragment 的预期审计为 `invalid`，精确列出四项指纹缺失/不一致；见 `docs/paper/audits/uav_imappo_ablation_first_paper_unit_superseded_audit.json`。
+
 ## 2026-08-24 UAV 十变体消融 calibration（完成，非论文结果）
 
 - 范围：10 variants × seed 7 × 100 training episodes × 100 max steps；训练 monitor、collision probe、hard final evaluation 各 20 episodes。
@@ -23,7 +30,7 @@
 
 - IMAPPO、独立 actor HAPPO、MATD3：四 episode 连续运行与 episode 2 后中断/恢复的最终模型逐 tensor 相等。
 - MATD3 额外验证目标网络、replay、environment-step 与 delayed actor-update 游标；协议/代码身份错误必须拒绝加载。
-- 全量测试：**179 passed, 14 warnings**。该结果属于复现基础设施验证，不是算法效果结果。
+- 全量测试：**182 passed, 14 warnings**。该结果属于复现基础设施验证，不是算法效果结果。
 
 ## 2026-08-24 VMAS dispersion calibration（完成，非论文结果）
 

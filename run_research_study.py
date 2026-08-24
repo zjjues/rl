@@ -32,6 +32,10 @@ PAPER_MIN_SEEDS = 10
 PAPER_MIN_EVAL_EPISODES = 100
 
 from research_metrics import METRIC_DIRECTIONS, resolve_metric_contract
+from research_provenance import (
+    registered_result_protocol_fingerprint,
+    registered_study_protocol_fingerprint,
+)
 
 
 EVALUATION_METRIC_DIRECTIONS = METRIC_DIRECTIONS
@@ -127,18 +131,13 @@ def implementation_fingerprint() -> str:
 def training_checkpoint_identity(
     spec: Mapping[str, object], variant: Mapping[str, object], seed: int
 ) -> Dict[str, object]:
-    registered = json.dumps(
-        {"spec": spec, "variant": variant, "seed": int(seed)},
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        default=str,
-    ).encode("utf-8")
     return {
         "study_id": str(spec["study_id"]),
         "variant_key": str(variant["key"]),
         "seed": int(seed),
-        "registered_protocol_sha256": hashlib.sha256(registered).hexdigest(),
+        "registered_protocol_sha256": registered_result_protocol_fingerprint(
+            spec, variant, seed
+        ),
         "implementation_sha256": implementation_fingerprint(),
     }
 
@@ -386,6 +385,10 @@ def build_manifest(spec: Dict[str, object], command: List[str]) -> Dict[str, obj
         "started_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "git_commit": git_output("rev-parse", "HEAD"),
         "git_status_short": git_output("status", "--short"),
+        "implementation_sha256": implementation_fingerprint(),
+        "registered_study_protocol_sha256": (
+            registered_study_protocol_fingerprint(spec)
+        ),
         "command": command,
         "python": sys.version,
         "platform": platform.platform(),
@@ -476,6 +479,8 @@ def _manifest_run_record(manifest: Mapping[str, object]) -> Dict[str, object]:
         "completed_at_utc",
         "git_commit",
         "git_status_short",
+        "implementation_sha256",
+        "registered_study_protocol_sha256",
         "command",
         "python",
         "platform",
@@ -495,6 +500,16 @@ def build_resume_manifest(
     """Preserve prior invocations instead of overwriting resume provenance."""
 
     current = build_manifest(incoming_spec, command)
+    existing_implementation = str(existing.get("implementation_sha256", ""))
+    if not existing_implementation:
+        raise ValueError(
+            "existing manifest lacks implementation_sha256; legacy partial "
+            "artifacts cannot be resumed as paper evidence"
+        )
+    if existing_implementation != current["implementation_sha256"]:
+        raise ValueError(
+            "resume implementation_sha256 differs from the existing study"
+        )
     history = deepcopy(list(existing.get("run_history", [])))
     if not history:
         history.append(_manifest_run_record(existing))
@@ -518,7 +533,10 @@ def build_resume_manifest(
 
 
 def validate_result_identity(
-    result: Mapping[str, object], variant: Mapping[str, object], seed: int
+    result: Mapping[str, object],
+    spec: Mapping[str, object],
+    variant: Mapping[str, object],
+    seed: int,
 ) -> None:
     if int(result.get("seed", -1)) != int(seed):
         raise ValueError(f"cached result seed does not match requested seed {seed}")
@@ -536,6 +554,11 @@ def validate_result_identity(
     if isinstance(result_variant, Mapping) and dict(result_variant) != dict(variant):
         raise ValueError(
             f"cached result variant definition differs for {expected_key!r}"
+        )
+    expected_provenance = training_checkpoint_identity(spec, variant, seed)
+    if result.get("provenance") != expected_provenance:
+        raise ValueError(
+            f"cached result provenance differs for {expected_key!r}/seed_{seed}"
         )
 
 
@@ -801,6 +824,7 @@ def run_seed(
 ) -> Dict[str, object]:
     started = time.perf_counter()
     cpu_started = time.process_time()
+    result_provenance = training_checkpoint_identity(spec, variant, seed)
     import torch
 
     cuda_active = str(spec["training"].get("device", "cpu")).startswith("cuda") and torch.cuda.is_available()
@@ -904,6 +928,7 @@ def run_seed(
     result = {
         "seed": int(seed),
         "variant": variant,
+        "provenance": result_provenance,
         "config": cfg.__dict__,
         "intent_representation": algo.intent_representation_metadata(),
         "algorithm_implementation": (
@@ -1515,7 +1540,7 @@ def main() -> None:
             )
             if args.resume and result_path.exists():
                 result = read_json(result_path)
-                validate_result_identity(result, variant, int(seed))
+                validate_result_identity(result, spec, variant, int(seed))
                 checkpoint_path.unlink(missing_ok=True)
             else:
                 result = run_seed(
@@ -1566,7 +1591,7 @@ def main() -> None:
                 output_dir, str(variant["key"]), int(seed)
             )
             result = read_json(result_path)
-            validate_result_identity(result, variant, int(seed))
+            validate_result_identity(result, spec, variant, int(seed))
             variant_results.append(result)
         summaries[str(variant["key"])] = summarize_variant(
             variant_results,
