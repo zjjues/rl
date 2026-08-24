@@ -1,5 +1,18 @@
 # 研究变更日志
 
+## 2026-08-24：正式消融运行暂停与可恢复快照
+
+### 工程状态
+
+- 从 clean commit `053c316` 启动 `uav_imappo_ablation_paper_v2 / imappo_full / seed=7`，随后按用户要求在 episode 边界安全暂停。
+- 原子 checkpoint 的 `next_episode=1950/3000`，包含模型、优化器、累计日志、rollout buffer 与 RNG 状态；实现和注册协议身份分别为 `c4e55820…40573` 与 `ddb4f154…a5129`。
+- manifest、冻结配置与 checkpoint 一并保存到 `testv1` 暂停快照；恢复命令和不可绕过的 provenance 要求记录于 `CONTINUATION_STATE.md`。
+
+### 论文影响
+
+- 此快照只证明长实验可中断恢复，尚无 result 或正式汇总，不能计为 1/100 完成，也不能用于效果、显著性或排序主张。
+- 后续须在完全相同实现和注册协议下恢复 seed 7，完成后通过严格 partial artifact 审计，才可把该单元记为有效 paper 证据。
+
 ## 2026-08-24：Episode 边界精确恢复、RNG 隔离与 paper 配置修复
 
 ### 工程变更

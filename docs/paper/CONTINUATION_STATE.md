@@ -1,7 +1,24 @@
 # 项目持续执行与恢复状态
 
 > 最后更新：2026-08-24（Asia/Shanghai）
-> 状态：**目标继续进行。工程/协议约 96%，paper 证据约 48%–52%。CityNav 一次性终测已真实失败并冻结；VMAS 两场景及 UAV 架构/消融 calibration 已完成；尚无 clean multi-seed 主结果，也没有独立人工偏好数据。**
+> 状态：**任务已按用户要求暂停并保存。工程/协议约 96%，paper 证据约 48%–52%。CityNav 一次性终测已真实失败并冻结；VMAS 两场景及 UAV 架构/消融 calibration 已完成；尚无 clean multi-seed 主结果，也没有独立人工偏好数据。**
+
+## 2026-08-24 20:33 暂停快照（当前权威恢复点）
+
+- Git 分支：`testv1`；暂停前 HEAD=`053c316443c9fc78a3c49302e7fa748a167f1c8a`，远端 `origin/testv1` 已核验为同一提交。当前暂停快照将在其后追加提交。
+- 已安全中断 paper 消融单元 `uav_imappo_ablation_paper_v2 / imappo_full / seed=7`；断点位于 episode 边界，`next_episode=1950`，目标总数 3000。
+- 本地断点：`experiments/paper/uav_imappo_ablation_paper_v2/imappo_full/seed_7/training_checkpoint.pt`，大小 6,718,642 bytes，SHA-256=`434fc021d6fe83c0d30af8edce948fc5625e625c1b0a9c94a440b6e92b7a894b`，schema=`episode_boundary_training_v1`。
+- 断点身份：registered protocol SHA-256=`ddb4f154a4f0564d06f6e8029fe8f14fe7228d3f4c3e96209addb4c7b23a5129`；implementation SHA-256=`c4e55820d537dda168d8638dc6849f9b55e449b5f2c09cadb9ab88e944a40573`。
+- 运行 manifest 仍为 `status=running`，其 `git_commit=053c316...` 且启动时工作树洁净；尚未形成 result、summary 或可用于论文汇总的正式结果。暂停断点不是效果证据。
+- 为满足“上传当前所有内容”，本次将显式纳入通常被 `.gitignore` 排除的 6.7 MB checkpoint；后续正常训练仍遵循“完成 result 后删除 checkpoint”的协议。
+- 恢复前先确认分支与工作树状态；随后执行：
+
+```powershell
+D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config configs\research\uav_imappo_ablation.paper.json --only-variants imappo_full --only-seeds 7 --resume
+```
+
+- 恢复后首先观察 checkpoint 身份校验是否通过；若实现或注册协议有任何变化，运行器应拒绝继续，禁止手工修改 manifest、checkpoint 或哈希来绕过验证。
+- 本节覆盖下文“活动正式目录不存在/0 个 checkpoint/无活跃实验”的历史描述；下文保留用于解释暂停前的研究演进。
 
 ### 2026-08-24 最新增量（优先读取）
 
