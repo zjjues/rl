@@ -12,6 +12,8 @@ UAV 十变体链式消融现在另有正式 `paper` 注册：10 seeds、100 fina
 
 首个正式消融单元还暴露并关闭了分块 provenance 缺口：旧完成结果没有保存 checkpoint 的实现指纹，故该单元被完整保留但判为 superseded，不能进入统计。新协议把 canonical result-protocol hash 与 implementation hash 同时写入 result、manifest 和 resume history，拒绝跨实现 resume，并可严格审计 `valid_partial` 而不生成提前统计。工程/协议准备度小幅提高，但因正式有效单元仍需重跑，paper 证据比例不增加。
 
+修复后 `imappo_full × seed 7` 已从 clean `317204a` 重跑并通过 `valid_partial`（1/100、0 errors/warnings）；新旧非计时行为与训练日志完全一致。该进度只把消融正式计算从 0 推进到 1%，仍不足以估计 seed 方差或任何注册效应，因此总体 paper 证据比例继续保持 48%–52%。
+
 ## 2026-08-24 最新判定（覆盖下文历史比例）
 
 工程/协议准备度约 **95%**，论文证据准备度约 **48%–52%**；比例表示门槛完成度，不是录用概率。下降不是工程退步，而是 CityNav 真正一次性终测推翻了 relevance gate 的可迁移性假设。当前不能诚实声称系统能区分“操作偏好”与新的真实城市导航目标语言。

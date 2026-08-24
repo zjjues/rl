@@ -18,6 +18,7 @@
 - UAV v3 paper 60-run 校正预算=70.76–96.04 active CPU-hours；HAPPO 为主成本。MATD3 wall=3711.34 s 但 CPU=121.42 s，禁止引用 wall 作为 GPU compute。
 - UAV 消融 calibration 已完成 10/10，artifact valid、0 errors、0 warnings；100-run/10-seed paper 校正预算=70.65–78.87 active CPU-hours。单 seed 点值禁止效果推断。
 - 首个 `imappo_full×seed7` paper 单元数值完成，但因旧 result/manifest 未持久化 implementation SHA-256 而 superseded；原目录保留，严禁聚合。新协议已补 result/manifest/run-history 双指纹、跨实现 resume 拒绝和严格 `valid_partial` 审计，需在新 clean commit 重跑该单元。
+- 修复后已从 clean `317204a` 重跑 `imappo_full×seed7`：strict audit=`valid_partial`，1/100 complete、99 missing、0 errors/warnings、无 summary/checkpoint。implementation=`20d4c3ef…c1ac`；非计时 metrics/logs 与 superseded run 完全一致。
 - 最终评估仍固定 100 episodes/tier；新增 `monitor_eval_episodes=20` 只缩减训练期重复监控，不削弱最终统计协议。
 - 新文件：`configs/research/uav_marl_architecture_v3.calibration.json`、`docs/paper/audits/uav_marl_architecture_v3_calibrated_runtime_plan.json`、`docs/paper/generated/uav_marl_architecture_v3_calibration_v1_active_time/`、`experiments/pilot/uav_marl_architecture_v3_calibration/`。
 - 完整恢复协议：`docs/paper/EXACT_TRAINING_RESUME_PROTOCOL.md`。
@@ -35,9 +36,9 @@
 - VMAS navigation/dispersion calibration 均完成；校正预算分别为 33.42–44.36/34.09–45.47 active CPU-hours。两个单 seed calibration 仍禁止算法排序。
 - 正式人工数据入口：`freeze_preference_dataset.py` + `audit_formal_preference_dataset`；当前没有实际独立人类数据，因此语言主张被阻断。
 - 可恢复实验支持 `--only-variants`、`--only-seeds`、`--resume`、partial manifest 和 episode-boundary checkpoint；VMAS navigation/dispersion、UAV v3 与 UAV 消融 calibration 均已完成。
-- 当前没有可聚合的正式消融结果；superseded 1-run fragment 只作失败分析。下一次从空的 `experiments/paper/uav_imappo_ablation_paper_v2/` 在新洁净实现上重跑。
+- 当前正式消融有 1/100 个可审计 result，但仍不可聚合或推断；活动目录为 `experiments/paper/uav_imappo_ablation_paper_v2/`，下一 chunk 必须使用 `--resume` 且 implementation hash 保持 `20d4c3ef…c1ac`。
 - 没有已知活跃后台实验进程。
-- 最新全量回归：**182 passed, 14 warnings, 7.93 s**；59 个 config/audit JSON 全部可解析；六份 paper 配置 dry-run 通过；残留 `training_checkpoint.pt` 数量为 0。warnings 仍为可选 PettingZoo 与 Matplotlib/PyParsing deprecation。
+- 最新全量回归：**182 passed, 14 warnings, 7.93 s**；60 个 config/audit JSON 全部可解析；六份 paper 配置 dry-run 通过；残留 `training_checkpoint.pt` 数量为 0。warnings 仍为可选 PettingZoo 与 Matplotlib/PyParsing deprecation。
 - `git diff --check` 在移除本文件 Markdown 行尾空格后通过；CRLF 转换提示不属于 whitespace error。
 
 ### 下一步严格顺序

@@ -7,6 +7,14 @@
 - 后验 provenance 审计发现旧 result/manifest 未持久化 checkpoint implementation SHA-256；因此该数值 **不得进入论文统计**，目录整体改名保留且必须在新协议下重跑。
 - 新 validator 对保留 fragment 的预期审计为 `invalid`，精确列出四项指纹缺失/不一致；见 `docs/paper/audits/uav_imappo_ablation_first_paper_unit_superseded_audit.json`。
 
+## 2026-08-24 正式消融 partial v2（有效但不可推断）
+
+- 从 clean commit `317204a` 重跑 `imappo_full × seed 7`；manifest=`partial`，completed=1/100、missing=99、无 summary、无 checkpoint。
+- 严格 artifact audit=`valid_partial`：3 checksum entries、0 errors、0 warnings；result/manifest implementation SHA-256 均为 `20d4c3ef…c1ac`，result protocol SHA-256=`ddb4f154…a5129`。
+- wall/process CPU=1468.89/1314.50 s；hard collision/task/return=`0.0042/0.599881/−18.578883`。单 seed 不进入 18 个正式统计假设。
+- 与 superseded 首跑相比，所有非计时 tier metrics 与 logs 逐 JSON 相等；差异仅为 solver wall-time 字段。这验证 provenance 修复没有改变行为轨迹，不构成算法效果证据。
+- 审计：`docs/paper/audits/uav_imappo_ablation_paper_v2_partial_audit.json`。
+
 ## 2026-08-24 UAV 十变体消融 calibration（完成，非论文结果）
 
 - 范围：10 variants × seed 7 × 100 training episodes × 100 max steps；训练 monitor、collision probe、hard final evaluation 各 20 episodes。

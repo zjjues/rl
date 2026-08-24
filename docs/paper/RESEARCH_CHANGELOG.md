@@ -12,6 +12,7 @@
 - 分块 paper result/manifest 新增 canonical protocol 与 implementation SHA-256；resume 拒绝旧无指纹 fragment 或跨实现运行。
 - artifact validator 新增严格 `--allow-partial`：只接受 missing-pair 集合精确、已有结果身份/校验和有效且无 summary 的 `valid_partial`。
 - 首个完成但缺 result 指纹的正式消融单元原样保留并标记 superseded；新 validator 对其反证审计为预期 invalid。
+- 在 clean `317204a` 重跑同一单元并得到 `valid_partial`：result/manifest 双指纹一致、1/100 completed、99 missing、无 summary/checkpoint、0 errors/warnings；非计时轨迹与旧 run 完全一致。
 - 新增中断恢复等价性测试；本批最终全量回归 **182 passed, 14 warnings**。
 
 ### 论文影响

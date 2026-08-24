@@ -29,3 +29,9 @@ Git commit 仍用于追踪实验数据提交历史，但训练实现同一性由
 6. paper invocation 均为 clean worktree，run history 不混合 implementation hashes。
 
 默认不传 `--allow-partial` 时仍要求完整 artifact，防止投稿阶段误把 partial 当成最终结果。单元完成不提升论文证据等级；只有 100/100、final summary 与完整 artifact audit 为 `valid` 后才能进行注册的 18 假设推断。
+
+## 修复后重跑验证
+
+从 clean commit `317204a` 重跑 `imappo_full × seed 7` 后，partial audit 返回 `valid_partial`：1/100 results、3 checksum entries、99 个声明 missing pairs、0 errors、0 warnings、无 summary、无 checkpoint。result 与 manifest 的 implementation SHA-256 均为 `20d4c3ef29595c8eec18d501078187f03823ae0d4106c15db66bb5a34af4c1ac`，result protocol SHA-256 为 `ddb4f154a4f0564d06f6e8029fe8f14fe7228d3f4c3e96209addb4c7b23a5129`。
+
+新旧 run 的全部非计时 tier metrics 和 logs 逐 JSON 相等；唯一差异是 1 个 final 与 60 个周期 `safety_filter_solver_time_ms` 墙钟测量。修复后 wall/process CPU=1468.89/1314.50 s，hard collision/task/return=0.0042/0.599881/−18.578883。该复跑证明 provenance 写入没有改变确定性行为路径，但仍只是一枚 seed，禁止效果推断。
