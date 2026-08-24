@@ -1,5 +1,18 @@
 # 研究变更日志
 
+## 2026-08-24：按要求结束当前实验并形成统一总结
+
+### 状态变更
+
+- 从已上传的 `next_episode=1950` 原子断点实际执行一次 clean cross-commit resume，implementation/protocol 身份校验通过；随后按用户要求在 `next_episode=2050/3000` 再次安全中止。
+- 更新后 checkpoint 为 6,847,602 bytes，SHA-256=`a0074a57914a2752209da085c170cf75d08a48edd3df58e4b01eab22276f05c1`。manifest 保存两个 invocation 和两个 Git commit，implementation fingerprint 保持 `c4e55820…40573`。
+- 新增 `CURRENT_PROJECT_SUMMARY.md`，统一记录工程功能、证据等级、关键 calibration/负结果、superseded artifact、paper 预算、六项投稿硬缺口、允许/禁止表述和恢复步骤。
+
+### 论文影响
+
+- 当前正式消融仍为 0/100 result；episode 2050 checkpoint 不计作论文结果。
+- cross-commit checkpoint resume 的运行时身份检查已真实通过，但完整 result/strict partial audit 尚未完成，因此不将本次进展升级为效果或正式统计证据。
+
 ## 2026-08-24：正式消融运行暂停与可恢复快照
 
 ### 工程状态
