@@ -11,7 +11,8 @@
 - `RESULTS_LEDGER.md`：正式结果登记表；smoke 结果不得登记为论文结论。
 - `RESEARCH_CHANGELOG.md`：重大工程变更及其论文影响。
 - `PUBLICATION_READINESS.md`：投稿门槛、当前距离与最短推进路径。
-- `SUBMISSION_READINESS_GATE.md`：11 项机器可审计的最终投稿门槛、阈值与 CI 用法。
+- `SUBMISSION_READINESS_GATE.md`：12 项机器可审计的最终投稿门槛、阈值与 CI 用法。
+- `UAV_SEMANTIC_GENERALIZATION_PROTOCOL.md`：六表示、无标签泄漏、seed-level exact/Holm 的正式泛化协议。
 - `CURRENT_PROJECT_SUMMARY.md`：暂停时的单一项目状态入口、证据边界与恢复方法。
 - `EXPERIMENT_ENVIRONMENT.md`：本地 Conda 环境、模型和重建方式。
 

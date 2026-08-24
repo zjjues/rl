@@ -15,7 +15,8 @@
 - `run.sh`、`runalgo.sh`、`run_interactive.sh`：原有运行入口。
 - `plot_results.py`：结果绘图脚本。
 - `run_research_study.py`：不覆盖已有结果的正式研究运行入口。
-- `audit_submission_readiness.py`：审计 11 项最终证据门槛，防止把 partial、calibration 或 superseded artifact 标成投稿完成。
+- `audit_submission_readiness.py`：审计 12 项最终证据门槛，防止把 partial、calibration 或 superseded artifact 标成投稿完成。
+- `validate_generalization_protocol.py`、`generate_generalization_statistics.py`：冻结语义泛化公平性，并按 seed 执行 exact paired tests 与 Holm 校正。
 
 已删除旧版 `reports/`、smoke 测试、中间日志、checkpoint 和过时英文报告，方便后续继续增加实验。
 

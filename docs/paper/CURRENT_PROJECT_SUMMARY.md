@@ -1,11 +1,18 @@
 # 多 UAV 语义意图 MARL 工程：当前完整状态总结
 
-> 冻结时间：2026-08-24 20:40（Asia/Shanghai）
+> 冻结时间：2026-08-24 21:21（Asia/Shanghai）
 > 分支：`testv1`
-> 本次封存前基线提交：`bde3111afebfc9ae03085d55404223a19b607f28`
+> 本次封存前基线提交：`c4a254163b1e1cc5ee710a95f5da63e987f2bf1e`
 > 总体结论：**工程/实验协议准备度约 96%，论文证据准备度约 48%–52%；当前不是顶刊投稿 ready。**
 
 本文件是暂停后恢复工作的单一入口。具体数值的原始依据仍以对应 JSON artifact、manifest、result 和专项文档为准；本文件不把 smoke、pilot、calibration 或作废结果升级为正式论文证据。
+
+## 紧急停止点（最终封存）
+
+- 已立即停止继续训练、功能扩展和全量回归；没有启动语义泛化 calibration 或 paper 运行。
+- 最后一项代码改动仅冻结六表示语义泛化协议、统计口径和机器门禁：预计 `60` 个正式结果，当前 `0/60`；投稿门禁当前 `0/12`。
+- 新增协议相关 focused tests 已分别通过（协议 7 项、统计 5 项；门禁/协议组合检查 15 项）。这些改动之后**未重新执行全量测试**；最近一次全量基线仍为 `191 passed`。
+- 进程查询因当前 Windows 权限被拒绝；本轮没有发起任何训练进程，先前确认也无活跃训练。后续工作全部暂停，恢复时从本文件和 `CONTINUATION_STATE.md` 开始。
 
 ## 1. 当前实验已经结束运行
 
@@ -50,7 +57,7 @@
 - 训练、monitor、collision probe、final tier 和 query 使用注册的配对 seed 公式。
 - 已实现 IQM、bootstrap 95% CI、paired differences、win rate、performance profile、exact paired tests 和 Holm 多重校正。
 - artifact 支持 checksums、canonical protocol hash、implementation hash、严格 partial audit、跨实现 resume 拒绝和原子写入。
-- 新增版本化 submission-readiness gate；正式研究会复用完整 artifact validator，人工偏好会重算 JSONL 审计，外部系统证据必须满足冻结字段、样本量和误差阈值。当前审计为 `not_ready`、0/11 final gates met。
+- 新增版本化 submission-readiness gate；正式研究会复用完整 artifact validator，人工偏好会重算 JSONL 审计，外部系统证据必须满足冻结字段、样本量和误差阈值。当前审计为 `not_ready`、0/12 final gates met。
 - 最新完整代码回归为 **191 passed, 14 warnings, 8.14 s**；本轮新增独立 readiness 审计工具及测试，但不修改训练源码，训练 implementation fingerprint 仍与 checkpoint 一致。
 
 ## 3. 已完成且可保留的证据
@@ -126,7 +133,7 @@ VMAS navigation 单 seed native return：attention-PPO `-2.711723`、MAPPO `-0.7
 
 因此当前项目可以诚实定位为“具有严谨 provenance、强基线路径、负结果约束和多层安全验证的完整研究平台”，不能定位为“已证明语义 MARL 优势”或“顶刊投稿完成稿”。工程准备度约 96% 不等于论文准备度；真正缺口主要是昂贵的多种子证据、独立人工数据和真实系统验证。
 
-机器审计将上述六类硬缺口细分为 11 个二值 final gates，当前 `0/11` 通过。该数字表示尚无最终门槛完整闭环，不是开发完成百分比；calibration、pilot 和已实现代码不会被错误折算为正式 evidence gate。详情见 `SUBMISSION_READINESS_GATE.md` 与 `audits/submission_readiness_v1.json`。
+机器审计将上述六类硬缺口细分为 12 个二值 final gates，当前 `0/12` 通过。语义泛化的完整 artifact 与专用 seed-level Holm 统计分别设门，避免“训练完成但统计口径错误”仍被标记 ready。该数字表示尚无最终门槛完整闭环，不是开发完成百分比；calibration、pilot 和已实现代码不会被错误折算为正式 evidence gate。
 
 ## 7. 当前允许与禁止的论文表述
 
@@ -185,4 +192,4 @@ D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config con
 
 ## 10. 收口判定
 
-当前实验进程已经停止，最新可恢复训练状态、全部已知证据等级、负结果、作废原因、资源预算、论文边界和后续恢复步骤均已记录。最新验证结果：64 份相关 config/audit/活动实验 JSON 全部可解析；`git diff --check` 通过；完整回归 **191 passed, 14 warnings**；`--require-ready` 在当前 11 项 blocker 下按设计返回非零。除非用户明确要求继续，后续不应自动恢复训练。
+当前实验进程已经停止，最新可恢复训练状态、全部已知证据等级、负结果、作废原因、资源预算、论文边界和后续恢复步骤均已记录。正式语义泛化协议现已冻结为 60-run/12-hypothesis seed-level 设计，但没有运行 calibration 或 paper artifact。`--require-ready` 在当前 12 项 blocker 下按设计返回非零。除非用户明确要求继续，后续不应自动恢复训练。

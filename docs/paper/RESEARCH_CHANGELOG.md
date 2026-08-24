@@ -1,10 +1,26 @@
 # 研究变更日志
 
+## 2026-08-24：冻结六表示语义泛化 paper 协议与 seed-level 统计
+
+### 工程变更
+
+- 新增 `uav_intent_generalization.paper.json`：objective-grounded/pretrained/legacy-hash/random-oracle/one-hot-oracle/no-intent × 10 seeds，共 60 results；另有逐字段同构的 1-seed calibration。
+- v8 resolved suite 固定 2 seen、4 paraphrase、6 unseen、18 counterfactual；行为只运行前 12 条，counterfactual 只作表示/profile 描述诊断。
+- 六组共享 64-D input、direct IMAPPO-attention、no mask、neutral rule context、no shaping 和 pairwise CBF，消除 posture mask、规则 profile 与 reward shaping 的捷径泄漏。
+- 新增独立协议 validator，拒绝 25-D one-hot 特权、oracle 进入确认性家族、counterfactual 进入行为家族或 calibration 漂移；协议 audit=`valid`，paper/calibration dry-run 均通过。
+- 新增统计生成器：query 先在 seed 内平均，10 paired seeds 做 exact two-sided sign-flip；paraphrase/unseen × 3 non-oracle baselines × task/return=12 hypotheses，统一 Holm。缺完整 artifact/checksum/seed 时拒绝输出。
+- readiness 从 11 项扩为 12 项，把语义泛化 artifact 与统计正确性分开设门；当前仍为 `not_ready`、0/12。
+
+### 论文影响
+
+- 已关闭“没有正式语义泛化配置/无预注册统计口径”的工程缺口，但没有关闭效果证据门槛；当前尚未运行 calibration 或 60/60 paper results。
+- random-dense/one-hot 明示为 canonical-label identity oracle，只作 descriptive anchors；固定查询的 representation metrics 不做 query-level 显著性，避免伪重复。
+
 ## 2026-08-24：投稿准备度从主观清单升级为机器 gate
 
 ### 工程变更
 
-- 新增 `submission_readiness.py`、`audit_submission_readiness.py` 和版本化 `submission_readiness.v1.json`，11 个 critical gates 未全部满足时拒绝 `ready`。
+- 新增 `submission_readiness.py`、`audit_submission_readiness.py` 和版本化 `submission_readiness.v1.json`；当前版本含 12 个 critical gates，未全部满足时拒绝 `ready`。
 - 正式 study gate 复用 checksum/provenance artifact validator；人工偏好 gate 重新读取 JSONL、重算 SHA-256 与独立复核审计；外部语言/HARL/SITL/HIL/frozen bundle 使用字段、样本量和误差联合合同。
 - evidence path 禁止逃逸仓库；配置拒绝重复 key、未知 kind、缺失 path 和“仅文件存在”合同。8 个测试覆盖通过、阈值失败、非关键 gate、正式偏好重算、artifact 篡改、schema 缺失、path escape 与存在性伪证据。
 - 审计工具位于仓库级工具层，不进入训练源码指纹；当前 implementation fingerprint 仍为 `c4e55820…40573`，不会无意义作废 episode-2050 checkpoint。
@@ -12,7 +28,7 @@
 
 ### 论文影响
 
-- 当前审计诚实输出 `not_ready`、0/11 final gates met；这不等同于 0% 开发进度，calibration/pilot 仍不能替代 final evidence。
+- 当前审计诚实输出 `not_ready`、0/12 final gates met；这不等同于 0% 开发进度，calibration/pilot 仍不能替代 final evidence。
 - 审计首次把“缺少正式语义泛化 paper config/artifact”单独暴露为 blocker，避免仅完成架构/消融后错误宣布顶刊 ready。
 
 ## 2026-08-24：按要求结束当前实验并形成统一总结

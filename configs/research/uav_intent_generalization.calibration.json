@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_intent_generalization_calibration_v1",
+  "level": "pilot",
+  "objective": "Runtime and failure-path calibration for the frozen six-variant semantic generalization protocol; not effect evidence.",
+  "seeds": [7],
+  "bootstrap_seed": 20260824,
+  "treatment_key": "objective_grounded_semantic",
+  "environment": {
+    "name": "uav-scheduling-v2",
+    "n_agents": 8,
+    "n_targets": 6,
+    "safety_reward_coef": 1.0,
+    "task_reward_coef": 1.2,
+    "intent_reward_profiles_enabled": true
+  },
+  "training": {
+    "episodes": 100,
+    "checkpoint_interval_episodes": 25,
+    "steps": 100,
+    "rollout_length": 128,
+    "minibatch_size": 64,
+    "eval_interval": 100,
+    "monitor_eval_episodes": 20,
+    "actor_lr": 0.0003,
+    "critic_lr": 0.0003,
+    "eta": 0.5,
+    "eta_end": 0.1,
+    "entropy_coef": 0.001,
+    "entropy_coef_end": 0.0001,
+    "potential_update_mode": "normal",
+    "potential_update_interval": 4,
+    "device": "cuda"
+  },
+  "intent": {
+    "dim": 64,
+    "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "encoder_batch_size": 32,
+    "nli_model": "cross-encoder/nli-deberta-v3-small",
+    "nli_model_revision": "e9890682d9e4279b7ae6d0fcfb435a43206280ec",
+    "nli_batch_size": 32,
+    "projection_seed": 17,
+    "code_seed": 29,
+    "adapter_ridge": 0.01,
+    "semantic_weight": 0.5,
+    "objective_weight": 1.0
+  },
+  "variants": [
+    {"key": "objective_grounded_semantic", "intent_source": "objective_grounded_semantic", "intent_profile_decoder": "nli_prototype_gated", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "direct", "rule_prior_context": "neutral", "residual_action_scale": 0.25, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false, "disable_intent_reward": true},
+    {"key": "pretrained_semantic", "intent_source": "pretrained_semantic", "intent_profile_decoder": "none", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "direct", "rule_prior_context": "neutral", "residual_action_scale": 0.25, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false, "disable_intent_reward": true},
+    {"key": "legacy_hash", "intent_source": "legacy_hash", "intent_profile_decoder": "none", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "direct", "rule_prior_context": "neutral", "residual_action_scale": 0.25, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false, "disable_intent_reward": true},
+    {"key": "random_dense_oracle", "intent_source": "random_dense", "intent_profile_decoder": "none", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "direct", "rule_prior_context": "neutral", "residual_action_scale": 0.25, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false, "disable_intent_reward": true},
+    {"key": "identity_oracle", "intent_source": "onehot", "intent_profile_decoder": "none", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "direct", "rule_prior_context": "neutral", "residual_action_scale": 0.25, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false, "disable_intent_reward": true},
+    {"key": "no_intent", "intent_source": "none", "intent_profile_decoder": "none", "algorithm": "imappo", "critic_mode": "attention", "policy_mode": "direct", "rule_prior_context": "neutral", "residual_action_scale": 0.25, "safety_filter_mode": "pairwise_cbf", "cbf_base_min_distance": 1.0, "cbf_iterations": 4, "use_action_mask": false, "disable_intent_reward": true}
+  ],
+  "generalization": {
+    "suite": "configs/research/uav_intent_generalization_suite.v8.json",
+    "behavior_query_keys": [
+      "seen_balanced",
+      "seen_safety_first",
+      "paraphrase_safety_first",
+      "paraphrase_aggressive_pursuit",
+      "paraphrase_balanced",
+      "paraphrase_stealth_approach",
+      "unseen_energy_saving",
+      "unseen_relay_coordination",
+      "unseen_predictive_planning",
+      "unseen_coverage_maximization",
+      "unseen_rapid_response",
+      "unseen_hover_and_observe"
+    ]
+  },
+  "evaluation": {
+    "episodes": 20,
+    "risk_tiers": {
+      "hard": {"spawn_region_scale": 0.30, "spawn_separation_scale": 0.80, "intent_mode": "dense"}
+    }
+  },
+  "reporting": {
+    "valid_scope": "uav_semantic_generalization",
+    "primary_metrics": ["task_completion", "episode_return"],
+    "summary_metrics": ["collision_rate", "task_completion", "episode_return", "energy_remaining", "speed", "distance_to_target", "min_neighbor_distance", "threat_zone_violation", "distance_to_threat"],
+    "artifact_metrics": ["collision_rate", "task_completion", "episode_return", "energy_remaining", "speed", "distance_to_target", "min_neighbor_distance", "threat_zone_violation", "distance_to_threat"],
+    "generalization_contract": {
+      "version": 1,
+      "confirmatory_unit": "seed",
+      "within_seed_query_aggregation": "arithmetic_mean",
+      "primary_tier": "hard",
+      "primary_splits": ["paraphrase", "unseen"],
+      "treatment": "objective_grounded_semantic",
+      "confirmatory_baselines": ["pretrained_semantic", "legacy_hash", "no_intent"],
+      "primary_metrics": ["task_completion", "episode_return"],
+      "family_size": 12,
+      "paired_test": "exact_two_sided_sign_flip",
+      "multiple_testing": "holm",
+      "oracle_anchors_descriptive_only": ["random_dense_oracle", "identity_oracle"],
+      "representation_diagnostics": "descriptive_fixed_query_set",
+      "counterfactual_behavior_status": "not_run_in_this_protocol"
+    }
+  }
+}

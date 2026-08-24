@@ -197,6 +197,14 @@ class SubmissionReadinessTests(unittest.TestCase):
                 }],
             }
             self.assertEqual(audit_submission_readiness(root, spec)["status"], "ready")
+            hash_locked = json.loads(json.dumps(spec))
+            hash_locked["gates"][0]["config_sha256"] = "0" * 64
+            hash_failed = audit_submission_readiness(root, hash_locked)
+            self.assertEqual(hash_failed["status"], "not_ready")
+            self.assertTrue(any(
+                "config SHA-256 mismatch" in reason
+                for reason in hash_failed["gates"][0]["reasons"]
+            ))
             (study / "a" / "seed_7" / "result.json").write_text("{}", encoding="utf-8")
             failed = audit_submission_readiness(root, spec)
             self.assertEqual(failed["status"], "not_ready")

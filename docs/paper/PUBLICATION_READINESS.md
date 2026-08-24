@@ -2,9 +2,9 @@
 
 ## 2026-08-24 机器化 submission gate
 
-新增 `submission_readiness.v1.json` 和独立审计器，把最终投稿条件拆为 11 个 critical gates：独立人工偏好、blind language gate、语义泛化、UAV 强基线、UAV 因果消融、两项 VMAS、官方 HARL 数值交叉核验、多机冲突 SITL、HIL/实机、冻结匿名 artifact。当前结果为 `not_ready`、**0/11 final gates met**。
+新增 `submission_readiness.v1.json` 和独立审计器，把最终投稿条件拆为 12 个 critical gates：独立人工偏好、blind language gate、语义泛化 artifact、语义泛化统计、UAV 强基线、UAV 因果消融、两项 VMAS、官方 HARL 数值交叉核验、多机冲突 SITL、HIL/实机、冻结匿名 artifact。当前结果为 `not_ready`、**0/12 final gates met**。
 
-这里的 0/11 是严格完成判定，不是对既有工程进度的否定，也不是录用概率：calibration、smoke、代码实现和负结果审计仍贡献于约 48%–52% 的阶段性证据准备度，但任何一项都不能替代对应 final artifact。审计文件为 `docs/paper/audits/submission_readiness_v1.json`，规则见 `SUBMISSION_READINESS_GATE.md`。
+这里的 0/12 是严格完成判定，不是对既有工程进度的否定，也不是录用概率：calibration、smoke、代码实现和负结果审计仍贡献于约 48%–52% 的阶段性证据准备度，但任何一项都不能替代对应 final artifact。语义泛化 paper/calibration 配置、无泄漏 validator 和 seed-level exact/Holm generator 已完成；因尚无 60/60 artifact，对应两个 final gates 仍不通过。
 
 ## 2026-08-24 长实验可靠性更新
 

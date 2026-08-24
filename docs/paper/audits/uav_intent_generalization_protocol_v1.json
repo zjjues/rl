@@ -1,0 +1,30 @@
+{
+  "status": "valid",
+  "study_id": "uav_intent_generalization_paper_v1",
+  "seed_count": 10,
+  "variant_count": 6,
+  "expected_result_count": 60,
+  "suite_id": "uav_intent_generalization_v8_safety_contract",
+  "suite_split_counts": {
+    "seen": 2,
+    "paraphrase": 4,
+    "unseen": 6,
+    "counterfactual": 18
+  },
+  "behavior_query_count": 12,
+  "representation_query_count": 30,
+  "confirmatory_hypothesis_count": 12,
+  "confirmatory_unit": "seed",
+  "descriptive_oracle_anchors": [
+    "random_dense_oracle",
+    "identity_oracle"
+  ],
+  "suite_resolved_sha256": "70e8517322c75cb7d025b0d62d1158f475f460969bbea89873d65c1464d5ffb7",
+  "paper_config": "configs/research/uav_intent_generalization.paper.json",
+  "paper_config_sha256": "cebbabacab763145257034bfa60c2a85dc1fb9469dfa8c18441a33f43779e297",
+  "calibration_config": "configs/research/uav_intent_generalization.calibration.json",
+  "calibration_config_sha256": "2cb6727c239522a80181daa9fe9895f3c9e962288da41b54f77dee207cee9bf5",
+  "suite_entrypoint": "configs/research/uav_intent_generalization_suite.v8.json",
+  "suite_entrypoint_sha256": "9fce1b81a378f9a8646dba271a8f72f6edf99d426f566ba197e7be824d2a4d2c",
+  "calibration_compatible": true
+}

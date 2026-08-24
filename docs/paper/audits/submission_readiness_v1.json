@@ -1,17 +1,18 @@
 {
   "schema_version": 1,
   "audit_id": "multi_uav_semantic_marl_submission_readiness_v1",
-  "spec_sha256": "f5475c945cb266db1f40356d9a49602ba61a568212216f2d0e3df7fcb81397d6",
+  "spec_sha256": "ba8aff06b7e3dc99d5ad5b88cdc56c760d577f25346c2286bb5bf12d20fc0e22",
   "status": "not_ready",
-  "gate_count": 11,
-  "critical_gate_count": 11,
+  "gate_count": 12,
+  "critical_gate_count": 12,
   "met_gate_count": 0,
-  "unmet_critical_gate_count": 11,
+  "unmet_critical_gate_count": 12,
   "blocking_gates": [
     "formal_human_preferences",
     "blind_language_gate",
     "semantic_generalization",
     "uav_strong_baselines",
+    "semantic_generalization_statistics",
     "uav_causal_ablation",
     "vmas_navigation_reproduction",
     "vmas_dispersion_reproduction",
@@ -48,7 +49,6 @@
       "critical": true,
       "status": "unmet",
       "reasons": [
-        "missing registered paper config: configs/research/uav_intent_generalization.paper.json",
         "missing study artifact directory: experiments/paper/uav_intent_generalization_paper_v1"
       ]
     },
@@ -60,6 +60,16 @@
       "status": "unmet",
       "reasons": [
         "missing study artifact directory: experiments/paper/uav_marl_architecture_v3_paper"
+      ]
+    },
+    {
+      "key": "semantic_generalization_statistics",
+      "title": "Seed-level exact tests and Holm correction for semantic generalization",
+      "kind": "json_contract",
+      "critical": true,
+      "status": "unmet",
+      "reasons": [
+        "missing evidence file: docs/paper/audits/uav_intent_generalization_statistics_v1.json"
       ]
     },
     {

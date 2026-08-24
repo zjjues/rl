@@ -19,7 +19,7 @@ D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config con
 
 - 恢复后首先观察 checkpoint 身份校验是否通过；若实现或注册协议有任何变化，运行器应拒绝继续，禁止手工修改 manifest、checkpoint 或哈希来绕过验证。
 - 完整状态总览、证据边界和论文差距统一见 `docs/paper/CURRENT_PROJECT_SUMMARY.md`。
-- 投稿机器审计=`not_ready`，0/11 final gates met；最新完整回归 **191 passed, 14 warnings, 8.14 s**，64 份相关 JSON 可解析；训练 implementation fingerprint 复核仍为 `c4e55820…40573`。
+- 投稿机器审计=`not_ready`，0/12 final gates met。语义泛化 paper/calibration 配置及 seed-level exact/Holm 统计路径已冻结，当前只缺 calibration 与 60/60 artifact；训练 implementation fingerprint 复核仍为 `c4e55820…40573`。
 - 本节覆盖下文“活动正式目录不存在/0 个 checkpoint/无活跃实验”的历史描述；下文保留用于解释暂停前的研究演进。
 
 ### 2026-08-24 最新增量（优先读取）

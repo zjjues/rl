@@ -41,9 +41,10 @@
       "kind": "study_artifact",
       "critical": true,
       "config": "configs/research/uav_intent_generalization.paper.json",
+      "config_sha256": "cebbabacab763145257034bfa60c2a85dc1fb9469dfa8c18441a33f43779e297",
       "study_dir": "experiments/paper/uav_intent_generalization_paper_v1",
       "required_level": "paper",
-      "minimum_result_count": 40
+      "minimum_result_count": 60
     },
     {
       "key": "uav_strong_baselines",
@@ -51,9 +52,30 @@
       "kind": "study_artifact",
       "critical": true,
       "config": "configs/research/uav_marl_architecture_v3.paper.json",
+      "config_sha256": "a39869a54b6f320bfa124f0a6e0abcb128758f8617ff9d2508980a34570a8fdb",
       "study_dir": "experiments/paper/uav_marl_architecture_v3_paper",
       "required_level": "paper",
       "minimum_result_count": 60
+    },
+    {
+      "key": "semantic_generalization_statistics",
+      "title": "Seed-level exact tests and Holm correction for semantic generalization",
+      "kind": "json_contract",
+      "critical": true,
+      "path": "docs/paper/audits/uav_intent_generalization_statistics_v1.json",
+      "equals": {
+        "schema_version": 1,
+        "status": "valid",
+        "study_id": "uav_intent_generalization_paper_v1",
+        "confirmatory_unit": "seed",
+        "query_pseudoreplication": false,
+        "seed_count": 10,
+        "family_size": 12,
+        "multiple_testing.method": "holm",
+        "multiple_testing.family_size": 12,
+        "artifact_status": "valid",
+        "config_sha256": "cebbabacab763145257034bfa60c2a85dc1fb9469dfa8c18441a33f43779e297"
+      }
     },
     {
       "key": "uav_causal_ablation",
@@ -61,6 +83,7 @@
       "kind": "study_artifact",
       "critical": true,
       "config": "configs/research/uav_imappo_ablation.paper.json",
+      "config_sha256": "12e766be964b164349736a4a126062b5b32d637df8ab33261fa8d12ac7969d0b",
       "study_dir": "experiments/paper/uav_imappo_ablation_paper_v2",
       "required_level": "paper",
       "minimum_result_count": 100
@@ -71,6 +94,7 @@
       "kind": "study_artifact",
       "critical": true,
       "config": "configs/research/vmas_navigation_architecture_v1.paper.json",
+      "config_sha256": "2191c37850bfa35f8f2a925a8f7b1a96c2065c1805ad38e0e677e85f88f80950",
       "study_dir": "experiments/paper/vmas_navigation_architecture_v1_paper",
       "required_level": "paper",
       "minimum_result_count": 50
@@ -81,6 +105,7 @@
       "kind": "study_artifact",
       "critical": true,
       "config": "configs/research/vmas_dispersion_architecture_v1.paper.json",
+      "config_sha256": "08a73c1004e83b72c9a08f6143a962cc646e28558cc6a5a88dce2eae8472e4a4",
       "study_dir": "experiments/paper/vmas_dispersion_architecture_v1_paper",
       "required_level": "paper",
       "minimum_result_count": 50

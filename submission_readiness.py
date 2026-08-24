@@ -191,6 +191,14 @@ def _study_artifact(root: Path, gate: Mapping[str, object]) -> Dict[str, object]
             "missing study artifact directory: "
             f"{study_dir.relative_to(root).as_posix()}"
         )
+    if config_path.is_file() and gate.get("config_sha256") is not None:
+        expected_config_sha = str(gate["config_sha256"]).lower()
+        observed_config_sha = _sha256(config_path)
+        if observed_config_sha != expected_config_sha:
+            reasons.append(
+                "registered study config SHA-256 mismatch: "
+                f"expected {expected_config_sha}, observed {observed_config_sha}"
+            )
     if reasons:
         return {"met": False, "reasons": reasons}
     try:
@@ -303,6 +311,10 @@ def audit_submission_readiness(
                     )
         if kind == "study_artifact" and int(gate.get("minimum_result_count", 1)) <= 0:
             raise ValueError(f"gate {key!r} minimum_result_count must be positive")
+        if kind == "study_artifact" and gate.get("config_sha256") is not None:
+            digest = str(gate["config_sha256"])
+            if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest.lower()):
+                raise ValueError(f"gate {key!r} config_sha256 must be a hexadecimal SHA-256")
         if kind == "formal_preference_dataset" and (
             int(gate.get("min_records_per_class", 50)) <= 0
             or int(gate.get("min_writers_per_split", 5)) <= 0

@@ -11,20 +11,21 @@
 2026-08-24 审计结果为：
 
 - status=`not_ready`；
-- critical gates=`11`；
+- critical gates=`12`；
 - met=`0`；
-- blocking=`11`。
+- blocking=`12`。
 
-`0/11` 表示尚无一项“最终完成门槛”被完整关闭，不表示工程没有进展，也不替代 `CURRENT_PROJECT_SUMMARY.md` 中约 48%–52% 的阶段性证据准备度估计。例如 UAV/VMAS calibration 已完成，但 calibration 不等于正式 10-seed artifact，因此对应最终门槛仍为 `unmet`。
+`0/12` 表示尚无一项“最终完成门槛”被完整关闭，不表示工程没有进展，也不替代 `CURRENT_PROJECT_SUMMARY.md` 中约 48%–52% 的阶段性证据准备度估计。例如语义泛化正式配置、validator 和统计生成器已经完成，但尚无 60/60 artifact，因此 artifact/statistics 两个 final gates 仍为 `unmet`。
 
-## 十一项 critical gates
+## 十二项 critical gates
 
 | Gate | 通过所需证据 | 当前状态 |
 |---|---|---|
 | formal human preferences | 冻结 JSONL、SHA-256、13 类覆盖、writer-disjoint split、独立复核、consent | unmet：manifest 缺失 |
 | blind language gate | 多来源开发；未访问偏好 test 与新 OOD final；冻结阈值；FAR/FRR 达标 | unmet：final v2 缺失 |
-| semantic generalization | 10-seed seen/paraphrase/unseen paper artifact；至少 40 results | unmet：paper config/artifact 均缺失 |
+| semantic generalization | 10-seed seen/paraphrase/unseen paper artifact；60/60 results | unmet：配置已冻结，artifact 缺失 |
 | UAV strong baselines | 架构 v3 60/60 results，checksum/provenance 全部 valid | unmet：paper artifact 缺失 |
+| semantic generalization statistics | seed 内 query 聚合；10 paired seeds；12 exact sign-flip tests；Holm | unmet：等待完整 artifact |
 | UAV causal ablation | 链式消融 100/100 results，完整统计与 checksum | unmet：0/100，仅有 episode-2050 checkpoint |
 | VMAS navigation | 50/50 原生 return paper results | unmet：paper artifact 缺失 |
 | VMAS dispersion | 50/50 原生 return paper results | unmet：paper artifact 缺失 |
