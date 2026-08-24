@@ -99,6 +99,20 @@ def build_runtime_plan(
     smoke_variants = [str(item["key"]) for item in smoke["variants"]]
     if paper_variants != smoke_variants:
         raise ValueError("paper and smoke variants must match in order")
+    for paper_variant, reference_variant in zip(
+        paper["variants"], smoke["variants"]
+    ):
+        if dict(paper_variant) != dict(reference_variant):
+            fields = sorted(
+                field
+                for field in set(paper_variant) | set(reference_variant)
+                if paper_variant.get(field) != reference_variant.get(field)
+            )
+            key = str(paper_variant["key"])
+            raise ValueError(
+                "paper and reference variant definitions must match exactly; "
+                f"variant {key!r} differs in fields {fields}"
+            )
     if set(measured_seconds) != set(paper_variants):
         raise ValueError("measured timings must exactly match registered variants")
     if max_chunk_hours <= 0:

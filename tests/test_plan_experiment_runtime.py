@@ -87,6 +87,14 @@ def test_plan_rejects_variant_mismatch():
         build_runtime_plan(paper, smoke, {"b": 1.0}, config_path="paper.json")
 
 
+def test_plan_rejects_same_key_with_execution_definition_drift():
+    reference = spec("calibration", 10, 3, [7], ["a"])
+    paper = spec("paper", 100, 10, [7], ["a"])
+    paper["variants"][0]["algorithm"] = "matd3"
+    with pytest.raises(ValueError, match="definitions must match exactly"):
+        build_runtime_plan(paper, reference, {"a": 1.0}, config_path="paper.json")
+
+
 def test_process_cpu_calibration_is_not_labelled_as_gpu_time():
     reference = spec("calibration", 100, 20, [7], ["a"])
     paper = spec("paper", 2000, 100, list(range(10)), ["a"])
