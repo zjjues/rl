@@ -1,7 +1,36 @@
 # 项目持续执行与恢复状态
 
-> 最后更新：2026-08-24（Asia/Shanghai）
-> 状态：**任务已按用户要求暂停并保存。工程/协议约 96%，paper 证据约 48%–52%。CityNav 一次性终测已真实失败并冻结；VMAS 两场景及 UAV 架构/消融 calibration 已完成；尚无 clean multi-seed 主结果，也没有独立人工偏好数据。**
+> 最后更新：2026-08-26 08:05（Asia/Shanghai）
+> 状态：**按用户要求暂停正式实验流水线并封存。UAV 链式消融 26/100 个 valid_partial 单元已提交；当前单元 no_attention×seed512 中断于 50-episode 边界，checkpoint 已随本快照提交。架构对照、VMAS 与语义泛化实验未启动。编排器位于仓库外 D:\seu\p\paper_campaign\，重启后自动续跑。**
+> 本快照覆盖下方 2026-08-24 的历史快照；历史内容保留用于解释研究演进。
+
+## 2026-08-26 08:05 暂停快照（当前权威恢复点）
+
+### 进度
+
+- 分支 `testv1`，暂停快照提交 `0cda8a2`；恢复前 HEAD 即本提交，worktree clean。
+- UAV 链式消融（`uav_imappo_ablation_paper_v2`，注册 10 variants × 10 seeds=100 单元）已完成并提交 **26/100**：`imappo_full` 10/10、`no_mask` 10/10、`no_attention` 6/10（seeds 7/11/23/42/100/256）。每个单元均经 strict partial validator，`valid_partial`、0 errors、0 warnings，逐单元提交（自 `2b29306` 起至 `bed5f80`）。
+- 被暂停单元：`no_attention × seed 512`，目标 3000 episodes × 200 steps；训练中断于 episode 边界。
+- 暂停 checkpoint：`experiments/paper/uav_imappo_ablation_paper_v2/no_attention/seed_512/training_checkpoint.pt`，mtime `2026-08-26 07:50:26`，大小 `6,150,916` bytes，SHA-256=`ded0f31d83c26f2d3b63b62d3d19f9eae3052832785114b3490eee272ba7f9f5`。已按 2026-08-24 先例显式纳入 Git（文件默认被 .gitignore 排除）。
+- manifest `status=running`、31 条 invocation；最后一条为 `no_attention×seed512`，发起自 clean `bed5f80`。implementation SHA-256=`c4e55820d537dda168d8638dc6849f9b55e449b5f2c09cadb9ab88e944a40573`；registered protocol SHA-256=`a623601534e12dcaaf537e38274a3e8d3c4574eee7f53233fb1dde4d1f826b17`。
+- 运行基础设施（均在仓库外，不污染 worktree）：编排器 `D:\seu\p\paper_campaign\run_campaign.py`（逐单元运行→strict partial 校验→提交，崩溃可重启、自动跳过已完成单元）；状态文件 `D:\seu\p\paper_campaign\state_uav_imappo_ablation_paper_v2.json`（26 个 done）；日志 `D:\seu\p\paper_run_logs\campaign_uav_imappo_ablation_paper_v2.log`。
+- 编排器每次启动 runner 均带 `--resume`：该 flag 同时承担"向既有研究追加分块单元"语义；run_seed 仅在 checkpoint 存在时续训，否则全新训练。研究目录已存在时必须传 `--resume`，否则 runner 以 FileExistsError 拒绝（2026-08-25 已实测）。
+- 实测速率约 23–26 分钟/单元；剩余 74 单元约 28–30 小时。架构对照 60、VMAS 两场景 100、语义泛化（须先 calibration）均未启动。
+
+### 恢复方法
+
+确认 worktree clean、checkpoint SHA-256 仍为 `ded0f31d…` 后，以脱离会话进程树方式重启编排器（会话后台任务曾被系统在中止于 ~25 分钟，勿用 `run_in_background` 跑长任务）：
+
+```powershell
+$p = Start-Process -FilePath "D:\Programs\anaconda3\envs\rl-test\python.exe" `
+  -ArgumentList @("D:\seu\p\paper_campaign\run_campaign.py","--config","D:\seu\p\rl\configs\research\uav_imappo_ablation.paper.json") `
+  -WorkingDirectory "D:\seu\p\paper_campaign" `
+  -RedirectStandardOutput "D:\seu\p\paper_run_logs\campaign_driver_stdout.log" `
+  -RedirectStandardError "D:\seu\p\paper_run_logs\campaign_driver_stderr.log" `
+  -WindowStyle Hidden -PassThru
+```
+
+编排器将自动从 checkpoint 续跑 `no_attention×seed512`，随后继续剩余 73 单元；全部完成后运行全量 validation 并提交。除非用户明确要求继续，不自动恢复训练。
 
 ## 2026-08-24 20:40 暂停快照（当前权威恢复点）
 
