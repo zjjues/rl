@@ -31,7 +31,7 @@ $p = Start-Process -FilePath "D:\Programs\anaconda3\envs\rl-test\python.exe" `
   -WindowStyle Hidden -PassThru
 ```
 
-编排器将自动从 checkpoint 续跑 `no_attention×seed1024`（若选择方案 b，恢复前删除该 checkpoint，编排器按全新单元重训），随后继续剩余 72 单元；全部完成后运行全量 validation 并提交。除非用户明确要求继续，不自动恢复训练。
+恢复决策（2026-08-27，方案 b）：`no_attention/seed_1024/training_checkpoint.pt` 已从工作树删除并提交（文件完整保留于提交 `9dc83e0` 的 Git 历史），编排器将把 seed1024 作为全新单元重训，随后继续剩余 72 单元；全部完成后运行全量 validation 并提交。除非用户明确要求继续，不自动恢复训练。
 
 ## 2026-08-26 08:05 暂停快照（历史快照，已被 2026-08-27 快照覆盖）
 
