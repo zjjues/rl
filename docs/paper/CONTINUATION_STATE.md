@@ -1,10 +1,39 @@
 # 项目持续执行与恢复状态
 
-> 最后更新：2026-08-26 08:05（Asia/Shanghai）
-> 状态：**按用户要求暂停正式实验流水线并封存。UAV 链式消融 26/100 个 valid_partial 单元已提交；当前单元 no_attention×seed512 中断于 50-episode 边界，checkpoint 已随本快照提交。架构对照、VMAS 与语义泛化实验未启动。编排器位于仓库外 D:\seu\p\paper_campaign\，重启后自动续跑。**
-> 本快照覆盖下方 2026-08-24 的历史快照；历史内容保留用于解释研究演进。
+> 最后更新：2026-08-27 19:19（Asia/Shanghai）
+> 状态：**按用户要求暂停正式实验流水线并封存。UAV 链式消融 27/100 个 valid_partial 单元已提交；当前单元 no_attention×seed1024 中断于 episode 1700 边界，checkpoint 已随本快照提交。架构对照、VMAS 与语义泛化实验未启动。编排器位于仓库外 D:\seu\p\paper_campaign\，重启后自动续跑。**
+> 本快照覆盖下方 2026-08-26 的历史快照；历史内容保留用于解释研究演进。
 
-## 2026-08-26 08:05 暂停快照（当前权威恢复点）
+## 2026-08-27 19:19 暂停快照（当前权威恢复点）
+
+### 进度
+
+- 分支 `testv1`，暂停前 HEAD=`a1c02a9`（no_attention×seed512 完成提交）。
+- UAV 链式消融（`uav_imappo_ablation_paper_v2`，注册 10 variants × 10 seeds=100 单元）已完成并提交 **27/100**：`imappo_full` 10/10、`no_mask` 10/10、`no_attention` 7/10（seeds 7/11/23/42/100/256/512）。每个单元均经 strict partial validator，`valid_partial`、0 errors、0 warnings，逐单元提交（自 `2b29306` 起至 `a1c02a9`）。
+- 被暂停单元：`no_attention × seed 1024`，目标 3000 episodes × 200 steps；15:26:24 自 clean `a1c02a9` 启动（当时无 checkpoint，全量训练）。暂停时 `next_episode=1700/3000`，尚未形成 result.json，有效进度仍为 27/100。
+- 宿主挂起提示：15:40:28（episode 1650 边界）后直至 19:18:27（episode 1700 边界）无任何 checkpoint 写入，期间进程存活但无进展约 3.4 小时，疑似宿主休眠/挂起后唤醒。等价性测试覆盖磁盘断点恢复，不覆盖 OS 挂起恢复后的训练段；恢复时可选择（a）直接 `--resume` 续跑剩余 1300 episodes，或（b）删除 `no_attention/seed_1024/training_checkpoint.pt` 整单元重训（约 24 分钟，最保守，推荐；先例：挂起污染的 VMAS attention calibration 已由同配置复跑替代）。
+- 暂停 checkpoint：`experiments/paper/uav_imappo_ablation_paper_v2/no_attention/seed_1024/training_checkpoint.pt`，mtime `2026-08-27 19:18:27`，大小 `5,771,508` bytes，SHA-256=`9d1b41b1428c62b2ab0deddd54b6975748681131789185e24a7e5bfcea2fbc66`。已按 2026-08-24 先例显式纳入 Git。
+- checkpoint 身份：schema=`episode_boundary_training_v1`；implementation SHA-256=`c4e55820d537dda168d8638dc6849f9b55e449b5f2c09cadb9ab88e944a40573`；variant 级 registered protocol SHA-256=`5fd80efd006f825c5181388a5202760f74256230d199dd9228fc93c3f185e060`。
+- manifest `status=running`、33 条 run_history；最后一条为 `no_attention×seed1024`，发起自 clean `a1c02a9`。manifest 级 implementation SHA-256=`c4e55820…40573`；registered study protocol SHA-256=`a623601534e12dcaaf537e38274a3e8d3c4574eee7f53233fb1dde4d1f826b17`（与 2026-08-26 快照一致，实现与注册协议均未变化）。
+- 运行基础设施（均在仓库外，不污染 worktree）：编排器 `D:\seu\p\paper_campaign\run_campaign.py`；状态文件 `D:\seu\p\paper_campaign\state_uav_imappo_ablation_paper_v2.json`（27 个 done）；日志 `D:\seu\p\paper_run_logs\campaign_uav_imappo_ablation_paper_v2.log`。
+- 剩余 73 单元约 28 小时（实测 23–26 分钟/单元）。架构对照 60、VMAS 两场景 100、语义泛化（须先 calibration）均未启动。
+
+### 恢复方法
+
+确认 worktree clean、checkpoint SHA-256 仍为 `9d1b41b1…` 后，以脱离会话进程树方式重启编排器（会话后台任务曾被系统在中止于 ~25 分钟，勿用 `run_in_background` 跑长任务）：
+
+```powershell
+$p = Start-Process -FilePath "D:\Programs\anaconda3\envs\rl-test\python.exe" `
+  -ArgumentList @("D:\seu\p\paper_campaign\run_campaign.py","--config","D:\seu\p\rl\configs\research\uav_imappo_ablation.paper.json") `
+  -WorkingDirectory "D:\seu\p\paper_campaign" `
+  -RedirectStandardOutput "D:\seu\p\paper_run_logs\campaign_driver_stdout.log" `
+  -RedirectStandardError "D:\seu\p\paper_run_logs\campaign_driver_stderr.log" `
+  -WindowStyle Hidden -PassThru
+```
+
+编排器将自动从 checkpoint 续跑 `no_attention×seed1024`（若选择方案 b，恢复前删除该 checkpoint，编排器按全新单元重训），随后继续剩余 72 单元；全部完成后运行全量 validation 并提交。除非用户明确要求继续，不自动恢复训练。
+
+## 2026-08-26 08:05 暂停快照（历史快照，已被 2026-08-27 快照覆盖）
 
 ### 进度
 
