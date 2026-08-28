@@ -32,7 +32,7 @@ $p = Start-Process -FilePath "D:\Programs\anaconda3\envs\rl-test\python.exe" `
   -WindowStyle Hidden -PassThru
 ```
 
-若选择方案 b，恢复前删除 `no_intent_reward/seed_1024/training_checkpoint.pt`（保留于 Git 历史），编排器按全新单元重训。启动前建议先确认交流供电、电源计划为高性能，避免夜间降速复现。除非用户明确要求继续，不自动恢复训练。
+恢复决策（2026-08-28，方案 b）：`no_intent_reward/seed_1024/training_checkpoint.pt` 已从工作树删除并提交（文件完整保留于提交 `516e998` 的 Git 历史），编排器将把 seed1024 作为全新单元重训，随后继续剩余 62 单元；全部完成后运行全量 validation 并提交。已确认交流供电（96%），并将活动电源方案从「平衡」切换为「高性能」（GUID `b969c099-da4a-4b59-855b-9b1dd6235ad9`，Win11 默认隐藏、已重建），应对 2026-08-28 快照记录的夜间 2.7 倍降速。除非用户明确要求继续，不自动恢复训练。
 
 ## 2026-08-27 19:19 暂停快照（历史快照，已被 2026-08-28 快照覆盖）
 
