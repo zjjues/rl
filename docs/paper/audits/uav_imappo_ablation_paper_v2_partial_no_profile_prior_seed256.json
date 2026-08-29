@@ -1,0 +1,99 @@
+{
+  "status": "valid_partial",
+  "study_id": "uav_imappo_ablation_paper_v2",
+  "level": "paper",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\paper\\uav_imappo_ablation_paper_v2",
+  "variant_count": 10,
+  "seed_count": 10,
+  "expected_result_count": 100,
+  "completed_result_count": 76,
+  "checksum_entry_count": 78,
+  "variant_protocol_audit": {
+    "status": "valid",
+    "variant_count": 10,
+    "variants": [
+      {
+        "key": "imappo_full",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "no_mask",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "no_attention",
+        "algorithm": "imappo",
+        "critic_mode": "uniform",
+        "critic_mode_effective": "uniform",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "no_intent_reward",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "no_cbf",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "no_nli_gate",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "prior_only",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "no_profile_prior",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "identity_oracle",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "no_intent",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}
