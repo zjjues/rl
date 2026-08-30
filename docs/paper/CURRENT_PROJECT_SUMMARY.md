@@ -1,9 +1,9 @@
 # 多 UAV 语义意图 MARL 工程：当前完整状态总结
 
-> 冻结时间：2026-08-24 21:21（Asia/Shanghai）
+> 冻结时间：2026-08-30 15:06（Asia/Shanghai）
 > 分支：`testv1`
-> 本次封存前基线提交：`c4a254163b1e1cc5ee710a95f5da63e987f2bf1e`
-> 总体结论：**本轮“停止实验、保存状态、记录差距并推送”任务已完成；长期顶刊投稿目标未完成。工程/实验协议准备度约 96%，论文证据准备度约 48%–52%，后两个比例是审计判断而非录用概率。**
+> 本次封存前基线提交：`36daaf0`（UAV 链式消融最终全量校验提交）
+> 总体结论：**UAV 链式消融 100/100 完成并通过全量验证：安全层（CBF + 目标画像先验）显著、语义机制主指标 null、动作掩码显著负效应。其余三项 paper 研究（架构 60、VMAS 100、语义泛化 60）未启动。长期顶刊投稿目标未完成；论文重构分析见 `PAPER_REVISION_ANALYSIS.md`。**
 
 本文件是暂停后恢复工作的单一入口。具体数值的原始依据仍以对应 JSON artifact、manifest、result 和专项文档为准；本文件不把 smoke、pilot、calibration 或作废结果升级为正式论文证据。
 
@@ -11,7 +11,7 @@
 
 - **本轮收口任务：已完成。** 已停止继续训练和功能扩展，保存可恢复 checkpoint，汇总完成状态与证据边界，并将全部内容推送到 `testv1` 的 `833c0a97ddda1dceec984c3df0b81e10866de7b1`。
 - **工程实现任务：基本完成但未最终验收。** 强基线、安全层、语义表示、跨场景适配、统计与 provenance 路径均已实现；最近一次全量基线为 `191 passed`。语义泛化新增 focused tests 已通过，但新增改动后未重跑全量回归。
-- **正式实验任务：未完成。** 已注册四类 paper study 合计需要 `270` 个正式 result（语义泛化 60、UAV 架构 60、链式消融 100、VMAS 两场景 50），当前可纳入论文主统计的有效 result 为 **`0/270`**。唯一在途消融仅有 `2050/3000` episode checkpoint，不能计作完成结果。
+- **正式实验任务：进行中（1/4 类完成）。** 已注册四类 paper study 合计需要 `270` 个正式 result（语义泛化 60、UAV 架构 60、链式消融 100、VMAS 两场景 50），当前可纳入论文主统计的有效 result 为 **`100/270`**（UAV 链式消融 100/100，经全量验证 valid、0 errors、0 warnings）。
 - **顶刊投稿任务：未完成。** 机器审计的 **`0/12`** 个 final gates 通过；目前只能证明研究平台、协议和执行路径较完整，不能证明核心方法相对强基线具有稳定、显著且可迁移的优势。
 - **运行状态：已停止。** 没有启动语义泛化 calibration 或 paper 运行；本轮没有发起任何训练。最后一次进程复查受 Windows 权限限制，但此前已确认没有活跃训练进程。
 
@@ -23,14 +23,14 @@
 | 冻结语言 relevance gate | 无 final v2 证据 | 多来源训练，在未访问 preference/OOD final 上通过 | 整项未完成 |
 | 语义行为泛化 | `0/60` | 6 variants × 10 seeds，并完成 12 个注册假设的 seed-level exact test + Holm | 60 results 与统计 artifact |
 | UAV 强基线 | `0/60` | IMAPPO/MAPPO/IPPO/HAPPO/MATD3 等 6 variants × 10 seeds | 60 results |
-| UAV 链式因果消融 | `0/100` result；1 个可恢复 checkpoint | 10 variants × 10 seeds，配对 CI、Holm、失败案例与冻结 artifact | 100 results；checkpoint 不计完成 |
+| UAV 链式因果消融 | **100/100 完成**，full validation valid | 10 variants × 10 seeds，配对 CI、Holm、失败案例与冻结 artifact | 已完成：4/18 Holm 拒绝（CBF/画像先验显著；语义 null；掩码负效应） |
 | VMAS 跨场景复现 | `0/50` | navigation 与 dispersion 各 5 algorithms × 10 seeds | 50 results |
 | 官方 HARL 数值交叉核验 | 仅完成源码/协议级审计 | 官方框架数值复现并记录差异 | 整项未完成 |
 | 多 UAV 冲突 SITL | 仅有组件与 pilot | policy-in-loop，覆盖延迟、丢包、动力学及 fallback | 整项未完成 |
 | HIL/受控实机 | 无正式证据 | HIL 或受控实机，且覆盖独立系统辨识边界 | 整项未完成 |
 | 冻结投稿包 | 无 | 匿名、校验和完整、所有门禁一致通过 | 整项未完成 |
 
-因此，“距离顶刊还有多远”的硬指标不是约 50% 这一主观比例，而是：**12 个关键门禁仍全部未闭环、至少 270 个注册训练结果尚未形成、人工数据/盲测/SITL/HIL/官方交叉复现与最终冻结包均缺失。** 只有这些证据完成且机器审计变为 `ready`，才可宣称达到投稿准备门槛；是否录用仍由创新性、结果强度和审稿判断决定。
+因此，“距离顶刊还有多远”的硬指标不是约 50% 这一主观比例，而是：**12 个关键门禁仍全部未闭环、至少 170 个注册训练结果尚未形成、人工数据/盲测/SITL/HIL/官方交叉复现与最终冻结包均缺失。** 只有这些证据完成且机器审计变为 `ready`，才可宣称达到投稿准备门槛；是否录用仍由创新性、结果强度和审稿判断决定。
 
 ## 1. 当前实验已经结束运行
 
@@ -123,7 +123,7 @@ VMAS navigation 单 seed native return：attention-PPO `-2.711723`、MAPPO `-0.7
 - 10 variants × 10 seeds=`100` 个训练单元。
 - 每单元 `3000×200` training，训练期 monitor 20 episodes，hard final 100 episodes。
 - 9 条注册链式对照、collision/task 两个主指标，共 18 个 Holm 家族假设。
-- 当前完成的有效 result=`0/100`；seed 7 仅训练到 episode 2050 checkpoint。
+- 2026-08-30 完成有效 result=**100/100**，full validation valid；18 假设 Holm 家族 4 拒绝：CBF 与画像先验显著降碰撞、画像先验显著小幅降任务完成率、掩码显著降任务完成率（+0.064）且无安全收益；语义机制全部对照不显著（详见 `RESULTS_LEDGER.md`）。
 - 校正预算=`70.65–78.87 active CPU-hours`，不是 GPU device-hours。
 
 ### 5.2 UAV 架构对照
@@ -161,6 +161,8 @@ VMAS navigation 单 seed native return：attention-PPO `-2.711723`、MAPPO `-0.7
 - calibration 证明所有主要路径可执行，并给出了 active CPU-time 预算。
 - CityNav final 是 relevance gate 不能迁移到真实城市导航语言的明确负结果。
 - CBF/QP/鲁棒动力学 pilot 显示经验风险降低，但仍存在违例。
+- UAV 链式消融正式结果（10 seeds、100 评估 episodes/seed、Holm 校正）：CBF 与目标画像先验显著降低 hard 档碰撞率；画像先验显著小幅降低任务完成率；动作掩码显著降低任务完成率且无安全收益。
+- 语义编码、NLI 门、意图奖励、注意力 critic、one-hot oracle 与意图通道在 hard 档碰撞率与任务完成率上无显著效应（预注册 18 假设族）。
 
 禁止：
 
@@ -205,6 +207,7 @@ D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config con
 - 研究变更日志：`docs/paper/RESEARCH_CHANGELOG.md`
 - 活动正式配置：`configs/research/uav_imappo_ablation.paper.json`
 - 活动实验目录：`experiments/paper/uav_imappo_ablation_paper_v2/`
+- 论文修改方向分析：`docs/paper/PAPER_REVISION_ANALYSIS.md`
 - 核心运行入口：`run_research_study.py`
 - artifact validator：`validate_research_artifact.py`
 

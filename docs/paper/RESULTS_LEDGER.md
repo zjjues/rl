@@ -1,5 +1,33 @@
 # 正式结果台账
 
+## 2026-08-30 UAV 链式消融正式结果（完成，100/100，论文级）
+
+- 范围：10 variants × 10 seeds = 100 单元；每单元 3000×200 training、训练期 monitor/collision probe 各 20 episodes、hard final 100 episodes；注册九条链式对照 × collision/task 两个主指标 = 18 个 Holm 家族假设。manifest=`complete`，full validation=`valid`、0 errors、0 warnings（提交 `36daaf0`；审计 `docs/paper/audits/uav_imappo_ablation_paper_v2_full_validation.json`）。
+- hard-tier 10-seed 均值 `(collision_rate, task_completion)`：
+
+| variant | collision_rate | task_completion |
+|---|---:|---:|
+| imappo_full | 0.00438 | 0.599123 |
+| no_mask | 0.00442 | 0.663275 |
+| no_attention | 0.00438 | 0.599076 |
+| no_intent_reward | 0.00434 | 0.599689 |
+| no_cbf | 0.01946 | 0.599991 |
+| no_nli_gate | 0.00432 | 0.600761 |
+| prior_only | 0.00430 | 0.602426 |
+| no_profile_prior | 0.00832 | 0.613331 |
+| identity_oracle | 0.00868 | 0.612191 |
+| no_intent | 0.00830 | 0.611683 |
+
+- 18 假设 Holm 家族（差异 = variant − imappo_full，hard 档）**4 拒绝**（holm_p=0.0352）：
+  - `no_cbf` collision **+0.01508**：CBF 显著降低碰撞率；
+  - `no_profile_prior` collision **+0.00394**：目标画像先验显著降低碰撞率；
+  - `no_profile_prior` task **+0.01421**：同一先验显著小幅降低任务完成率；
+  - `no_mask` task **+0.06415**：动作掩码显著拖累任务完成率 6.4 个百分点，碰撞率无差异（+0.00004，p=1.0）。
+- 其余 14 对照不显著：`no_attention`（collision +0.00000、task −0.00005）、`no_intent_reward`（−0.00004、+0.00057）、`no_nli_gate`（−0.00006、+0.00164）、`prior_only`（−0.00008、+0.00330）、`identity_oracle − no_profile_prior`、`no_intent − identity_oracle` 在 collision/task 上均无显著效应。`prior_only ≈ full` 表明学习残差相对纯规则先验无主指标增量。
+- 允许表述：CBF 与目标画像先验在 hard 档显著降低碰撞率（Holm 校正后）；画像先验同时显著小幅降低任务完成率；动作掩码显著降低任务完成率且无安全收益；语义编码/NLI 门/意图奖励/注意力 critic/one-hot oracle/意图通道在 collision 与 task 上无显著效应。
+- 禁止表述：仍不得声称"语义理解显著降低碰撞率"；不显著≠等效，不得声称任何机制等效；不得声称零碰撞保证；单 seed calibration 点值仍禁止排序。
+- 与历史一致：calibration 预警的多条近零机制差异在正式实验中兑现为 null；与 CityNav relevance gate 负结果形成同一条"语义通道目前无迁移收益"的证据链。论文重构分析见 `PAPER_REVISION_ANALYSIS.md`。
+
 ## 2026-08-24 首个正式消融单元（保留但 superseded）
 
 - `imappo_full × seed 7` 从 clean commit `0447ffd` 完成 3000×200 training、注册 monitor/probe 和 hard final 100 episodes；partial manifest 为 1 completed/99 missing、无 summary、无残留 checkpoint。

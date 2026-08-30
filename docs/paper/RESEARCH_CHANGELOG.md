@@ -1,5 +1,18 @@
 # 研究变更日志
 
+## 2026-08-30：UAV 链式消融 100/100 完成并通过全量验证
+
+### 状态变更
+
+- `uav_imappo_ablation_paper_v2` 全部 100 单元完成（2026-08-30 15:06）；manifest=`complete`，full validation=`valid`、0 errors、0 warnings，summary.json 生成，全部提交推送 `origin/testv1`。
+- 期间恢复插电不休眠 + 高性能电源方案（2026-08-29），单元速率恢复正常（约 20–21 分钟/单元）；此前两个跨宿主挂起的暂停 checkpoint 均已按方案 b 整单元重训，未进入最终结果。
+- 18 假设 Holm 家族 4 拒绝：CBF 与目标画像先验显著降低碰撞率；画像先验显著小幅降低任务完成率；动作掩码显著降低任务完成率且无安全收益。语义机制全部对照不显著。
+
+### 论文影响
+
+- 主结果不支持"语义结构增益"主张（in-distribution 消融为 null），支持"安全层（CBF + 画像先验）带来可复现收益"；论文重构分析见 `PAPER_REVISION_ANALYSIS.md`。
+- 允许/禁止表述已更新于 `CURRENT_PROJECT_SUMMARY.md` 与 `RESULTS_LEDGER.md`。
+
 ## 2026-08-24：冻结六表示语义泛化 paper 协议与 seed-level 统计
 
 ### 工程变更

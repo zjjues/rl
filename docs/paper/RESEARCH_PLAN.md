@@ -20,7 +20,7 @@
 - 预训练语义 embedding；
 - 可选的可训练投影层。
 
-必须通过同义改写、未见意图和组合意图测试证明语义结构带来的增益。
+in-distribution 链式消融（2026-08-30）未发现语义结构增益；是否带来泛化增益必须由同义改写、未见意图和组合意图测试证明（预注册语义泛化 study，尚未运行）。
 
 ### C2：意图一致的安全多智能体优化
 
@@ -48,7 +48,7 @@
 
 ### Phase B：算法证据
 
-- [ ] 完成 semantic、one-hot、random dense、MAPPO/IPPO 和全部消融。
+- [x] 链式消融 100/100 完成（安全层显著、语义机制 null、掩码负效应；见 `PAPER_REVISION_ANALYSIS.md`）；其余表示对照与 MAPPO/IPPO 架构对照未完成。
 - [ ] 完成 5-seed 泛化 pilot 并确定 embedding/projection 维度。
 - [ ] 主结果至少 10 seeds；每 seed 每档至少 100 个确定性评估 episode。
 - [ ] 报告 bootstrap 95% CI、IQM、成功率与 paired effect。

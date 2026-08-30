@@ -1,10 +1,24 @@
 # 项目持续执行与恢复状态
 
-> 最后更新：2026-08-28 17:36（Asia/Shanghai）
-> 状态：**按用户要求暂停正式实验流水线并封存。UAV 链式消融 37/100 个 valid_partial 单元已提交；当前单元 no_intent_reward×seed1024 中断于 episode 2050 边界，checkpoint 已随本快照提交。架构对照、VMAS 与语义泛化实验未启动。编排器位于仓库外 D:\seu\p\paper_campaign\，重启后自动续跑。**
-> 本快照覆盖下方 2026-08-26/2026-08-27 的历史快照；历史内容保留用于解释研究演进。
+> 最后更新：2026-08-30 15:06（Asia/Shanghai）
+> 状态：**UAV 链式消融 100/100 全部完成并通过全量验证（valid、0 errors、0 warnings），manifest=complete，summary.json 已生成，全部提交已推送 origin/testv1。论文修改方向分析见 `PAPER_REVISION_ANALYSIS.md`。其余研究（架构 60、VMAS 100、语义泛化 60）未启动。**
+> 本快照覆盖下方 2026-08-26/2026-08-27/2026-08-28 的历史快照；历史内容保留用于解释研究演进。
 
-## 2026-08-28 17:36 暂停快照（当前权威恢复点）
+## 2026-08-30 完成快照（当前权威恢复点）
+
+### 完成状态
+
+- UAV 链式消融（`uav_imappo_ablation_paper_v2`，10 variants × 10 seeds=100 单元）于 2026-08-30 15:06 全部完成；编排器按协议运行全量 validation：`status=valid`、0 errors、0 warnings，提交 `36daaf0`（`campaign finished cleanly`）。
+- manifest=`complete`；`summary.json` 含 per-variant tier 统计、18 假设 Holm 家族与 198 项扩展诊断。全部单元提交与最终校验已推送 `origin/testv1`（`bdce7f8..36daaf0`），worktree clean。
+- 2026-08-29 起插电不休眠 + 高性能电源方案生效后，单元速率恢复正常（约 20–21 分钟/单元），无新增挂起污染；此前两个跨宿主挂起的暂停 checkpoint（no_attention×seed1024、no_intent_reward×seed1024）均已按方案 b 整单元重训，未进入最终结果。
+- 主统计结果（hard 档，10 seeds × 100 episodes，Holm 校正）：18 假设中 **4 拒绝**——`no_cbf` collision +0.01508、`no_profile_prior` collision +0.00394、`no_profile_prior` task +0.01421、`no_mask` task +0.06415（差异均为 variant − imappo_full）。语义机制全部对照（no_attention/no_nli_gate/no_intent_reward/identity_oracle/no_intent）与 prior_only 在主指标上均不显著。
+- 详细台账：`RESULTS_LEDGER.md` 2026-08-30 节；论文重构分析：`PAPER_REVISION_ANALYSIS.md`。
+
+### 下一步
+
+- 候选下一研究：UAV 架构对照 60 单元（约 25 小时，配置 `uav_marl_architecture_v3.paper.json`）、VMAS 两场景 100 单元、语义泛化（须先 calibration）。编排器按 study 复用；未经用户明确指示不自动启动新研究。
+
+## 2026-08-28 17:36 暂停快照（历史快照，已被 2026-08-30 完成快照覆盖）
 
 ### 进度
 
