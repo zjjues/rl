@@ -208,6 +208,7 @@ D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config con
 - 活动正式配置：`configs/research/uav_imappo_ablation.paper.json`
 - 活动实验目录：`experiments/paper/uav_imappo_ablation_paper_v2/`
 - 论文修改方向分析：`docs/paper/PAPER_REVISION_ANALYSIS.md`
+- 论文与实验结果分析与差距总览：`docs/paper/PAPER_EXPERIMENT_ANALYSIS_AND_GAPS.md`
 - 核心运行入口：`run_research_study.py`
 - artifact validator：`validate_research_artifact.py`
 
