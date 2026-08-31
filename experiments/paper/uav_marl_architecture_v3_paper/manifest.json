@@ -3,7 +3,7 @@
   "study_id": "uav_marl_architecture_v3_paper",
   "level": "paper",
   "started_at_utc": "2026-08-31T10:57:56.479979+00:00",
-  "git_commit": "eeefe30f2ffc00fb34b8ac2101abe33245366305",
+  "git_commit": "6af35b82a2ca202add4bd93b2f62ff826b14c4ed",
   "git_status_short": "",
   "implementation_sha256": "c4e55820d537dda168d8638dc6849f9b55e449b5f2c09cadb9ab88e944a40573",
   "registered_study_protocol_sha256": "a74174660d46d37172b4fbf4f729b623d4b5baa826f5f4de00b2bcf09b131c6e",
@@ -14,7 +14,7 @@
     "--only-variants",
     "imappo",
     "--only-seeds",
-    "11",
+    "23",
     "--resume"
   ],
   "python": "3.10.20 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:13:20) [MSC v.1942 64 bit (AMD64)]",
@@ -553,19 +553,198 @@
         }
       },
       "status": "partial"
+    },
+    {
+      "started_at_utc": "2026-08-31T11:28:04.226859+00:00",
+      "git_commit": "6af35b82a2ca202add4bd93b2f62ff826b14c4ed",
+      "git_status_short": "",
+      "implementation_sha256": "c4e55820d537dda168d8638dc6849f9b55e449b5f2c09cadb9ab88e944a40573",
+      "registered_study_protocol_sha256": "a74174660d46d37172b4fbf4f729b623d4b5baa826f5f4de00b2bcf09b131c6e",
+      "command": [
+        "run_research_study.py",
+        "--config",
+        "D:\\seu\\p\\rl\\configs\\research\\uav_marl_architecture_v3.paper.json",
+        "--only-variants",
+        "imappo",
+        "--only-seeds",
+        "23",
+        "--resume"
+      ],
+      "python": "3.10.20 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:13:20) [MSC v.1942 64 bit (AMD64)]",
+      "platform": "Windows-10-10.0.26200-SP0",
+      "dependencies": {
+        "numpy": "1.26.4",
+        "torch": "2.4.1+cu124",
+        "gymnasium": "1.1.1",
+        "sentence-transformers": "3.2.1",
+        "scipy": "1.15.3"
+      },
+      "config": {
+        "schema_version": 1,
+        "study_id": "uav_marl_architecture_v3_paper",
+        "level": "paper",
+        "objective": "Strong-baseline comparison with identity-conditioned I-MAPPO, no-mask I-MAPPO, MAPPO, IPPO, independent-actor sequential HAPPO, and MATD3.",
+        "seeds": [
+          7,
+          11,
+          23,
+          42,
+          100,
+          256,
+          512,
+          1024,
+          2048,
+          4096
+        ],
+        "bootstrap_seed": 20260820,
+        "treatment_key": "imappo",
+        "environment": {
+          "name": "uav-scheduling-v2",
+          "n_agents": 8,
+          "n_targets": 6,
+          "safety_reward_coef": 1.0,
+          "task_reward_coef": 1.2,
+          "intent_reward_profiles_enabled": true
+        },
+        "training": {
+          "episodes": 3000,
+          "checkpoint_interval_episodes": 50,
+          "steps": 200,
+          "rollout_length": 128,
+          "minibatch_size": 64,
+          "eval_interval": 100,
+          "monitor_eval_episodes": 20,
+          "actor_lr": 0.0003,
+          "critic_lr": 0.0003,
+          "eta": 0.5,
+          "eta_end": 0.1,
+          "entropy_coef": 0.001,
+          "entropy_coef_end": 0.0001,
+          "potential_update_mode": "normal",
+          "potential_update_interval": 4,
+          "device": "cuda"
+        },
+        "intent": {
+          "dim": 25,
+          "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+          "encoder_revision": "",
+          "projection_seed": 17,
+          "code_seed": 29
+        },
+        "variants": [
+          {
+            "key": "imappo",
+            "intent_source": "onehot",
+            "intent_profile_decoder": "none",
+            "algorithm": "imappo",
+            "critic_mode": "attention",
+            "policy_mode": "direct",
+            "rule_prior_context": "neutral",
+            "residual_action_scale": 0.25,
+            "use_action_mask": true,
+            "safety_filter_mode": "none",
+            "disable_intent_reward": true
+          },
+          {
+            "key": "imappo_no_mask",
+            "intent_source": "onehot",
+            "intent_profile_decoder": "none",
+            "algorithm": "imappo",
+            "critic_mode": "attention",
+            "policy_mode": "direct",
+            "rule_prior_context": "neutral",
+            "residual_action_scale": 0.25,
+            "use_action_mask": false,
+            "safety_filter_mode": "none",
+            "disable_intent_reward": true
+          },
+          {
+            "key": "mappo",
+            "intent_source": "onehot",
+            "intent_profile_decoder": "none",
+            "algorithm": "mappo",
+            "critic_mode": "mlp",
+            "policy_mode": "direct",
+            "rule_prior_context": "neutral",
+            "residual_action_scale": 0.25,
+            "use_action_mask": false,
+            "safety_filter_mode": "none",
+            "disable_intent_reward": true
+          },
+          {
+            "key": "ippo",
+            "intent_source": "onehot",
+            "intent_profile_decoder": "none",
+            "algorithm": "ippo",
+            "critic_mode": "local",
+            "policy_mode": "direct",
+            "rule_prior_context": "neutral",
+            "residual_action_scale": 0.25,
+            "use_action_mask": false,
+            "safety_filter_mode": "none",
+            "disable_intent_reward": true
+          },
+          {
+            "key": "happo",
+            "intent_source": "none",
+            "intent_profile_decoder": "none",
+            "algorithm": "happo",
+            "critic_mode": "mlp",
+            "policy_mode": "direct",
+            "rule_prior_context": "neutral",
+            "residual_action_scale": 0.25,
+            "use_action_mask": false,
+            "safety_filter_mode": "none",
+            "disable_intent_reward": true,
+            "actor_parameter_sharing": "independent",
+            "update_scheme": "random_sequential_likelihood_factor"
+          },
+          {
+            "key": "matd3",
+            "intent_source": "onehot",
+            "intent_profile_decoder": "none",
+            "algorithm": "matd3",
+            "critic_mode": "mlp",
+            "policy_mode": "direct",
+            "rule_prior_context": "neutral",
+            "residual_action_scale": 0.25,
+            "use_action_mask": false,
+            "safety_filter_mode": "none",
+            "disable_intent_reward": true
+          }
+        ],
+        "evaluation": {
+          "episodes": 100,
+          "risk_tiers": {
+            "easy": {
+              "spawn_region_scale": 0.5,
+              "spawn_separation_scale": 1.2,
+              "intent_mode": "dense"
+            },
+            "medium": {
+              "spawn_region_scale": 0.4,
+              "spawn_separation_scale": 1.0,
+              "intent_mode": "dense"
+            },
+            "hard": {
+              "spawn_region_scale": 0.3,
+              "spawn_separation_scale": 0.8,
+              "intent_mode": "dense"
+            }
+          }
+        }
+      },
+      "status": "partial"
     }
   ],
   "git_commits": [
     "39e6119b65f66571c047120ca89d1038bac528c9",
-    "eeefe30f2ffc00fb34b8ac2101abe33245366305"
+    "eeefe30f2ffc00fb34b8ac2101abe33245366305",
+    "6af35b82a2ca202add4bd93b2f62ff826b14c4ed"
   ],
   "provenance_note": "Composite artifact assembled by resume; run_history is authoritative for per-invocation commands and dirty-worktree state.",
-  "completed_training_runs": 2,
+  "completed_training_runs": 3,
   "missing_training_runs": [
-    {
-      "variant": "imappo",
-      "seed": 23
-    },
     {
       "variant": "imappo",
       "seed": 42
