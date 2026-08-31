@@ -1,0 +1,67 @@
+{
+  "status": "valid_partial",
+  "study_id": "uav_marl_architecture_v3_paper",
+  "level": "paper",
+  "study_dir": "D:\\seu\\p\\rl\\experiments\\paper\\uav_marl_architecture_v3_paper",
+  "variant_count": 6,
+  "seed_count": 10,
+  "expected_result_count": 60,
+  "completed_result_count": 10,
+  "checksum_entry_count": 12,
+  "variant_protocol_audit": {
+    "status": "valid",
+    "variant_count": 6,
+    "variants": [
+      {
+        "key": "imappo",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "imappo_no_mask",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "critic_mode_effective": "attention",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "mappo",
+        "algorithm": "mappo",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "mlp",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "ippo",
+        "algorithm": "ippo",
+        "critic_mode": "local",
+        "critic_mode_effective": "local",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "happo",
+        "algorithm": "happo",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "centralized_mlp_sequential_independent_actors",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      },
+      {
+        "key": "matd3",
+        "algorithm": "matd3",
+        "critic_mode": "mlp",
+        "critic_mode_effective": "centralized_twin_critics",
+        "preference_relevance_gate_enabled": false,
+        "evaluation_scope": "uav"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}
