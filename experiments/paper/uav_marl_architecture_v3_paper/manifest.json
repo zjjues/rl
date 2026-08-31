@@ -1,0 +1,431 @@
+{
+  "schema_version": 1,
+  "study_id": "uav_marl_architecture_v3_paper",
+  "level": "paper",
+  "started_at_utc": "2026-08-31T10:57:56.479979+00:00",
+  "git_commit": "39e6119b65f66571c047120ca89d1038bac528c9",
+  "git_status_short": "",
+  "implementation_sha256": "c4e55820d537dda168d8638dc6849f9b55e449b5f2c09cadb9ab88e944a40573",
+  "registered_study_protocol_sha256": "a74174660d46d37172b4fbf4f729b623d4b5baa826f5f4de00b2bcf09b131c6e",
+  "command": [
+    "run_research_study.py",
+    "--config",
+    "D:\\seu\\p\\rl\\configs\\research\\uav_marl_architecture_v3.paper.json",
+    "--only-variants",
+    "imappo",
+    "--only-seeds",
+    "7",
+    "--resume"
+  ],
+  "python": "3.10.20 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:13:20) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "dependencies": {
+    "numpy": "1.26.4",
+    "torch": "2.4.1+cu124",
+    "gymnasium": "1.1.1",
+    "sentence-transformers": "3.2.1",
+    "scipy": "1.15.3"
+  },
+  "seed_protocol": {
+    "training_reset": "seed * 1000000 + training_episode",
+    "periodic_eval_reset": "seed * 1000000 + 500000 + evaluation_episode",
+    "collision_probe_reset": "seed * 1000000 + 600000 + evaluation_episode",
+    "final_tier_reset": "seed * 1000000 + 10000 + tier_index * 1000 + evaluation_episode",
+    "query_reset": "seed * 1000000 + 100000 + query_index * 10000 + tier_index * 1000 + evaluation_episode"
+  },
+  "config": {
+    "schema_version": 1,
+    "study_id": "uav_marl_architecture_v3_paper",
+    "level": "paper",
+    "objective": "Strong-baseline comparison with identity-conditioned I-MAPPO, no-mask I-MAPPO, MAPPO, IPPO, independent-actor sequential HAPPO, and MATD3.",
+    "seeds": [
+      7,
+      11,
+      23,
+      42,
+      100,
+      256,
+      512,
+      1024,
+      2048,
+      4096
+    ],
+    "bootstrap_seed": 20260820,
+    "treatment_key": "imappo",
+    "environment": {
+      "name": "uav-scheduling-v2",
+      "n_agents": 8,
+      "n_targets": 6,
+      "safety_reward_coef": 1.0,
+      "task_reward_coef": 1.2,
+      "intent_reward_profiles_enabled": true
+    },
+    "training": {
+      "episodes": 3000,
+      "checkpoint_interval_episodes": 50,
+      "steps": 200,
+      "rollout_length": 128,
+      "minibatch_size": 64,
+      "eval_interval": 100,
+      "monitor_eval_episodes": 20,
+      "actor_lr": 0.0003,
+      "critic_lr": 0.0003,
+      "eta": 0.5,
+      "eta_end": 0.1,
+      "entropy_coef": 0.001,
+      "entropy_coef_end": 0.0001,
+      "potential_update_mode": "normal",
+      "potential_update_interval": 4,
+      "device": "cuda"
+    },
+    "intent": {
+      "dim": 25,
+      "encoder_model": "sentence-transformers/all-MiniLM-L6-v2",
+      "encoder_revision": "",
+      "projection_seed": 17,
+      "code_seed": 29
+    },
+    "variants": [
+      {
+        "key": "imappo",
+        "intent_source": "onehot",
+        "intent_profile_decoder": "none",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "direct",
+        "rule_prior_context": "neutral",
+        "residual_action_scale": 0.25,
+        "use_action_mask": true,
+        "safety_filter_mode": "none",
+        "disable_intent_reward": true
+      },
+      {
+        "key": "imappo_no_mask",
+        "intent_source": "onehot",
+        "intent_profile_decoder": "none",
+        "algorithm": "imappo",
+        "critic_mode": "attention",
+        "policy_mode": "direct",
+        "rule_prior_context": "neutral",
+        "residual_action_scale": 0.25,
+        "use_action_mask": false,
+        "safety_filter_mode": "none",
+        "disable_intent_reward": true
+      },
+      {
+        "key": "mappo",
+        "intent_source": "onehot",
+        "intent_profile_decoder": "none",
+        "algorithm": "mappo",
+        "critic_mode": "mlp",
+        "policy_mode": "direct",
+        "rule_prior_context": "neutral",
+        "residual_action_scale": 0.25,
+        "use_action_mask": false,
+        "safety_filter_mode": "none",
+        "disable_intent_reward": true
+      },
+      {
+        "key": "ippo",
+        "intent_source": "onehot",
+        "intent_profile_decoder": "none",
+        "algorithm": "ippo",
+        "critic_mode": "local",
+        "policy_mode": "direct",
+        "rule_prior_context": "neutral",
+        "residual_action_scale": 0.25,
+        "use_action_mask": false,
+        "safety_filter_mode": "none",
+        "disable_intent_reward": true
+      },
+      {
+        "key": "happo",
+        "intent_source": "none",
+        "intent_profile_decoder": "none",
+        "algorithm": "happo",
+        "critic_mode": "mlp",
+        "policy_mode": "direct",
+        "rule_prior_context": "neutral",
+        "residual_action_scale": 0.25,
+        "use_action_mask": false,
+        "safety_filter_mode": "none",
+        "disable_intent_reward": true,
+        "actor_parameter_sharing": "independent",
+        "update_scheme": "random_sequential_likelihood_factor"
+      },
+      {
+        "key": "matd3",
+        "intent_source": "onehot",
+        "intent_profile_decoder": "none",
+        "algorithm": "matd3",
+        "critic_mode": "mlp",
+        "policy_mode": "direct",
+        "rule_prior_context": "neutral",
+        "residual_action_scale": 0.25,
+        "use_action_mask": false,
+        "safety_filter_mode": "none",
+        "disable_intent_reward": true
+      }
+    ],
+    "evaluation": {
+      "episodes": 100,
+      "risk_tiers": {
+        "easy": {
+          "spawn_region_scale": 0.5,
+          "spawn_separation_scale": 1.2,
+          "intent_mode": "dense"
+        },
+        "medium": {
+          "spawn_region_scale": 0.4,
+          "spawn_separation_scale": 1.0,
+          "intent_mode": "dense"
+        },
+        "hard": {
+          "spawn_region_scale": 0.3,
+          "spawn_separation_scale": 0.8,
+          "intent_mode": "dense"
+        }
+      }
+    }
+  },
+  "status": "partial",
+  "completed_training_runs": 1,
+  "missing_training_runs": [
+    {
+      "variant": "imappo",
+      "seed": 11
+    },
+    {
+      "variant": "imappo",
+      "seed": 23
+    },
+    {
+      "variant": "imappo",
+      "seed": 42
+    },
+    {
+      "variant": "imappo",
+      "seed": 100
+    },
+    {
+      "variant": "imappo",
+      "seed": 256
+    },
+    {
+      "variant": "imappo",
+      "seed": 512
+    },
+    {
+      "variant": "imappo",
+      "seed": 1024
+    },
+    {
+      "variant": "imappo",
+      "seed": 2048
+    },
+    {
+      "variant": "imappo",
+      "seed": 4096
+    },
+    {
+      "variant": "imappo_no_mask",
+      "seed": 7
+    },
+    {
+      "variant": "imappo_no_mask",
+      "seed": 11
+    },
+    {
+      "variant": "imappo_no_mask",
+      "seed": 23
+    },
+    {
+      "variant": "imappo_no_mask",
+      "seed": 42
+    },
+    {
+      "variant": "imappo_no_mask",
+      "seed": 100
+    },
+    {
+      "variant": "imappo_no_mask",
+      "seed": 256
+    },
+    {
+      "variant": "imappo_no_mask",
+      "seed": 512
+    },
+    {
+      "variant": "imappo_no_mask",
+      "seed": 1024
+    },
+    {
+      "variant": "imappo_no_mask",
+      "seed": 2048
+    },
+    {
+      "variant": "imappo_no_mask",
+      "seed": 4096
+    },
+    {
+      "variant": "mappo",
+      "seed": 7
+    },
+    {
+      "variant": "mappo",
+      "seed": 11
+    },
+    {
+      "variant": "mappo",
+      "seed": 23
+    },
+    {
+      "variant": "mappo",
+      "seed": 42
+    },
+    {
+      "variant": "mappo",
+      "seed": 100
+    },
+    {
+      "variant": "mappo",
+      "seed": 256
+    },
+    {
+      "variant": "mappo",
+      "seed": 512
+    },
+    {
+      "variant": "mappo",
+      "seed": 1024
+    },
+    {
+      "variant": "mappo",
+      "seed": 2048
+    },
+    {
+      "variant": "mappo",
+      "seed": 4096
+    },
+    {
+      "variant": "ippo",
+      "seed": 7
+    },
+    {
+      "variant": "ippo",
+      "seed": 11
+    },
+    {
+      "variant": "ippo",
+      "seed": 23
+    },
+    {
+      "variant": "ippo",
+      "seed": 42
+    },
+    {
+      "variant": "ippo",
+      "seed": 100
+    },
+    {
+      "variant": "ippo",
+      "seed": 256
+    },
+    {
+      "variant": "ippo",
+      "seed": 512
+    },
+    {
+      "variant": "ippo",
+      "seed": 1024
+    },
+    {
+      "variant": "ippo",
+      "seed": 2048
+    },
+    {
+      "variant": "ippo",
+      "seed": 4096
+    },
+    {
+      "variant": "happo",
+      "seed": 7
+    },
+    {
+      "variant": "happo",
+      "seed": 11
+    },
+    {
+      "variant": "happo",
+      "seed": 23
+    },
+    {
+      "variant": "happo",
+      "seed": 42
+    },
+    {
+      "variant": "happo",
+      "seed": 100
+    },
+    {
+      "variant": "happo",
+      "seed": 256
+    },
+    {
+      "variant": "happo",
+      "seed": 512
+    },
+    {
+      "variant": "happo",
+      "seed": 1024
+    },
+    {
+      "variant": "happo",
+      "seed": 2048
+    },
+    {
+      "variant": "happo",
+      "seed": 4096
+    },
+    {
+      "variant": "matd3",
+      "seed": 7
+    },
+    {
+      "variant": "matd3",
+      "seed": 11
+    },
+    {
+      "variant": "matd3",
+      "seed": 23
+    },
+    {
+      "variant": "matd3",
+      "seed": 42
+    },
+    {
+      "variant": "matd3",
+      "seed": 100
+    },
+    {
+      "variant": "matd3",
+      "seed": 256
+    },
+    {
+      "variant": "matd3",
+      "seed": 512
+    },
+    {
+      "variant": "matd3",
+      "seed": 1024
+    },
+    {
+      "variant": "matd3",
+      "seed": 2048
+    },
+    {
+      "variant": "matd3",
+      "seed": 4096
+    }
+  ]
+}
