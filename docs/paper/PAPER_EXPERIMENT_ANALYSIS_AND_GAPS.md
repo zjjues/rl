@@ -1,6 +1,6 @@
 # 论文与实验结果分析与差距总览
 
-> 冻结时间：2026-08-31 21:45（Asia/Shanghai）
+> 冻结时间：2026-10-21 19:46（Asia/Shanghai）
 > 本文档是该论文《意图驱动的空基异构多智能体层级协同调度方法》及其配套实验的唯一综合分析入口，整合四份专项文档的内容：`CURRENT_PROJECT_SUMMARY.md`（工程总状态）、`RESULTS_LEDGER.md`（结果台账）、`PAPER_REVISION_ANALYSIS.md`（修改方向分析）、`JEIT_REVIEW_AND_REVISION_PLAN.md`（模拟评审与执行计划）。具体数字以各 JSON artifact 为准。
 
 ## 1. 论文概况
@@ -23,7 +23,7 @@
 | 研究 | 范围 | 状态 |
 |---|---|---|
 | UAV 链式消融 `uav_imappo_ablation_paper_v2` | 10 变体 × 10 seeds = 100 单元；每单元 3000×200 训练、monitor/probe 各 20 episodes、hard final 100 episodes | **✅ 完成**（2026-08-30）：manifest=complete，full validation valid、0 errors、0 warnings |
-| UAV 架构对照 `uav_marl_architecture_v3_paper` | 6 变体（imappo/imappo_no_mask/mappo/ippo/happo/matd3）× 10 seeds = 60 单元 | **🔄 进行中**：10/60（2026-08-31 21:43），约 16.5 分钟/单元 |
+| UAV 架构对照 `uav_marl_architecture_v3_paper` | 6 变体（imappo/imappo_no_mask/mappo/ippo/happo/matd3）× 10 seeds = 60 单元 | **⏸ 已停止**：43/60；HAPPO/seed42 在 episode 1050 留有本地 checkpoint，完整 artifact 尚未 valid |
 
 ### 2.2 辅助证据（工程/校准/负结果，不得进入主统计）
 
@@ -119,7 +119,7 @@
 
 | 论文需要支撑的主张 | 现有证据 | 缺口 | 补法 |
 |---|---|---|---|
-| 完整系统优于强基线 | 0/60（在途 10/60） | 架构对照结果 | 🔄 已启动，~14h |
+| 完整系统优于强基线 | 43/60 分块结果；尚不能形成完整比较 | 架构对照剩余 17 个结果、summary/checksums 与全量统计 | ⏸ 已停止，禁止用部分结果下结论 |
 | 结论跨环境成立 | 单环境 | VMAS 两场景 100 单元 | 待启动（~40h） |
 | 语义通道在未见意图上同样 null 或有增益 | 未测 | 语义泛化 60 单元（先 calibration） | 待定 |
 | 意图突变敏捷响应（层级架构灵魂场景） | 轶事 | 突变正式实验 E2 | 待注册 |
@@ -137,5 +137,5 @@
 1. **论文必须全文重构而非修改**：旧叙事的贡献骨架（三大模块）已被正式实验整体推翻，A 类证据一致性问题单独即构成拒稿理由（见 `JEIT_REVIEW_AND_REVISION_PLAN.md` 1.1 节）。
 2. **新叙事（同选题）**：安全优先的空基层级协同——CBF + 画像先验为正主结果、语义群与掩码为诚实负结果、预注册协议为方法论卖点。题目仍是"大飞机指挥小飞机"，主角从语义机制换成安全层。
 3. **三条可选路线**：A 系统路线（机器人/自动化 venue）、B 方法论+负结果路线（ML 可复现性 venue）、C 补完证据再定稿（架构→VMAS→泛化/SITL）。推荐 A+C 组合。
-4. **当前在途**：架构对照 60 单元（10/60，~14 小时完成）——其结果决定"完整系统是否优于强基线"，是新论文 5.x 对比章节的直接来源。
-5. **下一步候选**（按性价比）：E2 突变实验注册（抢救层级架构灵魂场景）→ VMAS 100 单元（外部有效性）→ 语义泛化 calibration（探语义最后机会）。
+4. **当前停止点**：架构对照 43/60；IMAPPO、no-mask、MAPPO、IPPO 各 10/10，HAPPO 3/10，MATD3 0/10。部分结果不得用于算法优越性结论。
+5. **恢复后的候选顺序**（仅在用户明确允许训练时）：先完成架构剩余 17 单元并冻结统计，再评估 E2 注册、VMAS 100 单元和语义泛化；当前不执行大规模训练。

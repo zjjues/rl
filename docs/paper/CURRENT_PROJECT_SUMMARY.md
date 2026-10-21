@@ -1,19 +1,19 @@
 # 多 UAV 语义意图 MARL 工程：当前完整状态总结
 
-> 冻结时间：2026-08-30 15:06（Asia/Shanghai）
+> 冻结时间：2026-10-21 19:46（Asia/Shanghai）
 > 分支：`testv1`
-> 本次封存前基线提交：`36daaf0`（UAV 链式消融最终全量校验提交）
-> 总体结论：**UAV 链式消融 100/100 完成并通过全量验证：安全层（CBF + 目标画像先验）显著、语义机制主指标 null、动作掩码显著负效应。其余三项 paper 研究（架构 60、VMAS 100、语义泛化 60）未启动。长期顶刊投稿目标未完成；论文重构分析见 `PAPER_REVISION_ANALYSIS.md`。**
+> 本次封存前最新结果提交：`563a33e`（UAV 架构对照 HAPPO/seed23）
+> 总体结论：**UAV 链式消融 100/100 已完成并通过全量验证；UAV 架构对照完成 43/60 后停止，HAPPO/seed42 在 episode 1050 留有本地 checkpoint；语义泛化 0/60、VMAS 0/100。当前正式结果为 143/320，投稿门禁为 1/12，长期顶刊投稿目标未完成。**
 
 本文件是暂停后恢复工作的单一入口。具体数值的原始依据仍以对应 JSON artifact、manifest、result 和专项文档为准；本文件不把 smoke、pilot、calibration 或作废结果升级为正式论文证据。
 
 ## 0. 本轮任务完成状态与目标差距（最终封存）
 
-- **本轮收口任务：已完成。** 已停止继续训练和功能扩展，保存可恢复 checkpoint，汇总完成状态与证据边界，并将全部内容推送到 `testv1` 的 `833c0a97ddda1dceec984c3df0b81e10866de7b1`。
+- **本轮收口任务：已完成。** 已停止训练，核对现有 result 与本地 checkpoint，并按 2026-10-21 的实际工作区重新生成投稿门禁审计和本总结。没有启动新的训练单元。
 - **工程实现任务：基本完成但未最终验收。** 强基线、安全层、语义表示、跨场景适配、统计与 provenance 路径均已实现；最近一次全量基线为 `191 passed`。语义泛化新增 focused tests 已通过，但新增改动后未重跑全量回归。
-- **正式实验任务：进行中（1/4 类完成）。** 已注册四类 paper study 合计需要 `270` 个正式 result（语义泛化 60、UAV 架构 60、链式消融 100、VMAS 两场景 50），当前可纳入论文主统计的有效 result 为 **`100/270`**（UAV 链式消融 100/100，经全量验证 valid、0 errors、0 warnings）。
-- **顶刊投稿任务：未完成。** 机器审计的 **`0/12`** 个 final gates 通过；目前只能证明研究平台、协议和执行路径较完整，不能证明核心方法相对强基线具有稳定、显著且可迁移的优势。
-- **运行状态：已停止。** 没有启动语义泛化 calibration 或 paper 运行；本轮没有发起任何训练。最后一次进程复查受 Windows 权限限制，但此前已确认没有活跃训练进程。
+- **正式实验任务：部分完成。** 五个注册 paper study 合计需要 `320` 个正式 result（语义泛化 60、UAV 架构 60、链式消融 100、VMAS navigation 50、VMAS dispersion 50），当前已有 **`143/320`**：消融 100 个结果构成完整 valid artifact；架构 43 个是可核对的分块结果，但整个架构 artifact 在 60/60 和 summary/checksums 完成前仍为 `invalid/incomplete`。
+- **顶刊投稿任务：未完成。** 重新计算的机器审计为 **`1/12`** final gates 通过，唯一通过项是 UAV 链式因果消融；其余 11 项仍阻塞。
+- **运行状态：已停止。** 进程检查仅见与本工程无关的 `lattice` 环境 Python，没有 `rl-test` 训练进程。本轮遵从“先不执行大规模训练”，未恢复 HAPPO/seed42，也未启动语义泛化或 VMAS。
 
 ### 0.1 到“诚实可验证的顶刊投稿准备”的精确缺口
 
@@ -22,26 +22,25 @@
 | 独立人工偏好数据 | 无冻结正式数据集 | writer-disjoint、独立复核、consent/伦理与 adjudication 齐全 | 整项未完成 |
 | 冻结语言 relevance gate | 无 final v2 证据 | 多来源训练，在未访问 preference/OOD final 上通过 | 整项未完成 |
 | 语义行为泛化 | `0/60` | 6 variants × 10 seeds，并完成 12 个注册假设的 seed-level exact test + Holm | 60 results 与统计 artifact |
-| UAV 强基线 | `0/60` | IMAPPO/MAPPO/IPPO/HAPPO/MATD3 等 6 variants × 10 seeds | 60 results |
+| UAV 强基线 | `43/60`；完整 artifact 尚未 valid | IMAPPO/MAPPO/IPPO/HAPPO/MATD3 等 6 variants × 10 seeds | HAPPO 余 7 seeds、MATD3 10 seeds，共 17 results；随后生成 summary/checksums 并全量校验 |
 | UAV 链式因果消融 | **100/100 完成**，full validation valid | 10 variants × 10 seeds，配对 CI、Holm、失败案例与冻结 artifact | 已完成：4/18 Holm 拒绝（CBF/画像先验显著；语义 null；掩码负效应） |
-| VMAS 跨场景复现 | `0/50` | navigation 与 dispersion 各 5 algorithms × 10 seeds | 50 results |
+| VMAS 跨场景复现 | `0/100` | navigation 与 dispersion 各 5 algorithms × 10 seeds | 两场景共 100 results |
 | 官方 HARL 数值交叉核验 | 仅完成源码/协议级审计 | 官方框架数值复现并记录差异 | 整项未完成 |
 | 多 UAV 冲突 SITL | 仅有组件与 pilot | policy-in-loop，覆盖延迟、丢包、动力学及 fallback | 整项未完成 |
 | HIL/受控实机 | 无正式证据 | HIL 或受控实机，且覆盖独立系统辨识边界 | 整项未完成 |
 | 冻结投稿包 | 无 | 匿名、校验和完整、所有门禁一致通过 | 整项未完成 |
 
-因此，“距离顶刊还有多远”的硬指标不是约 50% 这一主观比例，而是：**12 个关键门禁仍全部未闭环、至少 170 个注册训练结果尚未形成、人工数据/盲测/SITL/HIL/官方交叉复现与最终冻结包均缺失。** 只有这些证据完成且机器审计变为 `ready`，才可宣称达到投稿准备门槛；是否录用仍由创新性、结果强度和审稿判断决定。
+因此，“距离顶刊还有多远”的硬指标不是主观百分比，而是：**11/12 个关键门禁仍未闭环、177/320 个注册训练结果尚未形成、现有 43 个架构分块结果尚未组成完整 valid artifact，且人工数据/盲测/SITL/HIL/官方交叉复现与最终冻结包均缺失。** 只有这些证据完成且机器审计变为 `ready`，才可宣称达到投稿准备门槛；是否录用仍由创新性、结果强度和审稿判断决定。
 
 ## 1. 当前实验已经结束运行
 
 - 当前没有活跃的 `rl-test` Python 训练进程。
-- 正在执行的正式消融单元已按用户要求中止：`uav_imappo_ablation_paper_v2 / imappo_full / seed=7`。
-- 原子 checkpoint 位于 `experiments/paper/uav_imappo_ablation_paper_v2/imappo_full/seed_7/training_checkpoint.pt`。
-- checkpoint：`next_episode=2050/3000`，大小 `6,847,602` bytes，SHA-256=`a0074a57914a2752209da085c170cf75d08a48edd3df58e4b01eab22276f05c1`。
-- checkpoint schema=`episode_boundary_training_v1`；implementation SHA-256=`c4e55820d537dda168d8638dc6849f9b55e449b5f2c09cadb9ab88e944a40573`；registered result-protocol SHA-256=`ddb4f154a4f0564d06f6e8029fe8f14fe7228d3f4c3e96209addb4c7b23a5129`。
-- `manifest.json` 保留从 clean commits `053c316...` 和 `bde3111...` 发起的两次 invocation；两次 implementation fingerprint 相同，第二次 `--resume` 身份检查已实际通过。
-- manifest 的 `status=running` 表示研究单元尚未形成结果；这是运行器协议状态，不得手工改成 `partial` 或 `complete`。
-- 当前没有 `result.json`、`summary.json` 或正式统计，所以活动 paper 消融有效进度仍是 **0/100**。`2050/3000` 只是一个可恢复的单运行训练进度。
+- 当前停止点是 `uav_marl_architecture_v3_paper / happo / seed=42`，不是已经完成的消融研究。
+- 本地原子 checkpoint 位于 `experiments/paper/uav_marl_architecture_v3_paper/happo/seed_42/training_checkpoint.pt`；`next_episode=1050/3000`，大小 `13,690,520` bytes，SHA-256=`d7e050a93fbf0bb39a41fb9d63378de6022fea06791fafa903b2894dbb368a58`。
+- checkpoint schema=`episode_boundary_training_v1`，算法 schema=`happo_independent_actors_v1`；implementation SHA-256=`c4e55820d537dda168d8638dc6849f9b55e449b5f2c09cadb9ab88e944a40573`；registered protocol SHA-256=`c898bd8458dbf05c1c050c8283d970852a6017435ddd22d5559b0558ef07767d`。
+- 架构结果分布为 IMAPPO 10、IMAPPO-no-mask 10、MAPPO 10、IPPO 10、HAPPO 3、MATD3 0，共 **43/60**。
+- 架构 `manifest.json` 因中断保持 `status=running`，且与最后提交相比有预期修改；checkpoint 受 `.gitignore` 管理，仅存在于当前本地工作区。不得手工把 manifest 改为 `partial/complete`，也不得把 43/60 描述为完整 valid artifact。
+- 只读 partial 校验准确报告 `completed_result_count=43`、variant protocol valid，同时因缺 17 个 result、summary、完整 checksums 及 manifest 未 complete 而总体 `invalid`；这属于尚未收口，不代表已完成的 43 个分块 result 被作废。
 
 ## 2. 工程当前实现的功能
 
@@ -75,7 +74,7 @@
 - 训练、monitor、collision probe、final tier 和 query 使用注册的配对 seed 公式。
 - 已实现 IQM、bootstrap 95% CI、paired differences、win rate、performance profile、exact paired tests 和 Holm 多重校正。
 - artifact 支持 checksums、canonical protocol hash、implementation hash、严格 partial audit、跨实现 resume 拒绝和原子写入。
-- 新增版本化 submission-readiness gate；正式研究会复用完整 artifact validator，人工偏好会重算 JSONL 审计，外部系统证据必须满足冻结字段、样本量和误差阈值。当前审计为 `not_ready`、0/12 final gates met。
+- 新增版本化 submission-readiness gate；正式研究会复用完整 artifact validator，人工偏好会重算 JSONL 审计，外部系统证据必须满足冻结字段、样本量和误差阈值。2026-10-21 重算审计为 `not_ready`、1/12 final gates met；通过项仅为 UAV 链式因果消融。
 - 最新完整代码回归为 **191 passed, 14 warnings, 8.14 s**；本轮新增独立 readiness 审计工具及测试，但不修改训练源码，训练 implementation fingerprint 仍与 checkpoint 一致。
 
 ## 3. 已完成且可保留的证据
@@ -130,11 +129,12 @@ VMAS navigation 单 seed native return：attention-PPO `-2.711723`、MAPPO `-0.7
 
 - IMAPPO、IMAPPO-no-mask、MAPPO、IPPO、HAPPO、MATD3 × 10 seeds=`60` 个训练单元。
 - 校正预算=`70.76–96.04 active CPU-hours`。
-- 仍缺 clean multi-seed 正式结果和官方 HARL 数值交叉复现。
+- 当前完成 `43/60`：IMAPPO、IMAPPO-no-mask、MAPPO、IPPO 均 10/10，HAPPO 3/10，MATD3 0/10。
+- 仍缺 HAPPO 7 个和 MATD3 10 个训练结果，以及完整 summary/checksums、full artifact validation 和官方 HARL 数值交叉复现。
 
 ### 5.3 VMAS 跨场景复现
 
-- navigation 和 dispersion 各 5 algorithms × 10 seeds=`50` 单元。
+- navigation 和 dispersion 各 5 algorithms × 10 seeds=`50` 单元，两场景合计 `100` 单元。
 - 校正预算分别为 `33.42–44.36` 与 `34.09–45.47 active CPU-hours`。
 - 两场景合计 `67.52–89.83 active CPU-hours`；尚未运行 paper multi-seed。
 
@@ -144,14 +144,14 @@ VMAS navigation 单 seed native return：attention-PPO `-2.711723`、MAPPO `-0.7
 
 1. 独立招募、writer-disjoint 的人工偏好 train/dev/test，含 consent、伦理边界、独立 reviewer 和 adjudication 记录。
 2. 在多来源训练数据上重新训练 relevance gate；用未访问的人类 preference test 和新的 OOD final 冻结验证。CityNav 不得复用为第二次 final。
-3. clean snapshot 上完成 UAV 10-seed 架构对照和 10-seed/100-run 链式消融，生成配对 CI、Holm 结果、失败案例和冻结 artifact。
+3. 已完成并冻结 UAV 10-seed/100-run 链式消融；继续完成 UAV 架构对照剩余 17 单元，随后生成配对 CI、Holm 结果、失败案例和完整冻结 artifact。
 4. 完成 VMAS 两场景 10-seed 复现，并用官方 HARL 框架做数值交叉核验，而不只是源码协议审计。
 5. 完成多 UAV 冲突场景的 policy-in-loop SITL，覆盖通信延迟、丢包、动力学与安全 fallback。
 6. 至少完成 HIL 或受控实机验证，并使延迟/动力学边界与独立系统辨识覆盖率一致。
 
 因此当前项目可以诚实定位为“具有严谨 provenance、强基线路径、负结果约束和多层安全验证的完整研究平台”，不能定位为“已证明语义 MARL 优势”或“顶刊投稿完成稿”。工程准备度约 96% 不等于论文准备度；真正缺口主要是昂贵的多种子证据、独立人工数据和真实系统验证。
 
-机器审计将上述六类硬缺口细分为 12 个二值 final gates，当前 `0/12` 通过。语义泛化的完整 artifact 与专用 seed-level Holm 统计分别设门，避免“训练完成但统计口径错误”仍被标记 ready。该数字表示尚无最终门槛完整闭环，不是开发完成百分比；calibration、pilot 和已实现代码不会被错误折算为正式 evidence gate。
+机器审计将上述六类硬缺口细分为 12 个二值 final gates，当前 `1/12` 通过（UAV 链式因果消融）。语义泛化的完整 artifact 与专用 seed-level Holm 统计分别设门，避免“训练完成但统计口径错误”仍被标记 ready。该数字不是开发完成百分比；calibration、pilot、分块中的架构结果和已实现代码不会被错误折算为已闭环 evidence gate。
 
 ## 7. 当前允许与禁止的论文表述
 
@@ -175,19 +175,19 @@ VMAS navigation 单 seed native return：attention-PPO `-2.711723`、MAPPO `-0.7
 
 ## 8. 精确恢复方法
 
-恢复前必须先检出保存本总结及 checkpoint 的 `testv1` 提交，并确认没有本地代码修改。使用已有 Conda 环境：
+仅在用户明确恢复大规模训练后执行。当前 checkpoint 是被 `.gitignore` 排除的本地文件，因此恢复必须在当前工作区进行，并先确认除架构 `manifest.json` 外没有非预期修改。使用已有 Conda 环境：
 
 ```powershell
-D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config configs\research\uav_imappo_ablation.paper.json --only-variants imappo_full --only-seeds 7 --resume
+D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config configs\research\uav_marl_architecture_v3.paper.json --only-variants happo --only-seeds 42 --resume
 ```
 
 恢复顺序：
 
-1. `git status --short --branch`，确认仅预期的实验 artifact 会在运行后变化。
-2. 读取 checkpoint，核对 `next_episode=2050` 及两个身份 SHA-256。
+1. `git status --short --branch`，确认已知修改仅为架构 `manifest.json`，并确认本地 checkpoint 存在。
+2. 读取 checkpoint，核对 `next_episode=1050`、study/variant/seed 身份及 implementation/protocol SHA-256。
 3. 运行上述 `--resume`；任何 implementation/protocol mismatch 都应停止，不得绕过。
-4. 完成后执行 strict partial validator，预期只有 `imappo_full×seed7` 一个 result、99 missing、无 summary、0 errors/warnings。
-5. 将 result/audit/文档提交到 clean snapshot 后，才运行 seed 11 的跨提交 resume 验证。
+4. 单元完成后确认生成 `happo/seed_42/result.json`，再刷新 partial audit；在整个 60/60 完成前，总 artifact 仍不得标为 valid/complete。
+5. 将该 result 与恢复后的 manifest 提交到 clean snapshot 后，才可启动下一个注册单元。
 
 若不继续这批正式实验，应保留 checkpoint、manifest、config 和本总结，不要把 manifest 手工改为 complete。
 
@@ -205,8 +205,9 @@ D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config con
 - 分块 provenance：`docs/paper/CHUNKED_PAPER_PROVENANCE_PROTOCOL.md`
 - 人工偏好协议：`docs/paper/PREFERENCE_ANNOTATION_PROTOCOL.md`
 - 研究变更日志：`docs/paper/RESEARCH_CHANGELOG.md`
-- 活动正式配置：`configs/research/uav_imappo_ablation.paper.json`
-- 活动实验目录：`experiments/paper/uav_imappo_ablation_paper_v2/`
+- 已完成消融配置：`configs/research/uav_imappo_ablation.paper.json`
+- 当前暂停的架构配置：`configs/research/uav_marl_architecture_v3.paper.json`
+- 当前暂停的架构目录：`experiments/paper/uav_marl_architecture_v3_paper/`
 - 论文修改方向分析：`docs/paper/PAPER_REVISION_ANALYSIS.md`
 - 论文与实验结果分析与差距总览：`docs/paper/PAPER_EXPERIMENT_ANALYSIS_AND_GAPS.md`
 - 核心运行入口：`run_research_study.py`
@@ -214,4 +215,4 @@ D:\Programs\anaconda3\envs\rl-test\python.exe run_research_study.py --config con
 
 ## 10. 收口判定
 
-当前实验进程已经停止，最新可恢复训练状态、全部已知证据等级、负结果、作废原因、资源预算、论文边界和后续恢复步骤均已记录。正式语义泛化协议现已冻结为 60-run/12-hypothesis seed-level 设计，但没有运行 calibration 或 paper artifact。`--require-ready` 在当前 12 项 blocker 下按设计返回非零。除非用户明确要求继续，后续不应自动恢复训练。
+当前实验进程已经停止，架构研究的 43/60 结果与 HAPPO/seed42 episode-1050 本地恢复点、全部已知证据等级、负结果、资源预算、论文边界和恢复步骤均已记录。正式语义泛化协议已冻结为 60-run/12-hypothesis seed-level 设计，但没有形成 paper artifact；VMAS 两场景 paper 结果仍为 0/100。`--require-ready` 在当前 11 项 blocker 下按设计返回非零。遵从用户“先不执行大规模训练”的要求，除非用户明确恢复，后续不得启动训练。
