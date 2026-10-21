@@ -26,7 +26,7 @@
 - 其余 14 对照不显著：`no_attention`（collision +0.00000、task −0.00005）、`no_intent_reward`（−0.00004、+0.00057）、`no_nli_gate`（−0.00006、+0.00164）、`prior_only`（−0.00008、+0.00330）、`identity_oracle − no_profile_prior`、`no_intent − identity_oracle` 在 collision/task 上均无显著效应。`prior_only ≈ full` 表明学习残差相对纯规则先验无主指标增量。
 - 允许表述：CBF 与目标画像先验在 hard 档显著降低碰撞率（Holm 校正后）；画像先验同时显著小幅降低任务完成率；动作掩码显著降低任务完成率且无安全收益；语义编码/NLI 门/意图奖励/注意力 critic/one-hot oracle/意图通道在 collision 与 task 上无显著效应。
 - 禁止表述：仍不得声称"语义理解显著降低碰撞率"；不显著≠等效，不得声称任何机制等效；不得声称零碰撞保证；单 seed calibration 点值仍禁止排序。
-- 与历史一致：calibration 预警的多条近零机制差异在正式实验中兑现为 null；与 CityNav relevance gate 负结果形成同一条"语义通道目前无迁移收益"的证据链。论文重构分析见 `PAPER_REVISION_ANALYSIS.md`。
+- 证据边界：正式消融未检出相关组件在注册主指标上的显著差异，不证明零效应或等效。CityNav relevance gate 未通过特定 OOD 终测，是不同实验对象的独立负结果；二者不能合并证明语义通道普遍无迁移收益。论文重构分析见 `PAPER_REVISION_ANALYSIS.md`。
 
 ## 2026-08-24 首个正式消融单元（保留但 superseded）
 

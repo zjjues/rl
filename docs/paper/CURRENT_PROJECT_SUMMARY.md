@@ -10,7 +10,7 @@
 ## 0. 本轮任务完成状态与目标差距（最终封存）
 
 - **本轮收口任务：已完成。** 已停止训练，核对现有 result 与本地 checkpoint，并按 2026-10-21 的实际工作区重新生成投稿门禁审计和本总结。没有启动新的训练单元。
-- **工程实现任务：基本完成但未最终验收。** 强基线、安全层、语义表示、跨场景适配、统计与 provenance 路径均已实现；最近一次全量基线为 `191 passed`。语义泛化新增 focused tests 已通过，但新增改动后未重跑全量回归。
+- **工程实现任务：代码回归通过，研究证据尚待完成。** 在 `a54d420` 工作区使用 `rl-test` 环境执行 `python -m pytest -q`，结果为 **203 passed、14 warnings、19.94 s**（2026-10-21）。这覆盖新增语义泛化与统计工具的回归，不代替正式实验或外部验证。
 - **正式实验任务：部分完成。** 五个注册 paper study 合计需要 `320` 个正式 result（语义泛化 60、UAV 架构 60、链式消融 100、VMAS navigation 50、VMAS dispersion 50），当前已有 **`143/320`**：消融 100 个结果构成完整 valid artifact；架构 43 个是可核对的分块结果，但整个架构 artifact 在 60/60 和 summary/checksums 完成前仍为 `invalid/incomplete`。
 - **顶刊投稿任务：未完成。** 重新计算的机器审计为 **`1/12`** final gates 通过，唯一通过项是 UAV 链式因果消融；其余 11 项仍阻塞。
 - **运行状态：已停止。** 进程检查仅见与本工程无关的 `lattice` 环境 Python，没有 `rl-test` 训练进程。本轮遵从“先不执行大规模训练”，未恢复 HAPPO/seed42，也未启动语义泛化或 VMAS。
@@ -75,7 +75,7 @@
 - 已实现 IQM、bootstrap 95% CI、paired differences、win rate、performance profile、exact paired tests 和 Holm 多重校正。
 - artifact 支持 checksums、canonical protocol hash、implementation hash、严格 partial audit、跨实现 resume 拒绝和原子写入。
 - 新增版本化 submission-readiness gate；正式研究会复用完整 artifact validator，人工偏好会重算 JSONL 审计，外部系统证据必须满足冻结字段、样本量和误差阈值。2026-10-21 重算审计为 `not_ready`、1/12 final gates met；通过项仅为 UAV 链式因果消融。
-- 最新完整代码回归为 **191 passed, 14 warnings, 8.14 s**；本轮新增独立 readiness 审计工具及测试，但不修改训练源码，训练 implementation fingerprint 仍与 checkpoint 一致。
+- 最新完整代码回归为 **203 passed, 14 warnings, 19.94 s**（2026-10-21，`rl-test`，`python -m pytest -q`，exit code 0）。警告为可选 PettingZoo 缺失及 matplotlib/pyparsing 弃用接口；本轮仅更新文档，未修改训练源码或恢复训练。测试通过不改变 `143/320` 的正式结果数量或 `1/12` 的投稿门禁。
 
 ## 3. 已完成且可保留的证据
 
